@@ -121,6 +121,12 @@ http://httpd.apache.org/docs/2.2/mod/core.html#allowencodedslashes
     Allow from all
     </Directory>
 
+    <Location /met/saml2/login >
+    authtype shibboleth
+    shibRequestSetting requireSession 1
+    require valid-user
+    </Location>
+
 
 Enable memcached
 ****************
@@ -149,51 +155,6 @@ Initialize media directory with proper permissions:
     python manage.py collectstatic
     mkdir ~/media
     chmod g+srw ~/media
-
-
-Saml2 Authentication integration
-********************************
-
-The ``local_settings`` example has a generic configuration of SAML2
-Authentication integration.
-
-You need to change ``SAML_CONFIG`` according to your organization information.
-
-For testing purposes, you should create your own self-signed certificates. For
-other purposes you should buy them. How to create the certificates:
-
-* Follow the first five steps of this guide:
-  http://www.akadia.com/services/ssh_test_certificate.html
-* Create certs directory met/saml2/certs
-* Copy server.key and server.crt to met/saml2/certs
-
-.. code-block:: bash
-
-   openssl genrsa -des3 -out server.key 2048
-   openssl req -new -key server.key -out server.csr
-   cp server.key server.key.org
-   openssl rsa -in server.key.org -out server.key
-   openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-
-
-You need to put your IDP metadata in ``saml/remote_metadata.xml`` or, if you
-modified the ``SAML_CONFIG.metatadata.local`` setting, in the proper path.
-
-Set a saml2 user as superuser
------------------------------
-
-If the user doesn't exists, you can create it already as superuser without a
-password using this command in the correct environment:
-
-
-.. code-block:: bash
-
-  python manage.py createsuperuser --username super@example.com \
-     --email=supera@example.com --noinput
-
-If this fails and some errors appear related to the  djangosaml2.log file, then
-you must change the permissions of the /tmp/djangosaml2.log file and make it
-writable by the user that executes your manage.py command.
 
 
 Automatic refresh of federations' metadata

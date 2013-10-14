@@ -1,3 +1,13 @@
+#################################################################
+# MET v2 Metadate Explorer Tool
+#
+# This Software is Open Source. See License: https://github.com/TERENA/met/blob/master/LICENSE.md
+# Copyright (c) 2012, TERENA All rights reserved.
+#
+# This Software is based on MET v1 developed for TERENA by Yaco Sistemas, http://www.yaco.es/
+# MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
+#########################################################################################
+
 from lxml import etree
 
 
@@ -94,15 +104,17 @@ class MetadataParser(object):
             entity[dict_attr] = entity_etree.get(etree_attr, None)
 
         entity_types = self.entity_types(entity['entityid'])
+        e_type = None
         if entity_types:
             entity['entity_types'] = entity_types
+            e_type = entity_types[0]
         displayName = self.entity_displayname(entity['entityid'])
         if displayName:
             entity['displayname'] = displayName
         description = self.entity_description(entity['entityid'])
         if description:
             entity['description'] = description
-        protocols = self.entity_protocols(entity['entityid'])
+        protocols = self.entity_protocols(entity['entityid'], e_type)
         if protocols:
             entity['protocols'] = protocols
         Organization = self.entity_organization(entity['entityid'])
@@ -145,10 +157,10 @@ class MetadataParser(object):
         return int(self.etree.xpath("count(//md:EntityDescriptor)",
                                 namespaces=NAMESPACES))
 
-    def entity_protocols(self, entityid):
+    def entity_protocols(self, entityid, entity_type = 'IDPSSODescriptor'):
         raw_protocols = self.etree.xpath("//md:EntityDescriptor[@entityID='%s']"
-                                         "/md:IDPSSODescriptor"
-                                         "/@protocolSupportEnumeration" % entityid,
+                                         "/md:%s"
+                                         "/@protocolSupportEnumeration" % (entityid, entity_type),
                                  namespaces=NAMESPACES)
         if raw_protocols:
             protocols = raw_protocols[0]

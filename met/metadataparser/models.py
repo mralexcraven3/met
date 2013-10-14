@@ -1,3 +1,13 @@
+#################################################################
+# MET v2 Metadate Explorer Tool
+#
+# This Software is Open Source. See License: https://github.com/TERENA/met/blob/master/LICENSE.md
+# Copyright (c) 2012, TERENA All rights reserved.
+#
+# This Software is based on MET v1 developed for TERENA by Yaco Sistemas, http://www.yaco.es/
+# MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
+#########################################################################################
+
 from os import path
 import requests
 from urlparse import urlsplit
@@ -17,12 +27,14 @@ from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 
 from met.metadataparser.utils import compare_filecontents
 from met.metadataparser.xmlparser import MetadataParser, DESCRIPTOR_TYPES_DISPLAY
 
 
 TOP_LENGTH = getattr(settings, "TOP_LENGTH", 5)
+stats = getattr(settings, "STATS")
 
 def update_obj(mobj, obj, attrs=None):
     for_attrs = attrs or getattr(mobj, 'all_attrs', [])
@@ -92,8 +104,16 @@ class Federation(Base):
 
     name = models.CharField(blank=False, null=False, max_length=100,
                             unique=True, verbose_name=_(u'Name'))
+
+    type = models.CharField(blank=True, null=True, max_length=100,
+                            unique=True, verbose_name=_(u'Type'))
+
     url = models.URLField(verbose_name='Federation url',
                           blank=True, null=True)
+
+    free_schedule_url = models.URLField(verbose_name='Free schedule url',
+                          blank=True, null=True)
+
     logo = models.ImageField(upload_to='federation_logo', blank=True,
                              null=True, verbose_name=_(u'Federation logo'))
     is_interfederation = models.BooleanField(default=False, db_index=True,
@@ -131,7 +151,7 @@ class Federation(Base):
 
         update_obj(metadata.get_federation(), self)
 
-    def process_metadata_entities(self, request=None):
+    def process_metadata_entities(self, request=None, timestamp = timezone.now()):
         entities_from_xml = self._metadata.get_entities()
 
         for entity in self.entity_set.all():
@@ -153,9 +173,53 @@ class Federation(Base):
                 except Entity.DoesNotExist:
                     entity = self.entity_set.create(entityid=m_id)
             entity.process_metadata(self._metadata.get_entity(m_id))
+            
+        for feature in stats['features'].keys():
+            fun = getattr(self, 'get_%s' %feature, None)
 
+            if callable(fun):
+                stat = EntityStat()
+                stat.feature = feature
+                stat.time = timestamp
+                stat.federation = self
+                stat.value = fun(stats['features'][feature])
+            
+                stat.save()
+            
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])
+    
+    def get_sp(self, xml_name):
+        return self.entity_set.all().filter(types=EntityType.objects.get(xmlname=xml_name)).count()
+
+    def get_idp(self, xml_name):
+        return self.entity_set.all().filter(types=EntityType.objects.get(xmlname=xml_name)).count()
+
+    def get_sp_saml1(self, xml_name):
+        return self.get_stat_protocol(xml_name, 'SPSSODescriptor')
+
+    def get_sp_saml2(self, xml_name):
+        return self.get_stat_protocol(xml_name, 'SPSSODescriptor')
+
+    def get_sp_shib1(self, xml_name):
+        return self.get_stat_protocol(xml_name, 'SPSSODescriptor')
+
+    def get_idp_saml1(self, xml_name):
+        return self.get_stat_protocol(xml_name, 'IDPSSODescriptor')
+
+    def get_idp_saml2(self, xml_name):
+        return self.get_stat_protocol(xml_name, 'IDPSSODescriptor')
+
+    def get_idp_shib1(self, xml_name):
+        return self.get_stat_protocol(xml_name, 'IDPSSODescriptor')
+
+    def get_stat_protocol(self, xml_name, service_type):
+        count = 0
+        for entity in self.entity_set.all().filter(types=EntityType.objects.get(xmlname=service_type)):
+            if Entity.READABLE_PROTOCOLS.has_key(xml_name) and entity.protocols and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols():
+                count += 1
+            
+        return count
 
 
 class EntityQuerySet(QuerySet):
@@ -226,6 +290,21 @@ class Entity(Base):
         return self._get_property('displayname')
 
     @property
+    def displayName(self):
+        displayName = "";
+        displayNameDict = self._get_property('displayname')
+        if displayNameDict:
+            if displayNameDict.has_key('en'):
+                displayName = displayNameDict['en']
+            else:
+                displayName = displayNameDict.itervalues().next()
+        return displayName
+
+    @property
+    def federationsCount(self):
+        return str(self.federations.all().count())
+        
+    @property
     def description(self):
         return self._get_property('description')
 
@@ -235,6 +314,10 @@ class Entity(Base):
 
     @property
     def protocols(self):
+#         import sys
+#         sys.path.insert(0, "/home/tamim/.eclipse/org.eclipse.platform_3.7.0_1680470357/plugins/org.python.pydev_2.7.5.2013052819/pysrc/")
+#         import pydevd;pydevd.settrace()
+        
         return self._get_property('protocols')
 
     def display_protocols(self):
@@ -325,13 +408,12 @@ class Entity(Base):
 
     @classmethod
     def get_most_federated_entities(self, maxlength=TOP_LENGTH, cache_expire=None):
-
         entities = None
         if cache_expire:
             cache = get_cache("default")
             entities = cache.get("most_federated_entities")
 
-        if not entities:
+        if not entities or entities.count() != maxlength:
             # Entities with count how many federations belongs to, and sorted by most first
             entities = Entity.objects.all().annotate(
                                  federationslength=Count("federations")).order_by("-federationslength")[:maxlength]
@@ -359,8 +441,28 @@ class EntityLogo(models.Model):
         return self.alt or u"logo %i" % self.id
 
 
+class EntityStat(models.Model):
+    time = models.DateTimeField(blank=False, null=False, 
+                           verbose_name=_(u'Metadata time stamp'))
+    feature = models.CharField(max_length=100, blank=False, null=False, db_index=True,
+                           verbose_name=(u'Feature name'))
+
+    value = models.PositiveIntegerField(max_length=100, blank=False, null=False,
+                           verbose_name=(u'Feature value'))
+
+    federation = models.ForeignKey(Federation, blank = False,
+                                         verbose_name=_(u'Federations'))
+
+    def __unicode__(self):
+        return self.feature
+
+
 @receiver(pre_save, sender=Federation, dispatch_uid='federation_pre_save')
 def federation_pre_save(sender, instance, **kwargs):
+    # Skip pre_save if only file name is saved 
+    if kwargs.has_key('update_fields') and kwargs['update_fields'] == set(['file']):
+        return
+
     if instance.file_url:
         instance.fetch_metadata_file()
     if instance.name:

@@ -1,3 +1,13 @@
+#################################################################
+# MET v2 Metadate Explorer Tool
+#
+# This Software is Open Source. See License: https://github.com/TERENA/met/blob/master/LICENSE.md
+# Copyright (c) 2012, TERENA All rights reserved.
+#
+# This Software is based on MET v1 developed for TERENA by Yaco Sistemas, http://www.yaco.es/
+# MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
+#########################################################################################
+
 # Django settings for met project.
 
 import os
@@ -139,7 +149,8 @@ INSTALLED_APPS = (
     'met.portal',
     'met.metadataparser',
 
-    'djangosaml2',
+    # 'djangosaml2',
+    'chartit',
 )
 
 # A sample logging configuration. The only tangible logging

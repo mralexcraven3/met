@@ -4,6 +4,15 @@
 {% block appendheader %}
 
 {% export_menu entities %}
+
+<div class="btn-group pull-right">
+  <a class="btn" href="{% url 'entity_comment' entity.id %}">{% trans "Comment" %}</a>
+</div>
+
+<div class="btn-group pull-right">
+  <a class="btn" href="{% url 'entity_proposal' entity.id %}">{% trans "Proposal" %}</a>
+</div>
+
 {% if entity.name %}
   <h2>{% l10n_property entity.name %}</h2>
 {% else %}
@@ -17,7 +26,7 @@
 {% canedit entity %}
 
 <div class="btn-group pull-right">
-  <a class="btn" href="{% url entity_edit entity.id %}">{% trans "edit" %}</a>
+  <a class="btn" href="{% url 'entity_edit' entity.id %}">{% trans "edit" %}</a>
 </div>
 {% endcanedit %}
 
@@ -45,6 +54,12 @@
   <li>
   <strong class="labelview">{% trans "Entity Types" %}: </strong>{{ entity.types|display_etype }}
   </li>
+
+  {% if entity.displayName %}
+  <li>
+  <strong class="labelview">{% trans "Display Name" %}: </strong>{{ entity.displayName }}
+  </li>
+  {% endif %}
 
   {% if entity.protocols %}
   <li>
@@ -76,7 +91,7 @@
   <strong class="labelview">{% trans "Federations" %}: </strong>
     <ul>
       {% for federation in entity.federations.all %}
-      <li><a href="{% url federation_view federation.slug %}">{{ federation }}</a></li>
+      <li><a href="{% url 'federation_view' federation.slug %}">{{ federation }}</a></li>
       {% endfor %}
     </ul>
   </li>

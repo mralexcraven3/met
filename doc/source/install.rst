@@ -23,6 +23,8 @@ System packages (ubuntu-1204)
 * libpq-dev
 * xmlsec1
 * memcached
+* django_chartit
+* dateutils
 
 
 Create database
@@ -192,6 +194,35 @@ password using this command in the correct environment:
 If this fails and some errors appear related to the  djangosaml2.log file, then
 you must change the permissions of the /tmp/djangosaml2.log file and make it
 writable by the user that executes your manage.py command.
+
+
+Automatic refresh of federations' metadata
+******************************************
+
+Metadata of configured federations can be refreshed automatically. To achieve this
+you just need to configure a cronjob on your server such as: 
+
+.. code-block:: bash
+
+   0 * * * * /home/met/start_met_refresh.sh
+
+where start_met_refresh.sh is a shell script like
+
+.. code-block:: bash
+
+   #! /bin/sh
+   su - met -c /home/met/met_refresh.sh
+
+and met_refresh.sh is a script that finally calls the python script that refershes
+the metadata:
+
+.. code-block:: bash
+
+   #! /bin/bash
+   source /home/met/met-venv/bin/activate
+   python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
+
+With the option --log the script will log as configured in the logging configuration file.
 
 
 Publishing Met Documentation

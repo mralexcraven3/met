@@ -2,10 +2,15 @@
 {% load i18n metadataparsertags %}
 
 {% block appendheader %}
+
+<div class="btn-group pull-right">
+  <a class="btn" href="{% url 'federation_charts' federation.slug %}">{% trans "Charts" %}</a>
+</div>
+
 {% canedit federation %}
 <div class="btn-group pull-right">
- <a class="btn" href="{% url federation_edit federation.slug %}">{% trans "edit" %}</a>
- <a class="btn" href="{% url entity_add federation.slug %}">{% trans "add entity" %}</a>
+ <a class="btn" href="{% url 'federation_edit' federation.slug %}">{% trans "edit" %}</a>
+ <a class="btn" href="{% url 'entity_add' federation.slug %}">{% trans "add entity" %}</a>
 </div>
 {% endcanedit %}
 <h2>

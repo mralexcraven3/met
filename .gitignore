@@ -10,3 +10,7 @@ saml2/remote_metadata.xml
 doc/build
 dist/
 build/
+/.settings
+/.project
+/.pydevproject
+/.gitignore

@@ -5,7 +5,7 @@
 {% export_summary_menu queryname %}
 {% endif %}
 {% if user.is_superuser %}
-<a class="btn" href="{% url federation_add %}">{% trans "Add federation" %}</a>
+<a class="btn" href="{% url 'federation_add' %}">{% trans "Add federation" %}</a>
 {% endif %}
 </div>
 
@@ -37,5 +37,5 @@
 </tbody>
 </table>
 {% else %}
-{% trans "There isn't federations" %}
+{% trans "There are no federations" %}
 {% endif %}

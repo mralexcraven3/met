@@ -9,7 +9,6 @@
 #########################################################################################
 
 import os
-import saml2
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 

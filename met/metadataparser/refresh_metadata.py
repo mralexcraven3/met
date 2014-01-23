@@ -34,26 +34,36 @@ def refresh(logger = None):
     timestamp = timezone.now()
     
     for federation in federations:
-        
-        log('Refreshing metadata for federation %s ...' %federation, logger, logging.INFO)
-        error_msg, data_changed = fetch_metadata_file(federation)
+        error_msg = None
+        try:
+            log('Refreshing metadata for federation %s ...' %federation, logger, logging.INFO)
+            error_msg, data_changed = fetch_metadata_file(federation)
+    
+            if not error_msg and data_changed:
+                log('Updating database ...', logger, logging.INFO)
+    
+                log('Updating federation ...', logger, logging.DEBUG)
+                federation.process_metadata()
+    
+                log('Updating federation entities ...', logger, logging.DEBUG)
+                federation.process_metadata_entities(timestamp = timestamp)
+    
+                log('Updating federation file ...', logger, logging.DEBUG)
+                federation.save(update_fields = ['file'])
 
-        if error_msg:
-            mailConfigDict = getattr(settings, "MAIL_CONFIG")
-            try:
-                subject = mailConfigDict['refresh_subject'] %federation
-                from_address = mailConfigDict['from_email_address']
-                sendMail(from_address, subject, error_msg)
-            except Exception, errorMessage:
-                log('Message could not be posted successfully: %s' %errorMessage, logger, logging.ERROR)
+        except Exception, errorMessage:
+            error_msg = errorMessage
 
-        elif data_changed:
-            log('Updating database ...', logger, logging.INFO)
-
-            federation.process_metadata()
-            federation.process_metadata_entities(timestamp = timestamp)
-            federation.save(update_fields = ['file'])
-
+        finally:
+            if error_msg:
+                mailConfigDict = getattr(settings, "MAIL_CONFIG")
+                try:
+                    subject = mailConfigDict['refresh_subject'] %federation
+                    from_address = mailConfigDict['from_email_address']
+                    sendMail(from_address, subject, error_msg)
+                except Exception, errorMessage:
+                    log('Message could not be posted successfully: %s' %errorMessage, logger, logging.ERROR)
+    
     log('Refreshing metadata terminated.', logger, logging.INFO)
 
 def fetch_metadata_file(federation):

@@ -17,7 +17,9 @@ import sys, os
 import logging.config
 from optparse import OptionParser
 
-from django.core import management;import met.settings as settings;management.setup_environ(settings)
+# from django.core import management;import met.settings as settings;management.setup_environ(settings)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'met.settings'
+
 from met.metadataparser.refresh_metadata import refresh
 
 class RefreshMetaData:

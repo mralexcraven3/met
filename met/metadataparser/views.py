@@ -252,7 +252,7 @@ def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stac
                       [{'options':{
                           'type': chart_type,
                           'stacking': stacking,
-                          'stack': stack
+                          'stack': stack,
                           },
                         'terms':{
                           'time_%s' %term: [{term_names[term]: {'stack': stack,}}],
@@ -280,6 +280,7 @@ def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stac
                     'labels': {
                        'rotation': -45,
                        'align': 'right'},
+                       'max': 10,
                          },
                'yAxis': {
                     'title': {
@@ -290,6 +291,7 @@ def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stac
                        'enabled': False},
                'scrollbar': {
                        'enabled': True},
+               'zoomType': 'xy',
                },
             x_sortf_mapf_mts=(None, lambda i: datetime.fromtimestamp(time.mktime(i.replace(tzinfo=tz.gettz('UTC')).astimezone(tz.tzlocal()).timetuple())).strftime(time_format), False)
     )
@@ -492,16 +494,16 @@ def federation_login(request):
     
     if attr_dict.has_key('username'):          
         name = attr_dict['username']
-        index = name.find('@')
-        if index > 0:
-            name = name[:index]
+#         index = name.find('@')
+#         if index > 0:
+#             name = name[:index]
         
         user = User.objects.filter(username=name)
     
         if user:
             user = user[0]
         else:
-            user = User.objects.create_user(name)
+            user = User.objects.create_superuser(name, email=None, password=None)
 
             # Set other attributes
             for attr in attr_dict.keys():

@@ -16,7 +16,7 @@ from django.forms.util import ErrorDict
 
 from django.utils import timezone
 
-from met.metadataparser.models import Federation, Entity
+from met.metadataparser.models import Federation, Entity, Dummy
 
 
 class FederationForm(forms.ModelForm):
@@ -26,8 +26,8 @@ class FederationForm(forms.ModelForm):
         editor_users_choices = self.fields['editor_users'].widget.choices
         self.fields['editor_users'].widget = CheckboxSelectMultiple(
                                                 choices=editor_users_choices)
-        self.fields['editor_users'].help_text = _("This users can edit this "
-                                                 "federation and his entities")
+        self.fields['editor_users'].help_text = _("This/these user(s) can edit this "
+                                                 "federation and its entities")
 
     class Meta:
         model = Federation
@@ -74,6 +74,9 @@ class ChartForm(forms.ModelForm):
 
         return result
             
+    class Meta:
+        model = Dummy
+
 
 class EntityCommentForm(forms.ModelForm):
     email = forms.EmailField(label=_(u'Your email address'),
@@ -82,6 +85,9 @@ class EntityCommentForm(forms.ModelForm):
     comment = forms.CharField(max_length=1000, label=_(u"Your comment"),
                              help_text=_(u"Please enter your comment here."),
                              widget=forms.Textarea(attrs={'cols': '100', 'rows': '10'}))
+
+    class Meta:
+        model = Dummy
 
 
 class EntityProposalForm(forms.ModelForm):
@@ -120,9 +126,8 @@ class EntityProposalForm(forms.ModelForm):
         self.fields['federations'].widget.choices = federation_choices
                              
  
-#     class Meta:
-#         model = Entity
-#         fields = ('federation')
+    class Meta:
+        model = Dummy
 
 
 class ServiceSearchForm(forms.Form):

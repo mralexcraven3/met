@@ -114,6 +114,9 @@ http://httpd.apache.org/docs/2.2/mod/core.html#allowencodedslashes
 
     AllowEncodedSlashes NoDecode
 
+    WSGIDaemonProcess <server name> home=/home/met
+    WSGIProcessGroup <server name>
+    
     WSGIScriptAlias / /home/met/met/met-wsgi.py
 
     <Directory /home/met/met/met-wsgi.py>

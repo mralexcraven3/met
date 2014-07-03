@@ -13,9 +13,11 @@ Created on Sep 18, 2013
 
 @author: tamim
 '''
+import os
 from os import path
 import requests
 import logging
+import itertools
 from urlparse import urlsplit
 from django.utils import timezone
 
@@ -56,6 +58,8 @@ def refresh(logger = None):
 
         finally:
             if error_msg:
+                log('Sending following error via email: %s' % error_msg, logger, logging.INFO)
+                
                 mailConfigDict = getattr(settings, "MAIL_CONFIG")
                 try:
                     subject = mailConfigDict['refresh_subject'] %federation
@@ -85,16 +89,51 @@ def fetch_metadata_file(federation):
     if not error_msg:
         parsed_url = urlsplit(federation.file_url)
 
-        if federation.file:
+        if federation.file and federation.file.storage.exists(federation.file):
             federation.file.seek(0)
             original_file_content = federation.file.read()
 
-            if not compare_filecontents(original_file_content, req.content):
-                filename = path.basename(parsed_url.path)
-                federation.file.save(filename, ContentFile(req.content), save=False)
-                data_changed = True
+        if not federation.file.storage.exists(federation.file) or not compare_filecontents(original_file_content, req.content):
+            filename = path.basename(parsed_url.path)
+            federation.file.save(filename, ContentFile(req.content), save=True)
+            data_changed = True
+#                 dir_name, file_name = os.path.split(federation.file.name)
+#                 purge(os.path.join(dir_name, filename), federation.file)
     
     return (error_msg, data_changed)
+
+def purge(name, the_file):
+    
+    def del_file(file_name):
+        try:
+            the_file.storage.delete(file_name)
+        except:
+            pass
+        
+    """
+    Deletes all old versions of the file except the two most recent ones.
+    """
+    dir_name, file_name = os.path.split(name)
+    file_root, file_ext = os.path.splitext(file_name)
+    # If the filename already exists, add an underscore and a number (before
+    # the file extension, if one exists) to the filename until the generated
+    # filename doesn't exist.
+    count = itertools.count(1)
+    file_to_delete = None
+    while the_file.storage.exists(name):
+        if name == the_file.name:
+            break
+        
+        if file_to_delete:
+            del_file(file_to_delete)
+        
+        file_to_delete = name
+        
+        # file_ext includes the dot.
+        name = os.path.join(dir_name, "%s_%s%s" % (file_root, next(count), file_ext))
+
+    return name
+
 
 def log(message, logger = None, severity = logging.INFO):
     

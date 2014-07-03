@@ -106,7 +106,7 @@ class Federation(Base):
                             unique=True, verbose_name=_(u'Name'))
 
     type = models.CharField(blank=True, null=True, max_length=100,
-                            unique=True, verbose_name=_(u'Type'))
+                            unique=False, verbose_name=_(u'Type'))
 
     url = models.URLField(verbose_name='Federation url',
                           blank=True, null=True)
@@ -152,6 +152,10 @@ class Federation(Base):
         update_obj(metadata.get_federation(), self)
 
     def process_metadata_entities(self, request=None, timestamp = timezone.now()):
+#         import sys
+#         sys.path.insert(0, "/home/tamim/.eclipse/org.eclipse.platform_3.7.0_1680470357/plugins/org.python.pydev_2.7.5.2013052819/pysrc/")
+#         import pydevd;pydevd.settrace()
+        
         entities_from_xml = self._metadata.get_entities()
 
         for entity in self.entity_set.all():
@@ -216,7 +220,8 @@ class Federation(Base):
     def get_stat_protocol(self, xml_name, service_type):
         count = 0
         for entity in self.entity_set.all().filter(types=EntityType.objects.get(xmlname=service_type)):
-            if Entity.READABLE_PROTOCOLS.has_key(xml_name) and entity.protocols and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols():
+#             if Entity.READABLE_PROTOCOLS.has_key(xml_name) and entity.protocols and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols():
+            if Entity.READABLE_PROTOCOLS.has_key(xml_name) and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols(self):
                 count += 1
             
         return count
@@ -314,16 +319,15 @@ class Entity(Base):
 
     @property
     def protocols(self):
-#         import sys
-#         sys.path.insert(0, "/home/tamim/.eclipse/org.eclipse.platform_3.7.0_1680470357/plugins/org.python.pydev_2.7.5.2013052819/pysrc/")
-#         import pydevd;pydevd.settrace()
-        
         return self._get_property('protocols')
 
-    def display_protocols(self):
+    def display_protocols(self, federation = None):
         protocols = []
-        for proto in self._get_property('protocols'):
-            protocols.append(self.READABLE_PROTOCOLS.get(proto, proto))
+
+        if self._get_property('protocols', federation):
+            for proto in self._get_property('protocols', federation):
+                protocols.append(self.READABLE_PROTOCOLS.get(proto, proto))
+
         return protocols
 
     @property
@@ -358,9 +362,9 @@ class Entity(Base):
             if not hasattr(self, '_entity_cached'):
                 raise ValueError("Can't find entity metadata")
 
-    def _get_property(self, prop):
+    def _get_property(self, prop, federation = None):
         try:
-            self.load_metadata()
+            self.load_metadata(federation)
         except ValueError:
             return None
         if hasattr(self, '_entity_cached'):
@@ -455,6 +459,10 @@ class EntityStat(models.Model):
 
     def __unicode__(self):
         return self.feature
+
+
+class Dummy(models.Model):
+    pass
 
 
 @receiver(pre_save, sender=Federation, dispatch_uid='federation_pre_save')

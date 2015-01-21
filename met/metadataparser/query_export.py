@@ -4,7 +4,7 @@ import hashlib
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
-from django.utils import simplejson as json
+import simplejson as json
 
 
 ## Taken from http://djangosnippets.org/snippets/790/

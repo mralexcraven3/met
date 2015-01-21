@@ -1,12 +1,12 @@
 import os
 import saml2
-BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
+BASEURL = '/'
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 DEBUG = True
 #DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-
 
 DATABASES = {
     'default': {
@@ -35,13 +35,18 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    os.path.join(BASEDIR, 'templates'),
+    os.path.join(BASEDIR, 'met/metadataparser/templates'),
+    os.path.join(BASEDIR, 'met/portal/templates'),
 )
 
+SAML_CREATE_UNKNOWN_USER = True
+
+SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'eppn'
 
 SAML_ATTRIBUTE_MAPPING = {
-    'mail': ('username', 'email', ),
-    'cn': ('first_name', ),
+    'eppn': ('username',) ,
+    'mail': ('email', ),
+    'givenName': ('first_name', ),
     'sn': ('last_name', ),
 }
 
@@ -49,6 +54,11 @@ SAML_ATTRIBUTE_MAPPING = {
 ORGANIZATION_NAME = 'Your organization'
 
 SAML2DIR = os.path.join(BASEDIR, 'saml2')
+
+LOGIN_URL = '%s/saml2/login/' % BASEURL
+LOGOUT_URL = '%s/saml2/logout/' % BASEURL
+REDIRECT_LOGIN_URL = '%s/' % BASEURL
+REDIRECT_LOGOUT_URL = '%s/' % BASEURL
 
 SAML_CONFIG = {
   # full path to the xmlsec1 binary programm

@@ -186,7 +186,7 @@ class EntityQuerySet(QuerySet):
 
 
 class EntityManager(models.Manager):
-    def get_query_set(self):
+    def get_queryset(self):
         return EntityQuerySet(self.model, using=self._db)
 
 

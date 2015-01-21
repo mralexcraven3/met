@@ -3,7 +3,7 @@ from xml.dom.minidom import Document
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
-from django.utils import simplejson as json
+import simplejson as json
 
 
 def export_summary_csv(qs, relation, filename, counters):

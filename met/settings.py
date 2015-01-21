@@ -40,7 +40,7 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
-MEDIA_ROOT = os.path.join(BASEDIR, 'media')
+MEDIA_ROOT = os.path.join(BASEDIR, 'met', 'media')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
@@ -51,7 +51,7 @@ MEDIA_URL = '%s/media/' % BASEURL
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.path.join(BASEDIR, 'static')
+STATIC_ROOT = os.path.join(BASEDIR, 'met', 'static')
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -73,15 +73,11 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-LOGIN_URL = '%s/saml2/login/' % BASEURL
-LOGOUT_URL = '%s/saml2/logout/' % BASEURL
-REDIRECT_LOGIN_URL = '%s/' % BASEURL
-REDIRECT_LOGOUT_URL = '%s/' % BASEURL
-
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'wcc$cfn0p!+@kv%@9y^u3^6fax5_a-n84^o*gl94!%kqc!fm-n'
+
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -106,14 +102,6 @@ ROOT_URLCONF = 'met.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'met.wsgi.application'
-
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    os.path.join(BASEDIR, 'metadataparser/templates'),
-    os.path.join(BASEDIR, 'portal/templates'),
-)
 
 INSTALLED_APPS = (
     'django.contrib.auth',

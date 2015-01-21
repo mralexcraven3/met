@@ -27,10 +27,6 @@ CACHES = {
 
 INTERNAL_IPS = ('192.168.122.1',)
 
-MEDIA_ROOT = os.path.join(os.environ.get('HOME', '/home/met'), 'media')
-STATIC_ROOT = os.path.join(os.environ.get('HOME', '/home/met'), 'static')
-
-
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
@@ -54,11 +50,6 @@ SAML_ATTRIBUTE_MAPPING = {
 ORGANIZATION_NAME = 'Your organization'
 
 SAML2DIR = os.path.join(BASEDIR, 'saml2')
-
-LOGIN_URL = '%s/saml2/login/' % BASEURL
-LOGOUT_URL = '%s/saml2/logout/' % BASEURL
-REDIRECT_LOGIN_URL = '%s/' % BASEURL
-REDIRECT_LOGOUT_URL = '%s/' % BASEURL
 
 SAML_CONFIG = {
   # full path to the xmlsec1 binary programm

@@ -17,7 +17,7 @@ class FederationForm(forms.ModelForm):
 
     class Meta:
         model = Federation
-        exclude = ('file_id', 'slug')
+        fields = ['file_url', 'file', 'editor_users', 'name', 'url', 'logo', 'is_interfederation']
 
 
 class EntityForm(forms.ModelForm):
@@ -36,8 +36,7 @@ class EntityForm(forms.ModelForm):
 
     class Meta:
         model = Entity
-        exclude = ('federations', 'file_id')
-
+        fields = ['file_url', 'file', 'editor_users', 'types']
 
 class ServiceSearchForm(forms.Form):
     entityid = forms.CharField(max_length=200, label=_(u"Search service ID"),

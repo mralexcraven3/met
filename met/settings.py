@@ -8,11 +8,6 @@ try:
 except:
     pass
 
-ADMINS = (
-    # ('Your Name', 'your_email@example.com'),
-    ('Andrea Biancini', 'andrea.biancini@garr.it'),
-)
-
 MANAGERS = ADMINS
 
 # Local time zone for this installation. Choices can be found here:
@@ -166,6 +161,7 @@ LOGGING = {
     }
 }
 
+LOGIN_URL = '%s/saml2/login' % BASEURL
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',

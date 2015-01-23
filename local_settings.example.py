@@ -19,6 +19,10 @@ DATABASES = {
     }
 }
 
+ADMINS = (
+    # ('Your Name', 'your_email@example.com'),
+)
+
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',

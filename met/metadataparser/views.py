@@ -75,11 +75,17 @@ def federation_view(request, federation_slug=None):
     if 'format' in request.GET:
         return export_query_set(request.GET.get('format'), entities,
                                 'entities_search_result', ('', 'types', 'federations'))
+
+    user = context.get('user', None)
+    add_entity = user and user.has_perm('metadataparser.add_federation')
+
+
     return render_to_response('metadataparser/federation_view.html',
             {'federation': federation,
              'entity_type': entity_type or 'All',
              'entities': entities,
              'show_filters': True,
+             'add_entity': add_entity,
             }, context_instance=RequestContext(request))
 
 

@@ -26,8 +26,11 @@ def federations_summary(context, queryname, federations=None):
     if not federations:
         federations = Federation.objects.all()
 
+    user = context.get('user', None)
+    add_federation = user and user.has_perm('metadataparser.add_federation')
+
     return {'federations': federations,
-            'user': context.get('user', None),
+            'add_federation': add_federation,
             'queryname': queryname,
             'entity_types': DESCRIPTOR_TYPES}
 

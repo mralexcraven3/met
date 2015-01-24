@@ -80,9 +80,6 @@ class Base(models.Model):
     def process_metadata(self):
         raise NotImplemented()
 
-    def can_edit(self, user):
-        return (user.is_superuser or user in self.editor_users.all())
-
 
 class XmlDescriptionError(Exception):
     pass
@@ -156,6 +153,12 @@ class Federation(Base):
 
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])
+
+    def can_edit(self, user):
+        if user.has_perm('metadataparser.change_federation'):
+            if user in self.editor_users.all():
+                return True
+        return False
 
 
 class EntityQuerySet(QuerySet):
@@ -316,13 +319,6 @@ class Entity(Base):
 
         return entity
 
-    def can_edit(self, user):
-        if super(Entity, self).can_edit(user):
-            return True
-        for federation in self.federations.all():
-            if federation.can_edit(user):
-                return True
-
     @classmethod
     def get_most_federated_entities(self, maxlength=TOP_LENGTH, cache_expire=None):
 
@@ -344,6 +340,17 @@ class Entity(Base):
 
     def get_absolute_url(self):
         return reverse('entity_view', args=[quote_plus(self.entityid)])
+
+    def can_edit(self, user):
+        if user.has_perm('metadataparser.change_entity'):
+            if user in self.editor_users.all():
+                return True
+
+        for federation in self.federations.all():
+            if federation.can_edit(user):
+                return True
+
+        return False
 
 
 class EntityLogo(models.Model):

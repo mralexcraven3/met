@@ -162,6 +162,7 @@ LOGGING = {
 }
 
 LOGIN_URL = '%s/saml2/login' % BASEURL
+LOGOUT_URL = '%s/saml2/logout' % BASEURL
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',

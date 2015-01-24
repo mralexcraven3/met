@@ -76,6 +76,7 @@ def federation_view(request, federation_slug=None):
         return export_query_set(request.GET.get('format'), entities,
                                 'entities_search_result', ('', 'types', 'federations'))
 
+    context = RequestContext(request)
     user = context.get('user', None)
     add_entity = user and user.has_perm('metadataparser.add_federation')
 
@@ -86,7 +87,7 @@ def federation_view(request, federation_slug=None):
              'entities': entities,
              'show_filters': True,
              'add_entity': add_entity,
-            }, context_instance=RequestContext(request))
+            }, context_instance=context)
 
 
 @user_can_edit(Federation)

@@ -23,6 +23,7 @@ System packages (ubuntu-1204)
 * libpq-dev
 * xmlsec1
 * memcached
+* libffi-dev
 
 
 Create database
@@ -84,6 +85,12 @@ Project deployment
 
       cp local_settings.example.py local_settings.py
       python manage.py syncdb
+
+* To initialize static files for admin page of Django execute:
+
+  .. code-block:: bash
+
+      python manage.py collectstatic
 
 
 Apache configuration

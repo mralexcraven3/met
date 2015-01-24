@@ -23,28 +23,14 @@ ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-    }
-}
-
 INTERNAL_IPS = ('192.168.122.1',)
-
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    os.path.join(BASEDIR, 'met/metadataparser/templates'),
-    os.path.join(BASEDIR, 'met/portal/templates'),
-)
 
 SAML_CREATE_UNKNOWN_USER = True
 
-SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'eppn'
+SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'username'
 
 SAML_ATTRIBUTE_MAPPING = {
-    'eppn': ('username',) ,
+    'eduPersonPrincipalName': ('username',) ,
     'mail': ('email', ),
     'givenName': ('first_name', ),
     'sn': ('last_name', ),

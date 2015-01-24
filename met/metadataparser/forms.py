@@ -36,7 +36,7 @@ class EntityForm(forms.ModelForm):
 
     class Meta:
         model = Entity
-        fields = ['file_url', 'file', 'editor_users', 'types']
+        fields = ['file_url', 'file', 'editor_users']
 
 class ServiceSearchForm(forms.Form):
     entityid = forms.CharField(max_length=200, label=_(u"Search service ID"),

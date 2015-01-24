@@ -12,7 +12,7 @@ class FederationForm(forms.ModelForm):
         editor_users_choices = self.fields['editor_users'].widget.choices
         self.fields['editor_users'].widget = CheckboxSelectMultiple(
                                                 choices=editor_users_choices)
-        self.fields['editor_users'].help_text = _("This users can edit this "
+        self.fields['editor_users'].help_text = _("These users can edit this "
                                                  "federation and his entities")
 
     class Meta:
@@ -27,7 +27,7 @@ class EntityForm(forms.ModelForm):
         editor_users_choices = self.fields['editor_users'].widget.choices
         self.fields['editor_users'].widget = CheckboxSelectMultiple(
                                                 choices=editor_users_choices)
-        self.fields['editor_users'].help_text = _("This users can edit only "
+        self.fields['editor_users'].help_text = _("These users can edit only "
                                                   "this entity")
 
         entity_types = self.fields['types'].widget.choices

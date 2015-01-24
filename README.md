@@ -9,4 +9,4 @@ Metadata Explorer Tool is a fast way to find federations, entities and his relat
 * You can find which federations or entities are part of interfederations
 * You can find most federated entities.
 
-To install this software please refer to [this documentation page](blob/master/doc/source/install.rst).
+To install this software please refer to [this documentation page](doc/source/install.rst).

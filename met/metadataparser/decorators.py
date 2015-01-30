@@ -12,7 +12,7 @@ from django.utils.decorators import available_attrs
 
 
 def user_can_edit(objtype, login_url=None,
-                  redirect_field=REDIRECT_FIELD_NAME):
+                  redirect_field=REDIRECT_FIELD_NAME, delete=False):
     """ based on user_passtest from django.contrib.auth.decorators"""
     def decorator(view_func):
         @wraps(view_func, assigned=available_attrs(view_func))
@@ -24,7 +24,7 @@ def user_can_edit(objtype, login_url=None,
                     break
             if objtype and objid:
                 obj = objtype.objects.get(id=objid)
-                if obj.can_edit(request.user):
+                if obj.can_edit(request.user, delete):
                     return view_func(request, *args, **kwargs)
                 else:
                     permission = False

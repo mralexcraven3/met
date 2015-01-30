@@ -10,7 +10,7 @@ import simplejson as json
 ## Taken from http://djangosnippets.org/snippets/790/
 def export_csv(qs, filename, fields=None):
     model = qs.model
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = ('attachment; filename=%s.csv'
                                        % slugify(filename))
     writer = csv.writer(response)
@@ -81,7 +81,7 @@ def export_json(qs, filename, fields=None):
         objs.append(item)
     # Return JS file to browser as download
     serialized = json.dumps(objs)
-    response = HttpResponse(serialized, mimetype='application/json')
+    response = HttpResponse(serialized, content_type='application/json')
     response['Content-Disposition'] = ('attachment; filename=%s.json'
                                        % slugify(filename))
     return response
@@ -122,7 +122,7 @@ def export_xml(qs, filename, fields=None):
                     item.appendChild(element)
         root.appendChild(item)
     # Return xml file to browser as download
-    response = HttpResponse(xml.toxml(), mimetype='application/xml')
+    response = HttpResponse(xml.toxml(), content_type='application/xml')
     response['Content-Disposition'] = ('attachment; filename=%s.xml'
                                        % slugify(filename))
     return response

@@ -6,10 +6,9 @@
 <div class="btn-group pull-right">
  <a class="btn" href="{% url 'federation_edit' federation.slug %}">{% trans "edit" %}</a>
  {% if add_entity %}
- <a class="btn" href="{% url 'entity_add' federation.slug %}">{% trans "add entity" %}</a>
+ &nbsp;<a class="btn" href="{% url 'entity_add' federation.slug %}">{% trans "add entity" %}</a>
  {% endif %}
-</div>
-{% endcanedit %}
+</div{% endcanedit %}
 <h2>
   {{ federation }}
 </h2>

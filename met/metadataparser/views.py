@@ -80,7 +80,6 @@ def federation_view(request, federation_slug=None):
     user = context.get('user', None)
     add_entity = user and user.has_perm('metadataparser.add_federation')
 
-
     return render_to_response('metadataparser/federation_view.html',
             {'federation': federation,
              'entity_type': entity_type or 'All',
@@ -119,14 +118,26 @@ def federation_edit(request, federation_slug=None):
     else:
         form = FederationForm(instance=federation)
 
+    context = RequestContext(request)
+    user = context.get('user', None)
+    delete_federation = user and user.has_perm('metadataparser.delete_federation')
     return render_to_response('metadataparser/federation_edit.html',
-                              {'form': form},
+                              {'form': form,
+                               'delete_federation': delete_federation},
                               context_instance=RequestContext(request))
 
 
-@user_can_edit(Federation)
+@user_can_edit(Federation, True)
 def federation_delete(request, federation_slug):
     federation = get_object_or_404(Federation, slug=federation_slug)
+
+    for entity in federation.entity_set.all():
+        if len(entity.federations.all()) == 1:
+            #messages.success(request,
+            #                 _(u"%(entity)s entity was deleted succesfully"
+            #                 % {'entity': unicode(entity)}))
+            entity.delete()
+
     messages.success(request,
                      _(u"%(federation)s federation was deleted succesfully"
                      % {'federation': unicode(federation)}))
@@ -185,7 +196,7 @@ def entity_edit(request, federation_slug=None, entity_id=None):
                               context_instance=RequestContext(request))
 
 
-@user_can_edit(Entity)
+@user_can_edit(Entity, True)
 def entity_delete(request, entity_id):
     entity = get_object_or_404(Entity, id=entity_id)
     messages.success(request,

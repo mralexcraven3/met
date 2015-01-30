@@ -154,8 +154,9 @@ class Federation(Base):
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])
 
-    def can_edit(self, user):
-        if user.has_perm('metadataparser.change_federation'):
+    def can_edit(self, user, delete):
+        permission = 'delete_federation' if delete else 'change_federation'
+        if user.has_perm('metadataparser.%s' % permission):
             if user in self.editor_users.all():
                 return True
         return False
@@ -341,13 +342,14 @@ class Entity(Base):
     def get_absolute_url(self):
         return reverse('entity_view', args=[quote_plus(self.entityid)])
 
-    def can_edit(self, user):
-        if user.has_perm('metadataparser.change_entity'):
+    def can_edit(self, user, delete):
+        permission = 'delete_entity' if delete else 'change_entity'
+        if user.has_perm('metadataparser.%s' % permission):
             if user in self.editor_users.all():
                 return True
 
         for federation in self.federations.all():
-            if federation.can_edit(user):
+            if federation.can_edit(user, False):
                 return True
 
         return False

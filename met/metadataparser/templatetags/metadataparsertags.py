@@ -189,7 +189,7 @@ class CanEdit(Node):
     def render(self, context):
         obj = self.obj.resolve(context, True)
         user = context.get('user')
-        if obj.can_edit(user):
+        if obj.can_edit(user, False):
             return self.nodelist.render(context)
         else:
             return ''

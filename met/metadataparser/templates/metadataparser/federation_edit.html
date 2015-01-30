@@ -10,8 +10,8 @@
 {% endblock %}
 
 {% block content %}
-{% if form.instance.id %}
-  {% url 'federation_delete form.instance.slug' as delete_link %}
+{% if form.instance.id and delete_federation %}
+  {% url 'federation_delete' form.instance.slug as delete_link %}
   {% bootstrap_form form cancel_link=form.instance.get_absolute_url delete_link=delete_link %}
 {% else %}
   {% url 'index' as cancel_link %}

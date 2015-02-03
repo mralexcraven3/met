@@ -2,6 +2,7 @@ from os import path
 import requests
 from urlparse import urlsplit
 from urllib import quote_plus
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib import messages
@@ -99,7 +100,6 @@ class Federation(Base):
 
     @property
     def _metadata(self):
-
         if not hasattr(self, '_metadata_cache'):
             self._metadata_cache = self.load_file()
         return self._metadata_cache
@@ -218,38 +218,63 @@ class Entity(Base):
                                          verbose_name=_(u'Federations'))
 
     types = models.ManyToManyField(EntityType, verbose_name=_(u'Type'))
+
+    registration_authority = models.CharField(blank=True, null='True', max_length=100,
+                                              verbose_name=_(u'Registration Authority'))
+    registration_instant = models.DateTimeField(blank=True, null=True,
+                                                verbose_name=_(u'Registration Instant'))
+    protocols = models.CharField(blank=True, null='True', max_length=500,
+                                              verbose_name=_(u'Protocols'))
+
     objects = models.Manager()
     longlist = EntityManager()
 
     @property
     def organization(self):
-        return self._get_property('organization')
+        names = self._get_uuinfo('organizationDisplayName')
+        urls = self._get_uuinfo('organizationUrl')
+
+        vals = []
+        for lang, name in names.items():
+            val = {}
+            val['displayName'] = name
+            val['lang'] = lang
+            if lang in urls.keys():
+                val['URL'] = urls[lang]
+            vals.append(val)
+        return vals
 
     @property
     def name(self):
-        return self._get_property('displayname')
+        return self._get_uuinfo('displayName', 'en')
 
     @property
     def description(self):
-        return self._get_property('description')
-
-    @property
-    def xml_types(self):
-        return self._get_property('entity_types')
-
-    @property
-    def protocols(self):
-        return self._get_property('protocols')
+        return self._get_uuinfo('description', 'en')
 
     def display_protocols(self):
         protocols = []
-        for proto in self._get_property('protocols'):
+        for proto in self.protocols.split(' '):
             protocols.append(self.READABLE_PROTOCOLS.get(proto, proto))
         return protocols
 
     @property
     def logos(self):
-        return list(self._get_property('logos')) + list(self.entitylogo_set.all())
+        if not hasattr(self, '_uuinfo_cached'):
+            self._uuinfo_cached = EntityInfo.objects.filter(entity=self)
+
+        logos = []
+        for cur_logo in self._uuinfo_cached:
+            if cur_logo.info_type == 'logos':
+                logo = {}
+                logo['width'] = cur_logo.width or ''
+                logo['height'] = cur_logo.height or ''
+                logo['file'] = cur_logo.value
+                logo['lang'] = cur_logo.language
+                logo['external'] = True
+                logos.append(logo)
+
+        return logos
 
     class Meta:
         verbose_name = _(u'Entity')
@@ -279,6 +304,21 @@ class Entity(Base):
             if not hasattr(self, '_entity_cached'):
                 raise ValueError("Can't find entity metadata")
 
+    def _get_uuinfo(self, info, lang=None):
+        if not hasattr(self, '_uuinfo_cached'):
+            self._uuinfo_cached = EntityInfo.objects.filter(entity=self)
+
+        if lang:
+            for cur_info in self._uuinfo_cached:
+                if cur_info.info_type == info and cur_info.language == lang:
+                    return cur_info.value
+        else:
+            val = {}
+            for cur_info in self._uuinfo_cached:
+                if cur_info.info_type == info:
+                     val[cur_info.language] = cur_info.value
+            return val
+
     def _get_property(self, prop):
         try:
             self.load_metadata()
@@ -296,9 +336,40 @@ class Entity(Base):
         if self.entityid != entity_data.get('entityid'):
             raise ValueError("EntityID is not the same")
 
+        if entity_data:
+            self.registration_authority = entity_data.get('registration_authority', None)
+            self.registration_instant = entity_data.get('registration_instant', None)
+            self.protocols = ' '.join(entity_data.get('protocols', []))
+
+            entity_infos = []
+            # Add description, displayName, urls elements to EntityInfo table (if not already present)
+            for cur_type in ['description', 'displayName', 'infoUrl', 'privacyUrl']:
+                for lang, val in entity_data.get(cur_type, {}).items():
+                    entity_infos.append(EntityInfo(info_type=cur_type, language=lang, value=val, entity=self))
+
+            # Add Logo elements to EntityInfo table (if not already present)
+            for val in entity_data.get('logos', []):
+                entity_infos.append(EntityInfo(info_type='logos', language=val['lang'], value=val['file'], entity=self,
+                                              width=val['width'], height=val['height']))
+
+            # Add Organization information to EntityInfo table (if not already present)
+            for val in entity_data.get('organization', []):
+                if 'URL' in val and 'lang' in val:
+                    entity_infos.append(EntityInfo(info_type='organizationUrl', language=val['lang'], value=val['URL'], entity=self))
+                if 'name' in val and 'lang' in val:
+                    entity_infos.append(EntityInfo(info_type='organizationName', language=val['lang'], value=val['name'], entity=self))
+                if 'displayName' in val and 'lang' in val:
+                    entity_infos.append(EntityInfo(info_type='organizationDisplayName', language=val['lang'], value=val['displayName'], entity=self))
+
+            EntityInfo.objects.bulk_create(entity_infos)
+            ## add additional fileds to be inserted into DB
+            self.save()
+
         self._entity_cached = entity_data
-        if self.xml_types:
-            for etype in self.xml_types:
+
+        xml_types = entity_data.get('entity_types', None)
+        if xml_types:
+            for etype in xml_types:
                 try:
                     entity_type = EntityType.objects.get(xmlname=etype)
                 except EntityType.DoesNotExist:
@@ -311,8 +382,12 @@ class Entity(Base):
         self.description
         entity = self._entity_cached.copy()
         entity["types"] = [(unicode(f)) for f in self.types.all()]
-        entity["federations"] = [{u"name": unicode(f), u"url":f.get_absolute_url()}
+        entity["federations"] = [{u"name": unicode(f), u"url": f.get_absolute_url()}
                                     for f in self.federations.all()]
+
+        entity["registration_authority"] = self.registration_authority
+        entity["registration_instant"] = datetime.strptime(self.registration_instant, '%Y-%m-%dT%H:%M%SZ')
+
         if "file_id" in entity.keys():
             del entity["file_id"]
         if "entity_types" in entity.keys():
@@ -322,7 +397,6 @@ class Entity(Base):
 
     @classmethod
     def get_most_federated_entities(self, maxlength=TOP_LENGTH, cache_expire=None):
-
         entities = None
         if cache_expire:
             cache = get_cache("default")
@@ -354,19 +428,24 @@ class Entity(Base):
 
         return False
 
-
-class EntityLogo(models.Model):
-    logo = models.ImageField(upload_to='entity_logo', blank=True,
-                             null=True, verbose_name=_(u'Entity logo'))
-    alt = models.CharField(max_length=100, blank=True, null=True,
-                           verbose_name=(u'Alternative text'))
+class EntityInfo(models.Model):
+    info_type = models.CharField(blank=True, max_length=30,
+                                verbose_name=_(u'Info Type'), db_index=True)
+    language = models.CharField(blank=True, null=True, max_length=2,
+                                verbose_name=_(u'Language'))
+    value = models.CharField(blank=False, max_length=1000,
+                                verbose_name=_(u'Info Value'))
 
     entity = models.ForeignKey(Entity, blank=False,
-                        verbose_name=_('Entity'))
+                                verbose_name=_('Entity'))
+
+    width = models.PositiveSmallIntegerField(null=True, default=0,
+                                verbose_name=_(u'Width'))
+    height = models.PositiveSmallIntegerField(null=True, default=0,
+                                verbose_name=_(u'Height'))
 
     def __unicode__(self):
-        return self.alt or u"logo %i" % self.id
-
+        return "[%s:%s] %s" % (self.info_type, self.language, self.value)
 
 @receiver(pre_save, sender=Federation, dispatch_uid='federation_pre_save')
 def federation_pre_save(sender, instance, **kwargs):

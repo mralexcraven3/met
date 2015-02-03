@@ -30,10 +30,6 @@ class EntityForm(forms.ModelForm):
         self.fields['editor_users'].help_text = _("These users can edit only "
                                                   "this entity")
 
-        entity_types = self.fields['types'].widget.choices
-        self.fields['types'].widget = CheckboxSelectMultiple(choices=entity_types)
-        self.fields['types'].help_text = ''
-
     class Meta:
         model = Entity
         fields = ['file_url', 'file', 'editor_users']

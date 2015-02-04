@@ -72,6 +72,8 @@ class MetadataParser(object):
         self.is_federation = (self.etree.tag == FEDERATION_ROOT_TAG)
         self.is_entity = not self.is_federation
 
+        self.lang_seen = []
+
     def get_federation(self, attrs=None):
         assert self.is_federation
         federation_attrs = attrs or ('ID', 'Name',)
@@ -123,7 +125,13 @@ class MetadataParser(object):
            entity['registration_authority'] = reg_info['authority']
         if reg_info and 'instant' in reg_info:
            entity['registration_instant'] = reg_info['instant']
-
+        entity['languages'] = self.lang_seen
+        attr_requested = self.entity_requested_attributes(entity_etree)
+        if attr_requested:
+            entity['attr_requested'] = attr_requested
+        contacts = self.entity_contacts(entity_etree)
+        if contacts:
+            entity['contacts'] = contacts
         return entity
 
     def entity_exist(self, entityid):
@@ -166,7 +174,7 @@ class MetadataParser(object):
     def entity_displayname(self, entity):
         languages = {}
 
-        names = entity.xpath("./mdui:UIInfo"
+        names = entity.xpath(".//mdui:UIInfo"
                              "//mdui:DisplayName",
                              namespaces=NAMESPACES)
 
@@ -175,6 +183,7 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
+            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
@@ -191,6 +200,7 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
+            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
@@ -207,6 +217,7 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
+            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
@@ -223,6 +234,7 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
+            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
@@ -239,6 +251,7 @@ class MetadataParser(object):
                     if lang is None:
                         continue  # the lang attribute is required
 
+                    if not lang in self.lang_seen: self.lang_seen.append(lang)
                     lang_dict = languages.setdefault(lang, {})
                     lang_dict[attr] = node.text
 
@@ -273,3 +286,36 @@ class MetadataParser(object):
             info['authority'] = reg_info[0].attrib.get('registrationAuthority')
             info['instant'] = reg_info[0].attrib.get('registrationInstant')
         return info
+
+    def entity_requested_attributes(self, entity):
+        xmllogos = entity.xpath(".//md:AttributeConsumingService"
+                                "/md:RequestedAttribute",
+                                namespaces=NAMESPACES)
+        attrs = {}
+        attrs['required'] = []
+        attrs['optional'] = []
+        for attr_node in xmllogos:
+            required = attr_node.attrib.get('isRequired', 'false')
+            index = 'optional'
+            if required == 'true':
+                index = 'required'
+            attrs[index].append(attr_node.attrib.get('Name', None))
+        return attrs
+
+    def entity_contacts(self, entity):
+        contacts = entity.xpath(".//md:ContactPerson",
+                                namespaces=NAMESPACES)
+        cont = []
+        for cont_node in contacts:
+            c_type = cont_node.attrib.get('contactType', '')
+            name = cont_node.xpath(".//md:GivenName", namespaces=NAMESPACES)
+            if name: name = name[0].text
+            else: name = None
+            surname = cont_node.xpath(".//md:SurName", namespaces=NAMESPACES)
+            if surname: surname = surname[0].text
+            else: surname = None
+            email = cont_node.xpath(".//md:EmailAddress", namespaces=NAMESPACES)
+            if email: email = email[0].text
+            else: email = None
+            cont.append({ 'type': c_type, 'name': name, 'surname': surname, 'email': email })
+        return cont

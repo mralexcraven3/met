@@ -1,5 +1,7 @@
 from django import template
 from django.template.base import Node, TemplateSyntaxError
+from django.template.defaultfilters import stringfilter
+from django.utils.safestring import mark_safe, SafeData
 from met.metadataparser.models import Federation
 from met.metadataparser.xmlparser import DESCRIPTOR_TYPES, DESCRIPTOR_TYPES_DISPLAY
 from met.metadataparser.query_export import export_modes
@@ -121,9 +123,10 @@ def entities_count(entity_qs, entity_type=None):
 
 
 @register.simple_tag(takes_context=True)
-def l10n_property(context, prop):
+def l10n_property(context, prop, lang):
     if isinstance(prop, dict):
-        lang = context.get('LANGUAGE_CODE', None)
+        if not lang:
+            lang = context.get('LANGUAGE_CODE', None)
         if lang and lang in prop:
             return prop.get(lang)
         else:
@@ -218,3 +221,10 @@ def canedit(parser, token):
         {% endcanedit %}
     """
     return do_canedit(parser, token)
+
+@register.filter
+@stringfilter
+def split(value, splitter='|'):
+    if not isinstance(value, SafeData):
+        value = mark_safe(value)
+    return value.split(splitter)

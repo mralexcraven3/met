@@ -1,6 +1,6 @@
 from os import path
 import requests
-from urlparse import urlsplit
+from urlparse import urlsplit, urlparse
 from urllib import quote_plus
 from datetime import datetime
 
@@ -21,6 +21,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from met.metadataparser.utils import compare_filecontents
 from met.metadataparser.xmlparser import MetadataParser, DESCRIPTOR_TYPES_DISPLAY
+from met.metadataparser.templatetags import attributemap
 
 
 TOP_LENGTH = getattr(settings, "TOP_LENGTH", 5)
@@ -223,22 +224,31 @@ class Entity(Base):
                                               verbose_name=_(u'Registration Authority'))
     registration_instant = models.DateTimeField(blank=True, null=True,
                                                 verbose_name=_(u'Registration Instant'))
+    languages = models.CharField(blank=True, null='True', max_length=50,
+                                              verbose_name=_(u'Languages'))
     protocols = models.CharField(blank=True, null='True', max_length=500,
                                               verbose_name=_(u'Protocols'))
+    attributes = models.CharField(blank=True, null='True', max_length=1000,
+                                              verbose_name=_(u'Requested Attributes'))
+    attributes_optional = models.CharField(blank=True, null='True', max_length=1000,
+                                              verbose_name=_(u'Optional Attributes'))
 
     objects = models.Manager()
     longlist = EntityManager()
 
     @property
     def organization(self):
-        names = self._get_uuinfo('organizationDisplayName')
+        names = self._get_uuinfo('organizationName')
         urls = self._get_uuinfo('organizationUrl')
+        displayNames = self._get_uuinfo('organizationDisplayName')
 
         vals = []
         for lang, name in names.items():
             val = {}
-            val['displayName'] = name
+            val['name'] = name
             val['lang'] = lang
+            if lang in displayNames.keys():
+                val['displayName'] = displayNames[lang]
             if lang in urls.keys():
                 val['URL'] = urls[lang]
             vals.append(val)
@@ -246,17 +256,66 @@ class Entity(Base):
 
     @property
     def name(self):
-        return self._get_uuinfo('displayName', 'en')
+        return self._get_uuinfo('displayName')
 
     @property
     def description(self):
-        return self._get_uuinfo('description', 'en')
+        return self._get_uuinfo('description')
+
+    @property
+    def infoUrl(self):
+        return self._get_uuinfo('infoUrl')
+
+    @property
+    def privacyUrl(self):
+        return self._get_uuinfo('privacyUrl')
 
     def display_protocols(self):
         protocols = []
         for proto in self.protocols.split(' '):
             protocols.append(self.READABLE_PROTOCOLS.get(proto, proto))
         return protocols
+
+    def display_attributes(self):
+        attributes = {}
+        for attr in self.attributes.split(' '):
+            oid = attr.replace('urn:oid:', '')
+            if attr in attributemap.MAP['fro']:
+                attributes[oid] = attributemap.MAP['fro'][attr]
+            else:
+                attributes[oid] = attr
+        return attributes
+
+    def display_attributes_optional(self):
+        attributes = {}
+        for attr in self.attributes_optional.split(' '):
+            oid = attr.replace('urn:oid:', '')
+            if attr in attributemap.MAP['fro']:
+                attributes[oid] = attributemap.MAP['fro'][attr]
+            else:
+                attributes[oid] = attr
+        return attributes
+
+    @property
+    def contacts(self):
+        if not hasattr(self, '_contacts_cached'):
+            self._contacts_cached = EntityContact.objects.filter(entity=self)
+
+        contacts = []
+        for cur_contact in self._contacts_cached:
+            if cur_contact.name and cur_contact.surname:
+                contact_name = '%s %s' % (cur_contact.name, cur_contact.surname)
+            elif cur_contact.name:
+                contact_name = cur_contact.name
+            elif cur_contact.surname:
+                contact_name = cur_contact.surname
+            else:
+                contact_name = urlparse(cur_contact.email).path.partition('?')[0]
+            c_type = 'undefined'
+            if cur_contact.contact_type:
+                c_type = cur_contact.contact_type
+            contacts.append({ 'name': contact_name, 'email': cur_contact.email, 'type': c_type })
+        return contacts
 
     @property
     def logos(self):
@@ -308,16 +367,11 @@ class Entity(Base):
         if not hasattr(self, '_uuinfo_cached'):
             self._uuinfo_cached = EntityInfo.objects.filter(entity=self)
 
-        if lang:
-            for cur_info in self._uuinfo_cached:
-                if cur_info.info_type == info and cur_info.language == lang:
-                    return cur_info.value
-        else:
-            val = {}
-            for cur_info in self._uuinfo_cached:
-                if cur_info.info_type == info:
-                     val[cur_info.language] = cur_info.value
-            return val
+        val = {}
+        for cur_info in self._uuinfo_cached:
+            if cur_info.info_type == info:
+                 val[cur_info.language] = cur_info.value
+        return val
 
     def _get_property(self, prop):
         try:
@@ -362,7 +416,18 @@ class Entity(Base):
                     entity_infos.append(EntityInfo(info_type='organizationDisplayName', language=val['lang'], value=val['displayName'], entity=self))
 
             EntityInfo.objects.bulk_create(entity_infos)
-            ## add additional fileds to be inserted into DB
+
+            # Add entity contacts if in metadata
+            contacts = []
+            for cont in entity_data.get('contacts', []):
+                contacts.append(EntityContact(contact_type=cont['type'], name=cont['name'], surname=cont['surname'], email=cont['email'], entity=self))
+            EntityContact.objects.bulk_create(contacts)
+
+            self.languages = ' '.join(entity_data.get('languages', []))
+            attributes = entity_data.get('attr_requested', {'required': [], 'optional': []})
+            self.attributes = ' '.join(attributes['required'])
+            self.attributes_optional = ' '.join(attributes['optional'])
+
             self.save()
 
         self._entity_cached = entity_data
@@ -435,17 +500,32 @@ class EntityInfo(models.Model):
                                 verbose_name=_(u'Language'))
     value = models.CharField(blank=False, max_length=1000,
                                 verbose_name=_(u'Info Value'))
-
-    entity = models.ForeignKey(Entity, blank=False,
-                                verbose_name=_('Entity'))
-
     width = models.PositiveSmallIntegerField(null=True, default=0,
                                 verbose_name=_(u'Width'))
     height = models.PositiveSmallIntegerField(null=True, default=0,
                                 verbose_name=_(u'Height'))
 
+    entity = models.ForeignKey(Entity, blank=False,
+                                verbose_name=_('Entity'))
+
     def __unicode__(self):
         return "[%s:%s] %s" % (self.info_type, self.language, self.value)
+
+class EntityContact(models.Model):
+    contact_type = models.CharField(blank=True, max_length=30,
+                                verbose_name=_(u'Contact Type'), db_index=True)
+    name = models.CharField(blank=True, null=True, max_length=100,
+                                verbose_name=_(u'Name'))
+    surname = models.CharField(blank=True, null=True, max_length=100,
+                                verbose_name=_(u'Surname'))
+    email = models.CharField(blank=False, max_length=100,
+                                verbose_name=_(u'Email'))
+
+    entity = models.ForeignKey(Entity, blank=False,
+                                verbose_name=_('Entity'))
+
+    def __unicode__(self):
+        return "[%s] %s %s <%s>" % (self.contact_type, self.name, self.surname, self.email)
 
 @receiver(pre_save, sender=Federation, dispatch_uid='federation_pre_save')
 def federation_pre_save(sender, instance, **kwargs):

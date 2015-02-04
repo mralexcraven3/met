@@ -155,6 +155,7 @@ def entity_view(request, entityid):
 
     return render_to_response('metadataparser/entity_view.html',
             {'entity': entity,
+             'lang': request.GET.get('lang', 'en') 
             }, context_instance=RequestContext(request))
 
 

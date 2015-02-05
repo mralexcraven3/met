@@ -112,6 +112,7 @@ INSTALLED_APPS = (
     'met.portal',
     'met.metadataparser',
     'djangosaml2',
+    'djcelery',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -199,3 +200,6 @@ TEMPLATE_DIRS = (
     os.path.join(BASEDIR, 'met/portal/templates'),
 )
 
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'

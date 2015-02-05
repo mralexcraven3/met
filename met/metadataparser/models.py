@@ -43,7 +43,7 @@ class Base(models.Model):
                             verbose_name=_(u'metadata xml file'),
                             help_text=_("if url is set, metadata url will be "
                                         "fetched and replace file value"))
-    file_id = models.CharField(blank=True, null=True, max_length=100,
+    file_id = models.CharField(blank=True, null=True, max_length=500,
                                verbose_name=_(u'File ID'))
 
     editor_users = models.ManyToManyField(User, null=True, blank=True,
@@ -89,7 +89,7 @@ class XmlDescriptionError(Exception):
 
 class Federation(Base):
 
-    name = models.CharField(blank=False, null=False, max_length=100,
+    name = models.CharField(blank=False, null=False, max_length=200,
                             unique=True, verbose_name=_(u'Name'))
     url = models.URLField(verbose_name='Federation url',
                           blank=True, null=True)
@@ -220,17 +220,17 @@ class Entity(Base):
 
     types = models.ManyToManyField(EntityType, verbose_name=_(u'Type'))
 
-    registration_authority = models.CharField(blank=True, null='True', max_length=100,
+    registration_authority = models.CharField(blank=True, null='True', max_length=200,
                                               verbose_name=_(u'Registration Authority'))
     registration_instant = models.DateTimeField(blank=True, null=True,
                                                 verbose_name=_(u'Registration Instant'))
-    languages = models.CharField(blank=True, null='True', max_length=50,
+    languages = models.CharField(blank=True, null='True', max_length=200,
                                               verbose_name=_(u'Languages'))
     protocols = models.CharField(blank=True, null='True', max_length=500,
                                               verbose_name=_(u'Protocols'))
-    attributes = models.CharField(blank=True, null='True', max_length=1000,
+    attributes = models.CharField(blank=True, null='True', max_length=5000,
                                               verbose_name=_(u'Requested Attributes'))
-    attributes_optional = models.CharField(blank=True, null='True', max_length=1000,
+    attributes_optional = models.CharField(blank=True, null='True', max_length=5000,
                                               verbose_name=_(u'Optional Attributes'))
 
     objects = models.Manager()
@@ -420,7 +420,8 @@ class Entity(Base):
             # Add entity contacts if in metadata
             contacts = []
             for cont in entity_data.get('contacts', []):
-                contacts.append(EntityContact(contact_type=cont['type'], name=cont['name'], surname=cont['surname'], email=cont['email'], entity=self))
+                if cont['email']:
+                    contacts.append(EntityContact(contact_type=cont['type'], name=cont['name'], surname=cont['surname'], email=cont['email'], entity=self))
             EntityContact.objects.bulk_create(contacts)
 
             self.languages = ' '.join(entity_data.get('languages', []))
@@ -444,14 +445,17 @@ class Entity(Base):
                     self.types.add(entity_type)
 
     def to_dict(self):
-        self.description
+        self.load_metadata()
+
         entity = self._entity_cached.copy()
         entity["types"] = [(unicode(f)) for f in self.types.all()]
         entity["federations"] = [{u"name": unicode(f), u"url": f.get_absolute_url()}
                                     for f in self.federations.all()]
 
-        entity["registration_authority"] = self.registration_authority
-        entity["registration_instant"] = datetime.strptime(self.registration_instant, '%Y-%m-%dT%H:%M%SZ')
+        if self.registration_authority:
+            entity["registration_authority"] = self.registration_authority
+        if self.registration_instant:
+            entity["registration_instant"] = datetime.strptime(self.registration_instant, '%Y-%m-%dT%H:%M%SZ')
 
         if "file_id" in entity.keys():
             del entity["file_id"]
@@ -496,9 +500,9 @@ class Entity(Base):
 class EntityInfo(models.Model):
     info_type = models.CharField(blank=True, max_length=30,
                                 verbose_name=_(u'Info Type'), db_index=True)
-    language = models.CharField(blank=True, null=True, max_length=2,
+    language = models.CharField(blank=True, null=True, max_length=10,
                                 verbose_name=_(u'Language'))
-    value = models.CharField(blank=False, max_length=1000,
+    value = models.CharField(blank=False, max_length=100000,
                                 verbose_name=_(u'Info Value'))
     width = models.PositiveSmallIntegerField(null=True, default=0,
                                 verbose_name=_(u'Width'))
@@ -514,11 +518,11 @@ class EntityInfo(models.Model):
 class EntityContact(models.Model):
     contact_type = models.CharField(blank=True, max_length=30,
                                 verbose_name=_(u'Contact Type'), db_index=True)
-    name = models.CharField(blank=True, null=True, max_length=100,
+    name = models.CharField(blank=True, null=True, max_length=200,
                                 verbose_name=_(u'Name'))
-    surname = models.CharField(blank=True, null=True, max_length=100,
+    surname = models.CharField(blank=True, null=True, max_length=200,
                                 verbose_name=_(u'Surname'))
-    email = models.CharField(blank=False, max_length=100,
+    email = models.CharField(blank=False, max_length=500,
                                 verbose_name=_(u'Email'))
 
     entity = models.ForeignKey(Entity, blank=False,

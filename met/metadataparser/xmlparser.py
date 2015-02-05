@@ -72,8 +72,6 @@ class MetadataParser(object):
         self.is_federation = (self.etree.tag == FEDERATION_ROOT_TAG)
         self.is_entity = not self.is_federation
 
-        self.lang_seen = []
-
     def get_federation(self, attrs=None):
         assert self.is_federation
         federation_attrs = attrs or ('ID', 'Name',)
@@ -92,6 +90,7 @@ class MetadataParser(object):
         else:
             raise ValueError("Entity not found: %s" % entityid)
         entity_attrs = (('entityid', 'entityID'), ('file_id', 'ID'))
+        self.lang_seen = []
         entity = {}
         for (dict_attr, etree_attr) in entity_attrs:
            entity[dict_attr] = entity_etree.get(etree_attr, None)

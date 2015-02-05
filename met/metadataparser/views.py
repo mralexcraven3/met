@@ -57,6 +57,7 @@ def index(request):
            'federations': federations,
            'entities': Entity.objects.all(),
            'entity_types': DESCRIPTOR_TYPES,
+           'federation_path': request.path,
            'most_federated_entities': most_federated_entities,
            }, context_instance=RequestContext(request))
 
@@ -82,6 +83,7 @@ def federation_view(request, federation_slug=None):
 
     return render_to_response('metadataparser/federation_view.html',
             {'federation': federation,
+             'entity_types': DESCRIPTOR_TYPES,
              'entity_type': entity_type or 'All',
              'entities': entities,
              'show_filters': True,

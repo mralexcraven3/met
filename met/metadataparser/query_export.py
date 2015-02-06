@@ -40,9 +40,7 @@ def export_csv(qs, filename, fields=None):
                 val = unicode(obj)
             else:
                 val = getattr(obj, field)
-                if callable(val):
-                    val = val()
-                elif getattr(val, 'all', None):
+                if getattr(val, 'all', None):
                     val = ', '.join([unicode(item) for item in val.all()])
                 # work around csv unicode limitation
                 elif type(val) == unicode:
@@ -70,9 +68,7 @@ def export_json(qs, filename, fields=None):
                 val = unicode(obj)
             else:
                 val = getattr(obj, field)
-                if callable(val):
-                    val = val()
-                elif getattr(val, 'all', None):
+                if getattr(val, 'all', None):
                     val = [unicode(i) for i in val.all()]
                 # work around csv unicode limitation
                 elif type(val) == unicode:

@@ -1,9 +1,10 @@
 import re
+import simplejson as json
 from urllib import unquote
 
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
@@ -63,6 +64,11 @@ def index(request):
 
 
 def federation_view(request, federation_slug=None):
+    request.session['num_entities'] = 0
+    request.session['cur_entities'] = 0
+    request.session['process_done'] = True
+    request.session.save()
+
     federation = get_object_or_404(Federation, slug=federation_slug)
 
     entity_type = None
@@ -106,7 +112,7 @@ def federation_edit(request, federation_slug=None):
                 form.instance.editor_users.add(request.user)
             if 'file' in form.changed_data or 'file_url' in form.changed_data:
                 form.instance.process_metadata()
-                form.instance.process_metadata_entities(request=request)
+                #form.instance.process_metadata_entities(request=request)
             if federation:
                 messages.success(request, _('Federation modified succesfully'))
             else:
@@ -127,6 +133,22 @@ def federation_edit(request, federation_slug=None):
                               {'form': form,
                                'delete_federation': delete_federation},
                               context_instance=RequestContext(request))
+
+
+@user_can_edit(Federation)
+def federation_update_entities(request, federation_slug=None):
+    federation = get_object_or_404(Federation, slug=federation_slug)
+    federation.process_metadata_entities(request=request)
+
+    messages.success(request, _('Federation entities updated succesfully'))
+    return HttpResponseRedirect(federation.get_absolute_url())
+
+
+def form_progress(request, federation_slug=None):
+    data = { 'done': request.session.get('process_done', False),
+             'num': request.session.get('cur_entities', 0),
+             'tot': request.session.get('num_entities', 0) }
+    return HttpResponse(json.dumps(data), content_type='application/javascript')
 
 
 @user_can_edit(Federation, True)

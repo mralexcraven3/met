@@ -3,6 +3,9 @@ from django.conf.urls import patterns, url
 
 urlpatterns = patterns('met.metadataparser.views',
     url(r'^federation/add/$', 'federation_edit', name='federation_add'),
+    url(r'^form_progress/$', 'form_progress', name='form_progress'),
+    url(r'^federation/(?P<federation_slug>[-\w]+)/federation_update_entities/$',
+        'federation_update_entities', name='federation_update_entities'),
     url(r'^federation/(?P<federation_slug>[-\w]+)/edit/$', 'federation_edit',
         name='federation_edit'),
     url(r'^federation/(?P<federation_slug>[-\w]+)/delete/$', 'federation_delete',

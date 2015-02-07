@@ -141,7 +141,16 @@ class Federation(Base):
                         mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
                                 (entity.get_absolute_url(), entity.entityid))))
 
+        if request:
+            request.session['num_entities'] = len(entities_from_xml)
+            request.session['cur_entities'] = 0
+            request.session['process_done'] = False
+            request.session.save()
+
         for m_id in entities_from_xml:
+            request.session['cur_entities'] += 1
+            request.session.save()
+
             try:
                 entity = self.get_entity(entityid=m_id)
             except Entity.DoesNotExist:
@@ -151,6 +160,9 @@ class Federation(Base):
                 except Entity.DoesNotExist:
                     entity = self.entity_set.create(entityid=m_id)
             entity.process_metadata(self._metadata.get_entity(m_id))
+
+        request.session['process_done'] = True
+        request.session.save()
 
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])

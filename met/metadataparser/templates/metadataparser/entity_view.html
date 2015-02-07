@@ -30,7 +30,10 @@
     </tr>
     <tr>
       <td class="first-col"><strong>{% trans "Registration policy" %}:</strong></td>
-      <td>{{ entity.registration_authority }} <i>({% trans "since" %} {{ entity.registration_instant|date:"d/m/Y" }})</i></td>
+      <td>{{ entity.registration_authority }}
+      {% if entity.registration_instant %}
+         <i>({% trans "since" %} {{ entity.registration_instant|date:"d/m/Y" }})</i></td>
+      {% endif %}
     </tr>
     <tr>
       <td class="first-col"><strong>{% trans "Federations" %}:</strong></td>

@@ -228,6 +228,8 @@ class Entity(Base):
                                               verbose_name=_(u'Languages'))
     protocols = models.CharField(blank=True, null='True', max_length=500,
                                               verbose_name=_(u'Protocols'))
+    scopes = models.CharField(blank=True, null='True', max_length=500000,
+                                              verbose_name=_(u'Attribute Scopes'))
     attributes = models.CharField(blank=True, null='True', max_length=5000,
                                               verbose_name=_(u'Requested Attributes'))
     attributes_optional = models.CharField(blank=True, null='True', max_length=5000,
@@ -396,35 +398,50 @@ class Entity(Base):
             self.protocols = ' '.join(entity_data.get('protocols', []))
 
             entity_infos = []
+            old_entity_infos = EntityInfo.objects.filter(entity=self)
             # Add description, displayName, urls elements to EntityInfo table (if not already present)
             for cur_type in ['description', 'displayName', 'infoUrl', 'privacyUrl']:
                 for lang, val in entity_data.get(cur_type, {}).items():
-                    entity_infos.append(EntityInfo(info_type=cur_type, language=lang, value=val, entity=self))
+                    new_entity_info =  EntityInfo(info_type=cur_type, language=lang, value=val, entity=self)
+                    if not new_entity_info in old_entity_infos:
+                        entity_infos.append(new_entity_info)
 
             # Add Logo elements to EntityInfo table (if not already present)
             for val in entity_data.get('logos', []):
-                entity_infos.append(EntityInfo(info_type='logos', language=val['lang'], value=val['file'], entity=self,
-                                              width=val['width'], height=val['height']))
+                new_entity_info = EntityInfo(info_type='logos', language=val['lang'], value=val['file'], entity=self,
+                                             width=val['width'], height=val['height'])
+                if not new_entity_info in old_entity_infos:
+                    entity_infos.append(new_entity_info)
 
             # Add Organization information to EntityInfo table (if not already present)
-            for val in entity_data.get('organization', []):
-                if 'URL' in val and 'lang' in val:
-                    entity_infos.append(EntityInfo(info_type='organizationUrl', language=val['lang'], value=val['URL'], entity=self))
-                if 'name' in val and 'lang' in val:
-                    entity_infos.append(EntityInfo(info_type='organizationName', language=val['lang'], value=val['name'], entity=self))
-                if 'displayName' in val and 'lang' in val:
-                    entity_infos.append(EntityInfo(info_type='organizationDisplayName', language=val['lang'], value=val['displayName'], entity=self))
+            for lang, data in entity_data.get('organization', {}).items():
+                if 'URL' in data:
+                    new_entity_info = EntityInfo(info_type='organizationUrl', language=lang, value=data['URL'], entity=self)
+                    if not new_entity_info in old_entity_infos:
+                        entity_infos.append(new_entity_info)
+                if 'name' in data:
+                    new_entity_info = EntityInfo(info_type='organizationName', language=lang, value=data['name'], entity=self)
+                    if not new_entity_info in old_entity_infos:
+                        entity_infos.append(new_entity_info)
+                if 'displayName' in data:
+                    new_entity_info = EntityInfo(info_type='organizationDisplayName', language=lang, value=data['displayName'], entity=self)
+                    if not new_entity_info in old_entity_infos:
+                        entity_infos.append(new_entity_info)
 
             EntityInfo.objects.bulk_create(entity_infos)
 
             # Add entity contacts if in metadata
             contacts = []
+            old_contacts = EntityContact.objects.filter(entity=self)
             for cont in entity_data.get('contacts', []):
                 if cont['email']:
-                    contacts.append(EntityContact(contact_type=cont['type'], name=cont['name'], surname=cont['surname'], email=cont['email'], entity=self))
+                    new_contact = EntityContact(contact_type=cont['type'], name=cont['name'], surname=cont['surname'], email=cont['email'], entity=self)
+                    if not new_contact in old_contacts:
+                        contacts.append(new_contact)
             EntityContact.objects.bulk_create(contacts)
 
             self.languages = ' '.join(entity_data.get('languages', []))
+            self.scopes = ' '.join(entity_data.get('scopes', []))
             attributes = entity_data.get('attr_requested', {'required': [], 'optional': []})
             self.attributes = ' '.join(attributes['required'])
             self.attributes_optional = ' '.join(attributes['optional'])
@@ -515,6 +532,18 @@ class EntityInfo(models.Model):
     def __unicode__(self):
         return "[%s:%s] %s" % (self.info_type, self.language, self.value)
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            for field in ['info_type', 'language', 'value', 'width', 'height']:
+                if self.__dict__[field] != other.__dict__[field]:
+                    return False
+            return True
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 class EntityContact(models.Model):
     contact_type = models.CharField(blank=True, max_length=30,
                                 verbose_name=_(u'Contact Type'), db_index=True)
@@ -530,6 +559,18 @@ class EntityContact(models.Model):
 
     def __unicode__(self):
         return "[%s] %s %s <%s>" % (self.contact_type, self.name, self.surname, self.email)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            for field in ['contact_type', 'name', 'surname', 'email']:
+                if self.__dict__[field] != other.__dict__[field]:
+                    return False
+            return True
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 @receiver(pre_save, sender=Federation, dispatch_uid='federation_pre_save')
 def federation_pre_save(sender, instance, **kwargs):

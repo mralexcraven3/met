@@ -11,6 +11,7 @@ NAMESPACES = {
     'saml': 'urn:oasis:names:tc:SAML:2.0:assertion',
     'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
     'mdrpi': 'urn:oasis:names:tc:SAML:metadata:rpi',
+    'shibmd': 'urn:mace:shibboleth:metadata:1.0',
     }
 
 SAML_METADATA_NAMESPACE = NAMESPACES['md']
@@ -90,7 +91,7 @@ class MetadataParser(object):
         else:
             raise ValueError("Entity not found: %s" % entityid)
         entity_attrs = (('entityid', 'entityID'), ('file_id', 'ID'))
-        self.lang_seen = []
+        lang_seen = []
         entity = {}
         for (dict_attr, etree_attr) in entity_attrs:
            entity[dict_attr] = entity_etree.get(etree_attr, None)
@@ -101,21 +102,36 @@ class MetadataParser(object):
         displayName = self.entity_displayname(entity_etree)
         if displayName:
             entity['displayName'] = displayName
+            for lang in displayName.keys():
+                if not lang in lang_seen:
+                    lang_seen.append(lang)
         description = self.entity_description(entity_etree)
         if description:
             entity['description'] = description
+            for lang in description.keys():
+                if not lang in lang_seen:
+                    lang_seen.append(lang)
         info_url = self.entity_information_url(entity_etree)
         if info_url:
             entity['infoUrl'] = info_url
+            for lang in info_url.keys():
+                if not lang in lang_seen:
+                    lang_seen.append(lang)
         privacy_url = self.entity_privacy_url(entity_etree)
         if privacy_url:
             entity['privacyUrl'] = privacy_url
+            for lang in privacy_url.keys():
+                if not lang in lang_seen:
+                    lang_seen.append(lang)
         protocols = self.entity_protocols(entity_etree)
         if protocols:
             entity['protocols'] = protocols
         organization = self.entity_organization(entity_etree)
         if organization:
             entity['organization'] = organization
+            for lang in organization.keys():
+                if not lang in lang_seen:
+                    lang_seen.append(lang)
         logos = self.entity_logos(entity_etree)
         if logos:
             entity['logos'] = logos
@@ -124,7 +140,10 @@ class MetadataParser(object):
            entity['registration_authority'] = reg_info['authority']
         if reg_info and 'instant' in reg_info:
            entity['registration_instant'] = reg_info['instant']
-        entity['languages'] = self.lang_seen
+        entity['languages'] = lang_seen
+        scopes = self.entity_attribute_scope(entity_etree)
+        if scopes:
+            entity['scopes'] = scopes
         attr_requested = self.entity_requested_attributes(entity_etree)
         if attr_requested:
             entity['attr_requested'] = attr_requested
@@ -182,7 +201,6 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
-            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
@@ -199,7 +217,6 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
-            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
@@ -216,7 +233,6 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
-            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
@@ -233,13 +249,12 @@ class MetadataParser(object):
             if lang is None:
                 continue  # the lang attribute is required
 
-            if not lang in self.lang_seen: self.lang_seen.append(lang)
             languages[lang] = dn_node.text
 
         return languages
 
     def entity_organization(self, entity):
-        orgs = entity.xpath("./md:Organization",
+        orgs = entity.xpath(".//md:Organization",
                             namespaces=NAMESPACES)
         languages = {}
         for org_node in orgs:
@@ -250,15 +265,14 @@ class MetadataParser(object):
                     if lang is None:
                         continue  # the lang attribute is required
 
-                    if not lang in self.lang_seen: self.lang_seen.append(lang)
                     lang_dict = languages.setdefault(lang, {})
                     lang_dict[attr] = node.text
 
-        result = []
-        for lang, data in languages.items():
-            data['lang'] = lang
-            result.append(data)
-        return result
+        #result = []
+        #for lang, data in languages.items():
+        #    data['lang'] = lang
+        #    result.append(data)
+        return languages
 
     def entity_logos(self, entity):
         xmllogos = entity.xpath(".//mdui:UIInfo"
@@ -285,6 +299,16 @@ class MetadataParser(object):
             info['authority'] = reg_info[0].attrib.get('registrationAuthority')
             info['instant'] = reg_info[0].attrib.get('registrationInstant')
         return info
+
+    def entity_attribute_scope(self, entity):
+        scope_node = entity.xpath(".//md:Extensions"
+                                  "/shibmd:Scope",
+                                  namespaces=NAMESPACES)
+
+        scope = []
+        for cur_scope in scope_node:
+            scope.append(cur_scope.text)
+        return scope
 
     def entity_requested_attributes(self, entity):
         xmllogos = entity.xpath(".//md:AttributeConsumingService"

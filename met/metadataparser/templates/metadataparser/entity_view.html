@@ -21,15 +21,15 @@
 <table class="table table-striped">
   <tbody>
     <tr>
-      <td class="first-col"><strong>{% trans "Entity id" %}:</strong></td>
+      <td class="first-col"><strong>{% trans "Entity ID" %}:</strong></td>
       <td>{{ entity.entityid }}</td>
     </tr>
     <tr>
-      <td class="first-col"><strong>{% trans "Entity Type" %}:</strong></td>
+      <td class="first-col"><strong>{% trans "Entity type" %}:</strong></td>
       <td>{{ entity.types|display_etype }}</td>
     </tr>
     <tr>
-      <td class="first-col"><strong>{% trans "Registration Policy" %}:</strong></td>
+      <td class="first-col"><strong>{% trans "Registration policy" %}:</strong></td>
       <td>{{ entity.registration_authority }} <i>({% trans "since" %} {{ entity.registration_instant|date:"d/m/Y" }})</i></td>
     </tr>
     <tr>
@@ -112,11 +112,7 @@
       <td class="first-col"><strong>{% trans "Organization name" %}:</strong></td>
       {% if entity.organization %}
       <td>
-          {% for organization in entity.organization %}
-              {% if organization.lang == lang %}
-                  {{ organization.name }}
-              {% endif %}
-          {% endfor %}
+          {% organization_property entity.organization 'name' lang %}
       </td>
       {% else %}
       <td>{% trans "No information provided." %}</td>
@@ -126,11 +122,7 @@
       <td class="first-col"><strong>{% trans "Organization display name" %}:</strong></td>
       {% if entity.organization %}
       <td>
-          {% for organization in entity.organization %}
-              {% if organization.lang == lang %}
-                  {{ organization.displayName }}
-              {% endif %}
-          {% endfor %}
+          {% organization_property entity.organization 'displayName' lang %}
       </td>
       {% else %}
       <td>{% trans "No information provided." %}</td>
@@ -140,11 +132,7 @@
       <td class="first-col"><strong>{% trans "Organization URL" %}:</strong></td>
       {% if entity.organization %}
       <td>
-          {% for organization in entity.organization %}
-              {% if organization.lang == lang %}
-                  <a href="{{ organization.URL }}">{{ organization.URL }}</a><br/>
-              {% endif %}
-          {% endfor %}
+          <a href="{% organization_property entity.organization 'URL' lang %}">{% organization_property entity.organization 'URL' lang %}</a><br/>
       </td>
       {% else %}
       <td>{% trans "No information provided." %}</td>
@@ -176,8 +164,22 @@
       {% endif %}
     </tr>
     <tr>
+      <td class="first-col"><strong>{% trans "Attribute scopes" %}:</strong></td>
+      {% if entity.scopes %}
+      <td>
+          <ul>
+              {% for scope in entity.scopes|split:" " %}
+              <li>{{ scope }}</li>
+              {% endfor %}
+          </ul>
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
       <td class="first-col"><strong>{% trans "Required attributes" %}:</strong></td>
-      {% if entity.attributes and entity.display_attributes.items|length > 1 %}
+      {% if entity.attributes and entity.display_attributes.items|length > 0 %}
       <td>
           <ul>
               {% for attr in entity.display_attributes.items %}
@@ -191,7 +193,7 @@
     </tr>
     <tr>
       <td class="first-col"><strong>{% trans "Optional attributes" %}:</strong></td>
-      {% if entity.attributes_optional and entity.display_attributes_optional.items|length > 1 %}
+      {% if entity.attributes_optional and entity.display_attributes_optional.items|length > 0 %}
       <td>
           <ul>
               {% for attr in entity.display_attributes_optional.items %}

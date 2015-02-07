@@ -134,6 +134,21 @@ def l10n_property(context, prop, lang):
     return prop
 
 
+
+@register.simple_tag(takes_context=True)
+def organization_property(context, organizations, prop, lang):
+    if isinstance(organizations, list):
+        if not lang:
+           lang = context.get('LANGUAGE_CODE', None)
+        if len(organizations) > 0:
+            for organization in organizations:
+                if organization['lang'] == lang:
+                    return organization[prop]
+            return organizations[0][prop]
+
+    return prop
+
+
 @register.simple_tag()
 def get_property(obj, prop=None):
     uprop = unicode(prop)

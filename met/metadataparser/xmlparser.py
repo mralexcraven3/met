@@ -90,11 +90,13 @@ class MetadataParser(object):
             entity_etree = entity_xpath[0]
         else:
             raise ValueError("Entity not found: %s" % entityid)
+
         entity_attrs = (('entityid', 'entityID'), ('file_id', 'ID'))
         lang_seen = []
         entity = {}
         for (dict_attr, etree_attr) in entity_attrs:
            entity[dict_attr] = entity_etree.get(etree_attr, None)
+        entity['xml'] = etree.tostring(entity_etree, pretty_print=True)
 
         entity_types = self.entity_types(entity_etree)
         if entity_types:

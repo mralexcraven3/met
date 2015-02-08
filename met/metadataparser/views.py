@@ -64,10 +64,11 @@ def index(request):
 
 
 def federation_view(request, federation_slug=None):
-    request.session['num_entities'] = 0
-    request.session['cur_entities'] = 0
-    request.session['process_done'] = True
-    request.session.save()
+    if federation_slug:
+        request.session['%s_process_done' % federation_slug] = False
+        request.session['%s_num_entities' % federation_slug] = 0
+        request.session['%s_cur_entities' % federation_slug] = 0
+        request.session.save()
 
     federation = get_object_or_404(Federation, slug=federation_slug)
 
@@ -94,6 +95,7 @@ def federation_view(request, federation_slug=None):
              'entities': entities,
              'show_filters': True,
              'add_entity': add_entity,
+             'update_entities': request.GET.get('update', 'false'),
             }, context_instance=context)
 
 
@@ -118,7 +120,7 @@ def federation_edit(request, federation_slug=None):
             else:
                 messages.success(request, _('Federation created succesfully'))
 
-            return HttpResponseRedirect(form.instance.get_absolute_url())
+            return HttpResponseRedirect(form.instance.get_absolute_url() + '?update=true')
 
         else:
             messages.error(request, _('Please correct the errors indicated'
@@ -138,16 +140,19 @@ def federation_edit(request, federation_slug=None):
 @user_can_edit(Federation)
 def federation_update_entities(request, federation_slug=None):
     federation = get_object_or_404(Federation, slug=federation_slug)
-    federation.process_metadata_entities(request=request)
+    federation.process_metadata_entities(request=request, federation_slug=federation_slug)
 
     messages.success(request, _('Federation entities updated succesfully'))
-    return HttpResponseRedirect(federation.get_absolute_url())
+    return HttpResponse("Done. All entities updated.", content_type='text/plain')
 
 
-def form_progress(request, federation_slug=None):
-    data = { 'done': request.session.get('process_done', False),
-             'num': request.session.get('cur_entities', 0),
-             'tot': request.session.get('num_entities', 0) }
+def entityupdate_progress(request, federation_slug=None):
+    data = { 'done': False }
+    if federation_slug:
+        data = { 'done': request.session.get('%s_process_done' % federation_slug, False),
+                 'tot': request.session.get('%s_num_entities' % federation_slug, 0),
+                 'num': request.session.get('%s_cur_entities' % federation_slug, 0) }
+
     return HttpResponse(json.dumps(data), content_type='application/javascript')
 
 
@@ -176,6 +181,13 @@ def entity_view(request, entityid):
 
     if 'format' in request.GET:
         return export_entity(request.GET.get('format'), entity)
+
+    if 'viewxml' in request.GET:
+        serialized = entity.xml
+        response = HttpResponse(serialized, content_type='application/xml')
+        #response['Content-Disposition'] = ('attachment; filename=%s.xml'
+        #                               % slugify(entity))
+        return response
 
     return render_to_response('metadataparser/entity_view.html',
             {'entity': entity,

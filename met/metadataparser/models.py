@@ -129,7 +129,7 @@ class Federation(Base):
 
         update_obj(metadata.get_federation(), self)
 
-    def process_metadata_entities(self, request=None):
+    def process_metadata_entities(self, request=None, federation_slug=None):
         entities_from_xml = self._metadata.get_entities()
 
         for entity in self.entity_set.all():
@@ -141,15 +141,16 @@ class Federation(Base):
                         mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
                                 (entity.get_absolute_url(), entity.entityid))))
 
-        if request:
-            request.session['num_entities'] = len(entities_from_xml)
-            request.session['cur_entities'] = 0
-            request.session['process_done'] = False
+        if request and federation_slug:
+            request.session['%s_num_entities' % federation_slug] = len(entities_from_xml)
+            request.session['%s_cur_entities' % federation_slug] = 0
+            request.session['%s_process_done' % federation_slug] = False
             request.session.save()
 
         for m_id in entities_from_xml:
-            request.session['cur_entities'] += 1
-            request.session.save()
+            if request and federation_slug:
+                request.session['%s_cur_entities' % federation_slug] += 1
+                request.session.save()
 
             try:
                 entity = self.get_entity(entityid=m_id)
@@ -161,8 +162,9 @@ class Federation(Base):
                     entity = self.entity_set.create(entityid=m_id)
             entity.process_metadata(self._metadata.get_entity(m_id))
 
-        request.session['process_done'] = True
-        request.session.save()
+        if request and federation_slug:
+            request.session['%s_process_done' % federation_slug] = True
+            request.session.save()
 
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])
@@ -283,6 +285,10 @@ class Entity(Base):
     @property
     def privacyUrl(self):
         return self._get_uuinfo('privacyUrl')
+
+    @property
+    def xml(self):
+         return self._get_property('xml')
 
     def display_protocols(self):
         protocols = []

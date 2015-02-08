@@ -12,6 +12,10 @@
 </div>
 {% endcanedit %}
 
+<div class="btn-group pull-right">
+  <a class="btn" href="{% url 'entity_view' entity.entityid %}?viewxml=true" target="_blank">{% trans "view xml" %}</a>
+</div>
+
 {% if entity.name %}
   <h2>{% l10n_property entity.name lang %}</h2>
 {% else %}

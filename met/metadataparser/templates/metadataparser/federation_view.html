@@ -53,30 +53,39 @@
             type: "GET",
             url: "{% url 'federation_update_entities' federation.slug %}"
         });
+
         window.setTimeout(updater, 1000);
     }
 
     function updater() {
         $.ajax ({
              type: "GET",
-             url: "{% url 'form_progress' %}",
+             url: "{% url 'entityupdate_progress' federation.slug %}",
              dataType: "json",
              cache: false,
              success: function(jsondata, success) {
                   if (jsondata) {
                       if (jsondata.done) {
                           $('#saveModal').modal('hide');
+                          window.location = window.location.pathname;
                       }
                       else {
                           var progress = Math.round(100 * (jsondata.num / jsondata.tot));
                           $('.bar').css('width', progress + '%');
-                          $('.sr-only').text(progress + '/' + jsondata.tot);
+                          $('.sr-only').text(jsondata.num + '/' + jsondata.tot);
                           window.setTimeout(updater, 500);
                       }
                   }
              }
         });
-    } 
+    }
+
+    {% if update_entities == 'true' %}
+    $(document).ready(function() {
+        $('#saveModal').modal('show');
+        update_entities();
+    });
+    {% endif %}
 </script>
 
 <div id="saveModal" class="modal hide fade in" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">

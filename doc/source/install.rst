@@ -24,6 +24,8 @@ System packages (ubuntu-1204)
 * xmlsec1
 * memcached
 * libffi-dev
+* django_chartit
+* dateutils
 
 
 Create database
@@ -119,12 +121,21 @@ http://httpd.apache.org/docs/2.2/mod/core.html#allowencodedslashes
 
     AllowEncodedSlashes NoDecode
 
+    WSGIDaemonProcess <server name> home=/home/met
+    WSGIProcessGroup <server name>
+    
     WSGIScriptAlias / /home/met/met/met-wsgi.py
 
     <Directory /home/met/met/met-wsgi.py>
     Order allow,deny
     Allow from all
     </Directory>
+
+    <Location /met/saml2/login >
+    authtype shibboleth
+    shibRequestSetting requireSession 1
+    require valid-user
+    </Location>
 
 
 Enable memcached
@@ -156,49 +167,33 @@ Initialize media directory with proper permissions:
     chmod g+srw ~/media
 
 
-Saml2 Authentication integration
-********************************
+Automatic refresh of federations' metadata
+******************************************
 
-The ``local_settings`` example has a generic configuration of SAML2
-Authentication integration.
-
-You need to change ``SAML_CONFIG`` according to your organization information.
-
-For testing purposes, you should create your own self-signed certificates. For
-other purposes you should buy them. How to create the certificates:
-
-* Follow the first five steps of this guide:
-  http://www.akadia.com/services/ssh_test_certificate.html
-* Create certs directory met/saml2/certs
-* Copy server.key and server.crt to met/saml2/certs
+Metadata of configured federations can be refreshed automatically. To achieve this
+you just need to configure a cronjob on your server such as: 
 
 .. code-block:: bash
 
-   openssl genrsa -des3 -out server.key 2048
-   openssl req -new -key server.key -out server.csr
-   cp server.key server.key.org
-   openssl rsa -in server.key.org -out server.key
-   openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+   0 * * * * /home/met/start_met_refresh.sh
 
-
-You need to put your IDP metadata in ``saml/remote_metadata.xml`` or, if you
-modified the ``SAML_CONFIG.metatadata.local`` setting, in the proper path.
-
-Set a saml2 user as superuser
------------------------------
-
-If the user doesn't exists, you can create it already as superuser without a
-password using this command in the correct environment:
-
+where start_met_refresh.sh is a shell script like
 
 .. code-block:: bash
 
-  python manage.py createsuperuser --username super@example.com \
-     --email=supera@example.com --noinput
+   #! /bin/sh
+   su - met -c /home/met/met_refresh.sh
 
-If this fails and some errors appear related to the  djangosaml2.log file, then
-you must change the permissions of the /tmp/djangosaml2.log file and make it
-writable by the user that executes your manage.py command.
+and met_refresh.sh is a script that finally calls the python script that refershes
+the metadata:
+
+.. code-block:: bash
+
+   #! /bin/bash
+   source /home/met/met-venv/bin/activate
+   python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
+
+With the option --log the script will log as configured in the logging configuration file.
 
 
 Publishing Met Documentation

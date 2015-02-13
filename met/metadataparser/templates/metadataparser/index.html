@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% load i18n metadataparsertags %}
 
+{% block appendheader %}
+
+{% endblock %}
 
 {% block extrajs %}
 <script type="text/javascript">
@@ -60,6 +63,19 @@
 
 <div class="summary">
   <h2 id="mostfederatedentities">{% trans "Most federated entities" %}</h2>
+
+<!--   <button type="button" class="btn" data-dismiss="alert">{% trans "More" %}</button> -->
+<!--  
+	<button type="button" class="btn pull-left" formtarget="{ url 'decrement_current_toplength' %}">-</button>
+	<button type="button" class="btn pull-left" formtarget="{ url 'increment_current_toplength' %}">+</button>
+ -->
+	<div class="btn-group pull-left">
+	  <a class="btn" href="{% url 'show_less_entries' %}">-</a>
+	</div>
+	<div class="btn-group pull-left">
+	  <a class="btn" href="{% url 'show_more_entries' %}">+</a>
+	</div>
+ 
   {% entity_list most_federated_entities show_total=False append_query="export=most_federated_entities" %}
 </div>
 

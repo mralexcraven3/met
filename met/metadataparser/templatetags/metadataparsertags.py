@@ -39,11 +39,17 @@ def federations_summary(context, queryname, federations=None):
 
 @register.inclusion_tag('metadataparser/tag_entity_list.html', takes_context=True)
 def entity_list(context, entities, show_total=True, append_query=None):
-    return {'request': context.get('request', None),
+    request = context.get('request', None)
+    lang = 'en'
+    if request:
+        lang = request.GET.get('lang', 'en')
+
+    return {'request': request,
             'entities': entities,
             'show_filters': context.get('show_filters'),
             'append_query': append_query,
             'show_total': show_total,
+            'lang': lang,
             'entity_types': DESCRIPTOR_TYPES}
 
 

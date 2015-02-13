@@ -1,7 +1,16 @@
+#################################################################
+# MET v2 Metadate Explorer Tool
+#
+# This Software is Open Source. See License: https://github.com/TERENA/met/blob/master/LICENSE.md
+# Copyright (c) 2012, TERENA All rights reserved.
+#
+# This Software is based on MET v1 developed for TERENA by Yaco Sistemas, http://www.yaco.es/
+# MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
+#########################################################################################
+
 # Django settings for met project.
 
 import os
-import saml2
 
 try:
     from local_settings import *
@@ -112,7 +121,7 @@ INSTALLED_APPS = (
     'met.portal',
     'met.metadataparser',
     'djangosaml2',
-    'djcelery',
+    'chartit',
 )
 
 # A sample logging configuration. The only tangible logging
@@ -192,6 +201,16 @@ CACHES = {
     }
 }
 
+SAML_CREATE_UNKNOWN_USER = True
+
+SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'email'
+
+SAML_ATTRIBUTE_MAPPING = {
+    'mail': ('username', 'email', ),
+    'cn': ('first_name', ),
+    'sn': ('last_name', ),
+}
+
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
@@ -203,3 +222,42 @@ TEMPLATE_DIRS = (
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+STATS = {
+    # Features that have to be saved in the database
+    'features': {
+        'sp': 'SPSSODescriptor',
+        'idp': 'IDPSSODescriptor',
+        'sp_saml1': 'urn:oasis:names:tc:SAML:1.1:protocol',
+        'sp_saml2': 'urn:oasis:names:tc:SAML:2.0:protocol',
+        'sp_shib1': 'urn:mace:shibboleth:1.0',
+        'idp_saml1': 'urn:oasis:names:tc:SAML:1.1:protocol',
+        'idp_saml2': 'urn:oasis:names:tc:SAML:2.0:protocol',
+        'idp_shib1': 'urn:mace:shibboleth:1.0',
+    },
+
+    # Protocols
+    'protocols': ['saml1', 'saml2', 'shib1'],
+
+    # Feature names
+    'feature_names': {
+        'sp': 'SP',
+        'idp': 'IDP',
+        'sp_saml1': 'SP SAML 1.1',
+        'sp_saml2': 'SP SAML 2.0',
+        'sp_shib1': 'SP Shibboleth 1.0',
+        'idp_saml1': 'IDP SAML 1.1',
+        'idp_saml2': 'IDP SAML 2.0',
+        'idp_shib1': 'IDP Shibboleth 1.0',
+    },
+
+    # Statistics that can be shown (values are keys for 'features')
+    'statistics': {
+        'entity_by_type': {'terms': ['sp', 'idp'], 'title': 'Services', 'x_title': 'Time', 'y_title': 'Count'},
+        'entity_by_protocol': {'terms': ['sp_saml1', 'sp_saml2', 'sp_shib1', 'idp_saml1', 'idp_saml2', 'idp_shib1'], 'title': 'Protocols', 'x_title': 'Time', 'y_title': 'Count'},
+    },
+
+    # Time format in the x axis
+    'time_format': '%m/%d/%Y %H:%M',
+}
+

@@ -25,7 +25,9 @@ of IDP and SP can be bigger than the number of entities
     <tr>
       <th>EntityID</th>
       <th>Type</th>
+      <th>Display Name</th>
       <th>Federations</th>
+      <th>Number of Federations</th>
     </tr>
   </thead>
   <tbody>
@@ -39,9 +41,15 @@ of IDP and SP can be bigger than the number of entities
       {{ entity.types|display_etype }}
     </td>
     <td>
+      {% organization_property entity.organization 'displayName' lang %}
+    </td>
+    <td>
     {% for federation in entity.federations.all %}
     <a href="{{ federation.get_absolute_url }}">{{ federation }}</a> {% if not forloop.last %}|{% endif %}
     {% endfor %}
+    </td>
+    <td>
+    {{ entity.federationsCount }}
     </td>
   </tr>
   {% endfor %}

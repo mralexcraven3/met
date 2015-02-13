@@ -12,3 +12,6 @@ doc/build
 dist
 build
 met-venv
+/.settings
+/.project
+/.pydevproject

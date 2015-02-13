@@ -1,3 +1,13 @@
+#################################################################
+# MET v2 Metadate Explorer Tool
+#
+# This Software is Open Source. See License: https://github.com/TERENA/met/blob/master/LICENSE.md
+# Copyright (c) 2012, TERENA All rights reserved.
+#
+# This Software is based on MET v1 developed for TERENA by Yaco Sistemas, http://www.yaco.es/
+# MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
+#########################################################################################
+
 from lxml import etree
 
 
@@ -99,8 +109,10 @@ class MetadataParser(object):
         entity['xml'] = etree.tostring(entity_etree, pretty_print=True)
 
         entity_types = self.entity_types(entity_etree)
+        e_type = None
         if entity_types:
             entity['entity_types'] = entity_types
+            e_type = entity_types[0]
         displayName = self.entity_displayname(entity_etree)
         if displayName:
             entity['displayName'] = displayName
@@ -125,7 +137,7 @@ class MetadataParser(object):
             for lang in privacy_url.keys():
                 if not lang in lang_seen:
                     lang_seen.append(lang)
-        protocols = self.entity_protocols(entity_etree)
+        protocols = self.entity_protocols(entity_etree, e_type)
         if protocols:
             entity['protocols'] = protocols
         organization = self.entity_organization(entity_etree)
@@ -182,9 +194,9 @@ class MetadataParser(object):
         return int(self.etree.xpath("count(//md:EntityDescriptor)",
                                 namespaces=NAMESPACES))
 
-    def entity_protocols(self, entity):
-        raw_protocols = entity.xpath("./md:IDPSSODescriptor"
-                                     "/@protocolSupportEnumeration",
+    def entity_protocols(self, entity, entity_type='IDPSSODescriptor'):
+        raw_protocols = entity.xpath("./md:%s"
+                                     "/@protocolSupportEnumeration" % (entity_type),
                                      namespaces=NAMESPACES)
         if raw_protocols:
             protocols = raw_protocols[0]

@@ -7,9 +7,16 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta name="description" content="{% trans "Metadata Explorer Tool" %}">
     <meta name="author" content="Terena">
-    <!-- Botstrap -->
-    <link href="{{ STATIC_URL }}css/bootstrap.css" rel="stylesheet">
-    <link href="{{ STATIC_URL }}css/styles.css" rel="stylesheet">
+    <script src="{{ STATIC_URL }}js/jquery-1.8.1.min.js"></script>
+    <script src="{{ STATIC_URL }}js/bootstrap.js"></script>
+    <script src="{{ STATIC_URL }}js/main.js"></script>
+    <script src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
+    <script src="{{ STATIC_URL }}js/sort_startup.js"></script>
+    <script src="{{ STATIC_URL }}js/highcharts.js"></script>
+
+    <!-- Bootstrap -->
+     <link href="{{ STATIC_URL }}css/bootstrap.css" rel="stylesheet">
+     <link href="{{ STATIC_URL }}css/styles.css" rel="stylesheet">
   </head>
   <body>
     <div class="container">
@@ -48,8 +55,8 @@
         <div class="alert alert-{{ message.tags|default:"info" }}">
           <button type="button" class="close" data-dismiss="alert">×</button>
           {{ message|safe }}
-       </div>
-       {% endfor %}
+        </div>
+        {% endfor %}
       </div>
       {% endif %}
       <div class="row">
@@ -59,13 +66,10 @@
     </div>
 
     <footer class="container well">
-      <p><a href="http://www.terena.org/">&copy; Copyright 2012 Terena</a><p>
+      <p><a href="http://www.terena.org/">&copy; Copyright 2012-2013 Terena</a><p>
       <p><a href="{% url 'about' %}">About Metadata Explorer Tool</a><p>
       <p><a href="https://github.com/TERENA/met">Get the code at Github</a><p>
     </footer>
-    <script src="{{ STATIC_URL }}js/jquery-1.8.1.min.js"></script>
-    <script src="{{ STATIC_URL }}js/bootstrap.js"></script>
-    <script src="{{ STATIC_URL }}js/main.js"></script>
     {% block extrajs %}
     {% endblock %}
   </body>

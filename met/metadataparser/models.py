@@ -234,61 +234,81 @@ class Entity(Base):
 
     types = models.ManyToManyField(EntityType, verbose_name=_(u'Type'))
 
-    registration_authority = models.CharField(blank=True, null='True', max_length=200,
-                                              verbose_name=_(u'Registration Authority'))
-    registration_instant = models.DateTimeField(blank=True, null=True,
-                                                verbose_name=_(u'Registration Instant'))
-    languages = models.CharField(blank=True, null='True', max_length=200,
-                                              verbose_name=_(u'Languages'))
-    protocols = models.CharField(blank=True, null='True', max_length=500,
-                                              verbose_name=_(u'Protocols'))
-    scopes = models.CharField(blank=True, null='True', max_length=500000,
-                                              verbose_name=_(u'Attribute Scopes'))
-    attributes = models.CharField(blank=True, null='True', max_length=5000,
-                                              verbose_name=_(u'Requested Attributes'))
-    attributes_optional = models.CharField(blank=True, null='True', max_length=5000,
-                                              verbose_name=_(u'Optional Attributes'))
-
     objects = models.Manager()
     longlist = EntityManager()
 
     @property
+    def registration_authority(self):
+        return self._get_property('registration_authority')
+
+    @property
+    def registration_instant(self):
+        return datetime.strptime(self._get_property('registration_instant'), '%Y-%m-%dT%H:%M:%SZ')
+
+    @property
+    def protocols(self):
+        return ' '.join(self._get_property('protocols'))
+
+    @property
+    def languages(self):
+        return ' '.join(self._get_property('languages'))
+
+    @property
+    def scopes(self):
+        return ' '.join(self._get_property('scopes'))
+
+    @property
+    def attributes(self):
+        attributes = self._get_property('attr_requested')
+        if not attributes:
+            return ''
+        return ' '.join(attributes['required'])
+
+    @property
+    def attributes_options(self):
+        attributes = self._get_property('attr_requested')
+        if not attributes:
+            return ''
+        return ' '.join(attributes['optional'])
+
+    @property
     def organization(self):
-        names = self._get_uuinfo('organizationName')
-        urls = self._get_uuinfo('organizationUrl')
-        displayNames = self._get_uuinfo('organizationDisplayName')
+        organization = self._get_property('organization')
+
+        names = []
+        urls = []
+        displayNames = []
 
         vals = []
-        for lang, name in names.items():
-            val = {}
-            val['name'] = name
-            val['lang'] = lang
-            if lang in displayNames.keys():
-                val['displayName'] = displayNames[lang]
-            if lang in urls.keys():
-                val['URL'] = urls[lang]
-            vals.append(val)
+        for lang, data in organization.items():
+            data['lang'] = lang
+            vals.append(data)
+
         return vals
 
     @property
     def name(self):
-        return self._get_uuinfo('displayName')
+        return self._get_property('displayName')
 
     @property
     def description(self):
-        return self._get_uuinfo('description')
+        return self._get_property('description')
 
     @property
     def infoUrl(self):
-        return self._get_uuinfo('infoUrl')
+        return self._get_property('infoUrl')
 
     @property
     def privacyUrl(self):
-        return self._get_uuinfo('privacyUrl')
+        return self._get_property('privacyUrl')
 
     @property
     def xml(self):
          return self._get_property('xml')
+
+    @property
+    def xml_types(self):
+         return self._get_property('entity_types')
 
     def display_protocols(self):
         protocols = []
@@ -318,40 +338,28 @@ class Entity(Base):
 
     @property
     def contacts(self):
-        if not hasattr(self, '_contacts_cached'):
-            self._contacts_cached = EntityContact.objects.filter(entity=self)
-
         contacts = []
-        for cur_contact in self._contacts_cached:
-            if cur_contact.name and cur_contact.surname:
-                contact_name = '%s %s' % (cur_contact.name, cur_contact.surname)
-            elif cur_contact.name:
-                contact_name = cur_contact.name
-            elif cur_contact.surname:
-                contact_name = cur_contact.surname
+        for cur_contact in self._get_property('contacts'):
+            if cur_contact['name'] and cur_contact['surname']:
+                contact_name = '%s %s' % (cur_contact['name'], cur_contact['surname'])
+            elif cur_contact['name']:
+                contact_name = cur_contact['name']
+            elif cur_contact['surname']:
+                contact_name = cur_contact['surname']
             else:
-                contact_name = urlparse(cur_contact.email).path.partition('?')[0]
+                contact_name = urlparse(cur_contact['email']).path.partition('?')[0]
             c_type = 'undefined'
-            if cur_contact.contact_type:
-                c_type = cur_contact.contact_type
-            contacts.append({ 'name': contact_name, 'email': cur_contact.email, 'type': c_type })
+            if cur_contact['type']:
+                c_type = cur_contact['type']
+            contacts.append({ 'name': contact_name, 'email': cur_contact['email'], 'type': c_type })
         return contacts
 
     @property
     def logos(self):
-        if not hasattr(self, '_uuinfo_cached'):
-            self._uuinfo_cached = EntityInfo.objects.filter(entity=self)
-
         logos = []
-        for cur_logo in self._uuinfo_cached:
-            if cur_logo.info_type == 'logos':
-                logo = {}
-                logo['width'] = cur_logo.width or ''
-                logo['height'] = cur_logo.height or ''
-                logo['file'] = cur_logo.value
-                logo['lang'] = cur_logo.language
-                logo['external'] = True
-                logos.append(logo)
+        for cur_logo in self._get_property('logos'):
+            cur_logo['external'] = True
+            logos.append(cur_logo)
 
         return logos
 
@@ -383,16 +391,6 @@ class Entity(Base):
             if not hasattr(self, '_entity_cached'):
                 raise ValueError("Can't find entity metadata")
 
-    def _get_uuinfo(self, info, lang=None):
-        if not hasattr(self, '_uuinfo_cached'):
-            self._uuinfo_cached = EntityInfo.objects.filter(entity=self)
-
-        val = {}
-        for cur_info in self._uuinfo_cached:
-            if cur_info.info_type == info:
-                 val[cur_info.language] = cur_info.value
-        return val
-
     def _get_property(self, prop):
         try:
             self.load_metadata()
@@ -410,67 +408,9 @@ class Entity(Base):
         if self.entityid != entity_data.get('entityid'):
             raise ValueError("EntityID is not the same")
 
-        if entity_data:
-            self.registration_authority = entity_data.get('registration_authority', None)
-            self.registration_instant = entity_data.get('registration_instant', None)
-            self.protocols = ' '.join(entity_data.get('protocols', []))
-
-            entity_infos = []
-            old_entity_infos = EntityInfo.objects.filter(entity=self)
-            # Add description, displayName, urls elements to EntityInfo table (if not already present)
-            for cur_type in ['description', 'displayName', 'infoUrl', 'privacyUrl']:
-                for lang, val in entity_data.get(cur_type, {}).items():
-                    new_entity_info =  EntityInfo(info_type=cur_type, language=lang, value=val, entity=self)
-                    if not new_entity_info in old_entity_infos:
-                        entity_infos.append(new_entity_info)
-
-            # Add Logo elements to EntityInfo table (if not already present)
-            for val in entity_data.get('logos', []):
-                new_entity_info = EntityInfo(info_type='logos', language=val['lang'], value=val['file'], entity=self,
-                                             width=val['width'], height=val['height'])
-                if not new_entity_info in old_entity_infos:
-                    entity_infos.append(new_entity_info)
-
-            # Add Organization information to EntityInfo table (if not already present)
-            for lang, data in entity_data.get('organization', {}).items():
-                if 'URL' in data:
-                    new_entity_info = EntityInfo(info_type='organizationUrl', language=lang, value=data['URL'], entity=self)
-                    if not new_entity_info in old_entity_infos:
-                        entity_infos.append(new_entity_info)
-                if 'name' in data:
-                    new_entity_info = EntityInfo(info_type='organizationName', language=lang, value=data['name'], entity=self)
-                    if not new_entity_info in old_entity_infos:
-                        entity_infos.append(new_entity_info)
-                if 'displayName' in data:
-                    new_entity_info = EntityInfo(info_type='organizationDisplayName', language=lang, value=data['displayName'], entity=self)
-                    if not new_entity_info in old_entity_infos:
-                        entity_infos.append(new_entity_info)
-
-            EntityInfo.objects.bulk_create(entity_infos)
-
-            # Add entity contacts if in metadata
-            contacts = []
-            old_contacts = EntityContact.objects.filter(entity=self)
-            for cont in entity_data.get('contacts', []):
-                if cont['email']:
-                    new_contact = EntityContact(contact_type=cont['type'], name=cont['name'], surname=cont['surname'], email=cont['email'], entity=self)
-                    if not new_contact in old_contacts:
-                        contacts.append(new_contact)
-            EntityContact.objects.bulk_create(contacts)
-
-            self.languages = ' '.join(entity_data.get('languages', []))
-            self.scopes = ' '.join(entity_data.get('scopes', []))
-            attributes = entity_data.get('attr_requested', {'required': [], 'optional': []})
-            self.attributes = ' '.join(attributes['required'])
-            self.attributes_optional = ' '.join(attributes['optional'])
-
-            self.save()
-
         self._entity_cached = entity_data
-
-        xml_types = entity_data.get('entity_types', None)
-        if xml_types:
-            for etype in xml_types:
+        if self.xml_types:
+            for etype in self.xml_types:
                 try:
                     entity_type = EntityType.objects.get(xmlname=etype)
                 except EntityType.DoesNotExist:

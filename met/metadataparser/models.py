@@ -543,64 +543,6 @@ class Entity(Base):
 
         return False
 
-class EntityInfo(models.Model):
-    info_type = models.CharField(blank=True, max_length=30,
-                                verbose_name=_(u'Info Type'), db_index=True)
-    language = models.CharField(blank=True, null=True, max_length=10,
-                                verbose_name=_(u'Language'))
-    value = models.CharField(blank=False, max_length=100000,
-                                verbose_name=_(u'Info Value'))
-    width = models.PositiveSmallIntegerField(null=True, default=0,
-                                verbose_name=_(u'Width'))
-    height = models.PositiveSmallIntegerField(null=True, default=0,
-                                verbose_name=_(u'Height'))
-
-    entity = models.ForeignKey(Entity, blank=False,
-                                verbose_name=_('Entity'))
-
-    def __unicode__(self):
-        return "[%s:%s] %s" % (self.info_type, self.language, self.value)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            for field in ['info_type', 'language', 'value', 'width', 'height']:
-                if self.__dict__[field] != other.__dict__[field]:
-                    return False
-            return True
-        else:
-            return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-class EntityContact(models.Model):
-    contact_type = models.CharField(blank=True, max_length=30,
-                                verbose_name=_(u'Contact Type'), db_index=True)
-    name = models.CharField(blank=True, null=True, max_length=200,
-                                verbose_name=_(u'Name'))
-    surname = models.CharField(blank=True, null=True, max_length=200,
-                                verbose_name=_(u'Surname'))
-    email = models.CharField(blank=False, max_length=500,
-                                verbose_name=_(u'Email'))
-
-    entity = models.ForeignKey(Entity, blank=False,
-                                verbose_name=_('Entity'))
-
-    def __unicode__(self):
-        return "[%s] %s %s <%s>" % (self.contact_type, self.name, self.surname, self.email)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            for field in ['contact_type', 'name', 'surname', 'email']:
-                if self.__dict__[field] != other.__dict__[field]:
-                    return False
-            return True
-        else:
-            return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
 class EntityStat(models.Model):
     time = models.DateTimeField(blank=False, null=False, 
                            verbose_name=_(u'Metadata time stamp'))

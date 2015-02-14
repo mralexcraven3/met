@@ -532,10 +532,6 @@ def search_service(request):
         }, context_instance=RequestContext(request))
 
 def federation_login(request):
-#     import sys
-#     sys.path.insert(0, "/home/tamim/.eclipse/org.eclipse.platform_3.7.0_1680470357/plugins/org.python.pydev_2.7.5.2013052819/pysrc/")
-#     import pydevd;pydevd.settrace()
-
     saml_attr_mapping_dict = getattr(settings, "SAML_ATTRIBUTE_MAPPING")
     attr_dict = {}
     user = User()
@@ -580,6 +576,4 @@ def federation_login(request):
 
 def federation_logout(request):
     logout(request)
-#     return HttpResponseRedirect('/Shibboleth.sso/Logout')
-    messages.warning(request, _('Local logout was successful. No IdP logout was performed!'))
     return HttpResponseRedirect('%s?return=%s' %(getattr(settings, "SHIB_LOGOUT_URL"), request.GET.get('next')))

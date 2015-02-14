@@ -17,19 +17,22 @@ import sys, os
 import logging.config
 from optparse import OptionParser
 
-# from django.core import management;import met.settings as settings;management.setup_environ(settings)
+current_directory = os.path.join(os.path.dirname(__file__), '..')
+activate_this = os.path.join(current_directory, '..', 'met-venv/bin/activate_this.py')
+execfile(activate_this, dict(__file__=activate_this))
+
+sys.path.append(current_directory)
+sys.path.append(os.path.join(current_directory, 'met'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'met.settings'
 
 from met.metadataparser.refresh_metadata import refresh
 
 class RefreshMetaData:
-
     def process(self, options):
         logger = None
         log_config = options.log
         
         if log_config:
-        
             logging.config.fileConfig(log_config)
             logger = logging.getLogger("Refresh")
     
@@ -37,7 +40,6 @@ class RefreshMetaData:
 
 
 def commandlineCall(argv, ConvertClass=RefreshMetaData):
-
     optParser = OptionParser()
     optParser.set_usage("refresh [--log  <file>")
     
@@ -68,5 +70,4 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
 
 
 if __name__ == '__main__':
-
     commandlineCall(sys.argv)

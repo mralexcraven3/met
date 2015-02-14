@@ -2,51 +2,6 @@
 {% load i18n metadataparsertags %}
 
 {% block extrajs %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/google_jsapi.js"></script>
-
-<script type="text/javascript">
-    google.load("visualization", "1", {packages:["corechart"]});
-    google.setOnLoadCallback(drawChart);
-
-    function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-            ['Type', 'Number'],
-            {% for etype in entity_types %}
-            ['{{ etype|display_etype }}', {% entities_count federation.entity_set etype %}],
-            {% endfor %}
-            ['', 0]
-        ]);
-
-        var options = {
-            pieHole: 0.4,
-            pieSliceText: 'value',
-            legend: 'right',
-            chartArea: {width: '70%', height: '80%'} 
-        };
-
-        var chart = new google.visualization.PieChart(document.getElementById('fed_donut'));
-        chart.draw(data, options);
-
-	google.visualization.events.addListener(chart, 'select', function() {
-            var row = (chart.getSelection()[0]) ? chart.getSelection()[0].row : -1;
-            if (row >= 0) {
-                window.location.href = "{{ federation_path }}?entity_type=" + data.getFormattedValue(row, 0) + "SSODescriptor";
-            }
-            else {
-                window.location.href = "{{ federation_path }}?";
-            }
-        });
-
-        {% if entity_type != 'All' %}
-        for (var i = 0; i < data.getNumberOfRows(); ++i) {
-            if (data.getFormattedValue(i, 0) == '{{ entity_type|display_etype }}') {
-                chart.setSelection([{ 'row': i }]);
-            }
-        }
-        {% endif %}
-    }
-</script>
-
 <script language="javascript">
     function update_entities() {
         $.ajax({
@@ -129,16 +84,9 @@
 
 
 {% block content %}
-<table width="100%">
-<tr>
-<td><div id="fed_donut" style="width: 500px; height: 250px"></div></td>
-<td align="right">
 {% if federation.logo %}
 <p><img alt="{{ federation }} logo" src="{{ MEDIA_URL }}{{ federation.logo }}"/></p>
 {% endif %}
-</td>
-</tr>
-</table>
 {% if federation.url %}
 <p><a href="{{ federation.url }}">{% trans "Federation external website" %}</a></p>
 {% endif %}

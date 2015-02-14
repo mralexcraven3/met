@@ -8,8 +8,10 @@
 # MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
 #########################################################################################
 
-from os import path
 import requests
+import simplejson as json
+
+from os import path
 from urlparse import urlsplit, urlparse
 from urllib import quote_plus
 from datetime import datetime
@@ -17,6 +19,7 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.core import validators
 from django.core.cache import get_cache
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
@@ -45,6 +48,62 @@ def update_obj(mobj, obj, attrs=None):
             getattr(obj, attrb, None) and
             getattr(mobj, attrb) != getattr(obj, attrb)):
             setattr(obj, attrb,  getattr(mobj, attrb))
+
+class JSONField(models.CharField):
+    """JSONField is a generic textfield that neatly serializes/unserializes
+    JSON objects seamlessly
+
+    The json spec claims you must use a collection type at the top level of
+    the data structure.  However the simplesjon decoder and Firefox both encode
+    and decode non collection types that do not exist inside a collection.
+    The to_python method relies on the value being an instance of basestring
+    to ensure that it is encoded.  If a string is the sole value at the
+    point the field is instanced, to_python attempts to decode the sting because
+    it is derived from basestring but cannot be encodeded and throws the
+    exception ValueError: No JSON object could be decoded.
+    """
+
+    # Used so to_python() is called
+    __metaclass__ = models.SubfieldBase
+    description = _("JSON object")
+
+    def __init__(self, *args, **kwargs):
+        super(JSONField, self).__init__(*args, **kwargs)
+        self.validators.append(validators.MaxLengthValidator(self.max_length))
+
+    def get_internal_type(self):
+        return "TextField"
+
+    def to_python(self, value):
+        """Convert our string value to JSON after we load it from the DB"""
+        if value == "":
+            return None
+
+        try:
+            if isinstance(value, basestring):
+                return json.loads(value)
+        except ValueError:
+            return value
+
+        return value
+
+    def get_prep_value(self, value):
+        """Convert our JSON object to a string before we save"""
+
+        if not value or value == "":
+            return None
+
+        db_value = json.dumps(value)
+        return super(JSONField, self).get_prep_value(db_value)
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        """Convert our JSON object to a string before we save"""
+
+        if not value or value == "":
+            return None
+
+        db_value = json.dumps(value)
+        return super(JSONField, self).get_db_prep_value(db_value, connection, prepared)
 
 
 class Base(models.Model):
@@ -299,6 +358,9 @@ class Entity(Base):
 
     types = models.ManyToManyField(EntityType, verbose_name=_(u'Type'))
 
+    name = JSONField(blank=True, null=True, max_length=2000,
+                     verbose_name=_(u'Display Name'))
+
     objects = models.Manager()
     longlist = EntityManager()
 
@@ -352,7 +414,7 @@ class Entity(Base):
         return vals
 
     @property
-    def name(self):
+    def display_name(self):
         return self._get_property('displayName')
 
     @property
@@ -489,6 +551,8 @@ class Entity(Base):
                                               name=DESCRIPTOR_TYPES_DISPLAY[etype])
                 if entity_type not in self.types.all():
                     self.types.add(entity_type)
+            self.name = self._get_property('displayName')
+            self.save()
 
     def to_dict(self):
         self.load_metadata()

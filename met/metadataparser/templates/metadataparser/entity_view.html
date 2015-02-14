@@ -94,7 +94,7 @@
     <tr>
       <td class="first-col"><strong>{% trans "Display name" %}:</strong></td>
       {% if entity.name %}
-      <td>{% l10n_property entity.name lang %}</td>
+      <td>{% l10n_property entity.display_name lang %}</td>
       {% else %}
       <td>{% trans "No information provided." %}</td>
       {% endif %}

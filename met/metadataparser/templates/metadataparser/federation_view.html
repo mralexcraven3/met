@@ -84,13 +84,22 @@
 
 
 {% block content %}
-{% if federation.logo %}
-<p><img alt="{{ federation }} logo" src="{{ MEDIA_URL }}{{ federation.logo }}"/></p>
-{% endif %}
-{% if federation.url %}
-<p><a href="{{ federation.url }}">{% trans "Federation external website" %}</a></p>
-{% endif %}
+<table width="100%"><tr><td width="50%">
+    {% if federation.logo %}
+        <p><img alt="{{ federation }} logo" src="{{ MEDIA_URL }}{{ federation.logo }}"/></p>
+    {% endif %}
 
+    {% if federation.url %}
+        <p><a href="{{ federation.url }}">{% trans "Federation external website" %}</a></p>
+    {% endif %}
+</td><td width="50%" align="right">
+    {% if statcharts %}
+        {% load chartit %}
+        {{ statcharts|load_charts:"pie_chart" }}
+
+        <div id='pie_chart'></div>
+    {% endif %}
+</td></tr></table>
 
 {% entity_list entities %}
 

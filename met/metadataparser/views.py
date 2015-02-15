@@ -15,6 +15,7 @@ from datetime import datetime
 from dateutil import tz
 
 from django.conf import settings
+from django.db.models import Max
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
@@ -128,6 +129,7 @@ def federation_view(request, federation_slug=None):
     context = RequestContext(request)
     user = context.get('user', None)
     add_entity = user and user.has_perm('metadataparser.add_federation')
+    pie_chart = fed_pie_chart(request, federation.id)
 
     return render_to_response('metadataparser/federation_view.html',
             {'federation': federation,
@@ -138,6 +140,7 @@ def federation_view(request, federation_slug=None):
              'add_entity': add_entity,
              'lang': request.GET.get('lang', 'en'),
              'update_entities': request.GET.get('update', 'false'),
+             'statcharts': [pie_chart],
             }, context_instance=context)
 
 
@@ -275,6 +278,39 @@ def federation_charts(request, federation_slug=None):
                               },
                               context_instance=RequestContext(request))
 
+
+def fed_pie_chart(request, federation_id):
+    statsConfigDict = getattr(settings, "STATS")
+    terms = statsConfigDict['statistics']['entity_by_type']['terms']
+    stats = EntityStat.objects.filter(federation = federation_id, \
+                                      feature__in = terms).annotate(max_time=Max('time'))
+    term_names = statsConfigDict['feature_names']
+
+    #Step 1: Create a DataPool with the data we want to retrieve.
+    statdata = \
+        DataPool(
+           series=[{'options': { 'source': stats },
+                    'legend_by': 'feature',
+                    'terms': ['feature', 'value'],
+                  }]
+        )
+
+    #Step 2: Create the Chart object
+    series_options = \
+          [{'options': { 'type': 'pie', 'stacking': False },
+            'terms':{ 'feature': [ 'value' ] }}]
+
+    cht = Chart(
+            datasource = statdata,
+            series_options = series_options,
+            chart_options =
+              {'title': { 'text': 'Federation entities' },
+               'credits': { 'enabled': False}
+            },
+    )
+
+    #Step 3: Send the chart object to the template.
+    return cht
 
 def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stacking, term_names, time_format, protocols = None):
     #Step 1: Create a DataPool with the data we want to retrieve.

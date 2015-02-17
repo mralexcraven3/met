@@ -51,7 +51,7 @@ ORGANIZATION_NAME = 'Your organization'
 
 SHIB_LOGOUT_URL = '/Shibboleth.sso/Logout'
 
-SAML2DIR = '/saml2'
+SAML2DIR = os.path.join(BASEDIR, 'saml2')
 
 SAML_CONFIG = {
   # full path to the xmlsec1 binary programm

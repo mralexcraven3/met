@@ -93,11 +93,11 @@ def fetch_metadata_file(federation, logger=None):
     if not federation.file.storage.exists(federation.file) or not compare_filecontents(original_file_content, req.content):
         filename = path.basename(parsed_url.path)
         federation.file.save(filename, ContentFile(req.content), save=True)
-        data_changed = True
         #dir_name, file_name = os.path.split(federation.file.name)
         #purge(os.path.join(dir_name, filename), federation.file)
+        return ('', True)
     
-    return ('', data_changed)
+    return ('', False)
 
 def purge(name, the_file):
     def del_file(file_name):

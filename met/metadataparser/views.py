@@ -303,8 +303,8 @@ def fed_pie_chart(request, federation_id):
     cht = Chart(
             datasource = statdata,
             series_options = series_options,
-            chart_options =
-              {'title': { 'text': 'Federation entities' },
+            chart_options = {
+               'title': { 'text': ' ' },
                'credits': { 'enabled': False}
             },
     )

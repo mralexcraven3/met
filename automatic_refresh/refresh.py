@@ -14,6 +14,7 @@ Created on Sep 19, 2013
 @author: tamim
 '''
 import sys, os
+import django
 import logging.config
 from optparse import OptionParser
 
@@ -24,6 +25,8 @@ execfile(activate_this, dict(__file__=activate_this))
 sys.path.append(current_directory)
 sys.path.append(os.path.join(current_directory, 'met'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'met.settings'
+
+django.setup()
 
 from met.metadataparser.refresh_metadata import refresh
 

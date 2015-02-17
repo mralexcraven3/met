@@ -282,8 +282,8 @@ def federation_charts(request, federation_slug=None):
 def fed_pie_chart(request, federation_id):
     statsConfigDict = getattr(settings, "STATS")
     terms = statsConfigDict['statistics']['entity_by_type']['terms']
-    stats = EntityStat.objects.filter(federation = federation_id, \
-                                      feature__in = terms).annotate(max_time=Max('time'))
+    stats = model=EntityStat.objects.filter(federation = federation_id, \
+                                            feature__in = terms).order_by('-time')[len(terms):]
     term_names = statsConfigDict['feature_names']
 
     #Step 1: Create a DataPool with the data we want to retrieve.

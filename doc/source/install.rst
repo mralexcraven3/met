@@ -175,25 +175,15 @@ you just need to configure a cronjob on your server such as:
 
 .. code-block:: bash
 
-   0 * * * * /home/met/start_met_refresh.sh
-
-where start_met_refresh.sh is a shell script like
-
-.. code-block:: bash
-
-   #! /bin/sh
-   su - met -c /home/met/met_refresh.sh
-
-and met_refresh.sh is a script that finally calls the python script that refershes
-the metadata:
-
-.. code-block:: bash
-
-   #! /bin/bash
-   source /home/met/met-venv/bin/activate
-   python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
+   0 * * * * python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
 
 With the option --log the script will log as configured in the logging configuration file.
+
+This cron code must be inserted for the met user, so to edit the proper cron file,
+it is highly suggested you use the command:
+
+.. code-block:: bash
+   crontab -u met -e
 
 
 Publishing Met Documentation

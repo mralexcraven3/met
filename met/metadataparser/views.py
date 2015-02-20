@@ -297,7 +297,7 @@ def fed_pie_chart(request, federation_id):
 
     #Step 2: Create the Chart object
     series_options = \
-          [{'options': { 'type': 'pie', 'stacking': False },
+          [{'options': { 'type': 'pie', 'stacking': False, 'size': '70%' },
             'terms':{ 'feature': [ 'value' ] }}]
 
     cht = Chart(

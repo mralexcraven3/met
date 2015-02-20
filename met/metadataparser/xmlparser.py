@@ -321,7 +321,8 @@ class MetadataParser(object):
 
         scope = []
         for cur_scope in scope_node:
-            scope.append(cur_scope.text)
+            if not cur_scope.text in scope:
+                scope.append(cur_scope.text)
         return scope
 
     def entity_requested_attributes(self, entity):

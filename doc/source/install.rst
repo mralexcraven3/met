@@ -183,6 +183,7 @@ This cron code must be inserted for the met user, so to edit the proper cron fil
 it is highly suggested you use the command:
 
 .. code-block:: bash
+
    crontab -u met -e
 
 

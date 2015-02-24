@@ -69,6 +69,10 @@ class ChartForm(forms.Form):
 
         return result
             
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance')
+        super(ChartForm, self).__init__(*args, **kwargs)
+
     class Meta:
         exclude = []
 

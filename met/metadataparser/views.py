@@ -24,6 +24,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadReque
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 
 from chartit import DataPool, Chart
 
@@ -245,7 +246,9 @@ def federation_charts(request, federation_slug=None):
             protocols = statsConfigDict['protocols']
 
             from_time = datetime.fromordinal(form.cleaned_data['fromDate'].toordinal())
+            if timezone.is_naive(from_time): from_time = pytz.utc.localize(from_time)
             to_time = datetime.fromordinal(form.cleaned_data['toDate'].toordinal() + 1)
+            if timezone.is_naive(to_time): to_time = pytz.utc.localize(to_time)
 
             service_stats = EntityStat.objects.filter(  federation=federation \
                                               , feature__in = service_terms \

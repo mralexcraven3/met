@@ -16,7 +16,7 @@ from django.forms.util import ErrorDict
 
 from django.utils import timezone
 
-from met.metadataparser.models import Federation, Entity, Dummy
+from met.metadataparser.models import Federation, Entity
 
 
 class FederationForm(forms.ModelForm):
@@ -48,7 +48,7 @@ class EntityForm(forms.ModelForm):
         model = Entity
         fields = ['file_url', 'file', 'editor_users']
 
-class ChartForm(forms.ModelForm):
+class ChartForm(forms.Form):
     fromDate = forms.DateField(label=_(u'Start date'),
                              help_text=_(u"Statistics start date."), initial=timezone.now(),
                              widget=SelectDateWidget(years=range(timezone.datetime.today().year, 2012, -1)))
@@ -70,11 +70,10 @@ class ChartForm(forms.ModelForm):
         return result
             
     class Meta:
-        model = Dummy
         exclude = []
 
 
-class EntityCommentForm(forms.ModelForm):
+class EntityCommentForm(forms.Form):
     email = forms.EmailField(label=_(u'Your email address'),
                              help_text=_(u"Please enter your email address here."))
 
@@ -82,12 +81,15 @@ class EntityCommentForm(forms.ModelForm):
                              help_text=_(u"Please enter your comment here."),
                              widget=forms.Textarea(attrs={'cols': '100', 'rows': '10'}))
 
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance')
+        super(EntityCommentForm, self).__init__(*args, **kwargs)
+
     class Meta:
-        model = Dummy
         exclude = []
 
 
-class EntityProposalForm(forms.ModelForm):
+class EntityProposalForm(forms.Form):
     email = forms.EmailField(label=_(u'Your email address'),
                              help_text=_(u"Please enter your email address here."))
 
@@ -106,6 +108,7 @@ class EntityProposalForm(forms.ModelForm):
     
 
     def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance')
         super(EntityProposalForm, self).__init__(*args, **kwargs)
 
         gatherd_federations = self.instance.federations.all()
@@ -121,7 +124,6 @@ class EntityProposalForm(forms.ModelForm):
                              
  
     class Meta:
-        model = Dummy
         exclude = []
 
 

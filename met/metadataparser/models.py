@@ -287,7 +287,6 @@ class Federation(Base):
     def get_stat_protocol(self, xml_name, service_type):
         count = 0
         for entity in self.entity_set.all().filter(types=EntityType.objects.get(xmlname=service_type)):
-#             if Entity.READABLE_PROTOCOLS.has_key(xml_name) and entity.protocols and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols():
             if Entity.READABLE_PROTOCOLS.has_key(xml_name) and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols(self):
                 count += 1
             

@@ -91,10 +91,11 @@ def fetch_metadata_file(federation, logger=None):
         original_file_content = federation.file.read()
 
     if not federation.file.storage.exists(federation.file) or not compare_filecontents(original_file_content, req.content):
-        filename = path.basename(parsed_url.path)
+        #filename = path.basename(parsed_url.path)
+        filename = path.basename("%s-metadata.xml" % federation.slug)
         federation.file.save(filename, ContentFile(req.content), save=True)
-        #dir_name, file_name = os.path.split(federation.file.name)
-        #purge(os.path.join(dir_name, filename), federation.file)
+        dir_name, file_name = os.path.split(federation.file.name)
+        purge(os.path.join(dir_name, filename), federation.file)
         return ('', True)
     
     return ('', False)

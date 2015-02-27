@@ -49,69 +49,73 @@ SAML_ATTRIBUTE_MAPPING = {
 
 ORGANIZATION_NAME = 'Your organization'
 
-SHIB_LOGOUT_URL = '/Shibboleth.sso/Logout'
-
 SAML2DIR = os.path.join(BASEDIR, 'saml2')
+
+SAML_DESCRIPTION = 'Metadata Explorer Tool'
+SAML_ENTITYID = 'https://met-hostname.example.com/saml2/metadata/'
 
 SAML_CONFIG = {
   # full path to the xmlsec1 binary programm
   'xmlsec_binary': '/usr/bin/xmlsec1',
 
   # your entity id, usually your subdomain plus the url to the metadata view
-  'entityid': 'https://met-hostname.example.com/saml2/metadata/',
+  'entityid': SAML_ENTITYID,
 
   # directory with attribute mapping
   'attribute_map_dir': os.path.join(SAML2DIR, 'attribute-maps'),
 
   # this block states what services we provide
   'service': {
-      # we are just a lonely SP
-      'sp': {
-          'name': 'Metadata Explorer Tool',
-          'endpoints': {
-              # url and binding to the assetion consumer service view
-              # do not change the binding or service name
-              'assertion_consumer_service': [
-                  ('https://met-hostname.example.com/met/saml2/acs/',
-                   saml2.BINDING_HTTP_POST),
-                  ],
-              # url and binding to the single logout service view
-              # do not change the binding or service name
-              'single_logout_service': [
-                  ('https://met-hostname.example.com/met/saml2/ls/',
-                   saml2.BINDING_HTTP_REDIRECT),
-                  ],
-              },
-          # # This is commented to be compatible with simplesamlphp
-          # # attributes that this project need to identify a user
-          #'required_attributes': ['mail'],
-          #
-          # # attributes that may be useful to have but not required
-          #'optional_attributes': ['eduPersonAffiliation'],
-
-          # in this section the list of IdPs we talk to are defined
-          'idp': {
-              # we do not need a WAYF service since there is
-              # only an IdP defined here. This IdP should be
-              # present in our metadata
-
-              # the keys of this dictionary are entity ids
-              'https://idp-hostname.example.com/idp/shibboleth': {
-                  'single_sign_on_service': {
-                      saml2.BINDING_HTTP_REDIRECT: 'https://idp-hostname.example.com/idp/profile/Shibboleth/SSO',
-                      },
-                  'single_logout_service': {
-                      saml2.BINDING_HTTP_REDIRECT: 'https://idp-hostname.example.com/idp/profile/Shibboleth/Logout',
-                      },
-                  },
-              },
-          },
+    # we are just a lonely SP
+    'sp': {
+      'name': SAML_DESCRIPTION,
+      'endpoints': {
+        # url and binding to the assetion consumer service view
+        # do not change the binding or service name
+        'assertion_consumer_service': [
+          ('https://met-hostname.example.com/met/saml2/acs/',
+          saml2.BINDING_HTTP_POST),
+        ],
+        # url and binding to the single logout service view
+        # do not change the binding or service name
+        'single_logout_service': [
+          ('https://met-hostname.example.com/met/saml2/ls/',
+            saml2.BINDING_HTTP_REDIRECT),
+        ],
       },
+      # This is commented to be compatible with simplesamlphp
+      # attributes that this project need to identify a user
+      'required_attributes': ['eduPersonPrincipalName', 'mail'],
 
- # where the remote metadata is stored
+      # attributes that may be useful to have but not required
+      'optional_attributes': ['givenName', 'sn'],
+
+      # in this section the list of IdPs we talk to are defined
+      #'idp': {
+      #  # we do not need a WAYF service since there is
+      #  # only an IdP defined here. This IdP should be
+      #  # present in our metadata
+      #
+      #  # the keys of this dictionary are entity ids
+      #  'https://idp-hostname.example.com/idp/shibboleth': {
+      #    'single_sign_on_service': {
+      #      saml2.BINDING_HTTP_REDIRECT: 'https://idp-hostname.example.com/idp/profile/Shibboleth/SSO',
+      #    },
+      #    'single_logout_service': {
+      #      saml2.BINDING_HTTP_REDIRECT: 'https://idp-hostname.example.com/idp/profile/Shibboleth/Logout',
+      #    },
+      #  },
+      #},
+    },
+  },
+
+  # where the remote metadata is stored
   'metadata': {
-      'local': [os.path.join(SAML2DIR, 'remote_metadata.xml')],
-      },
+      'local': [
+          os.path.join(SAML2DIR, 'remote_metadata.xml'),
+          os.path.join(SAML2DIR, 'edugain_metadata.xml'),
+      ],
+  },
 
   # set to 1 to output debugging information
   'debug': 1,
@@ -140,6 +144,21 @@ SAML_CONFIG = {
       'url': [('http://www.example.com', 'es'), ('http://www.example.com', 'en')],
       },
 }
+
+DJANGO_FEDERATIONS = [ 'edugain' ]
+
+DJANGO_ADDITIONAL_IDPS = [
+  {
+    'entityID': 'https://idp-hostname.example.com/idp/shibboleth',
+    'title': 'IdP example',
+    'icon': 'openidp.png',
+    'descr': 'Example IdP',
+    'country': '_all_',
+    'weight': -5,
+    'keywords': ['Example', 'Test'],
+  },
+]
+
 
 MAIL_CONFIG = {
   # Email server name

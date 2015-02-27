@@ -571,49 +571,6 @@ def search_service(request):
          'show_filters': False,
         }, context_instance=RequestContext(request))
 
-def federation_login(request):
-    saml_attr_mapping_dict = getattr(settings, "SAML_ATTRIBUTE_MAPPING")
-    attr_dict = {}
-    user = User()
-
-    # Build a dictionary where keys are configured attributes of the User class
-    for key in saml_attr_mapping_dict.keys():
-        if request.environ.has_key(key):
-            var = request.environ[key]
-            for attr in saml_attr_mapping_dict[key]:
-                if hasattr(user, attr):
-                    attr_dict[attr] = var
-    
-    if attr_dict.has_key('username'):          
-        name = attr_dict['username']
-#         index = name.find('@')
-#         if index > 0:
-#             name = name[:index]
-        
-        user = User.objects.filter(username=name)
-    
-        if user:
-            user = user[0]
-        else:
-            user = User.objects.create_superuser(name, email=None, password=None)
-
-            # Set other attributes
-            for attr in attr_dict.keys():
-                setattr(user, attr, attr_dict[attr])
-            user.save()
-        
-        user.backend = 'djangosaml2.backends.Saml2Backend'
-        backend_conf = getattr(settings, "AUTHENTICATION_BACKENDS")
-        if backend_conf:
-            user.backend = backend_conf[len(backend_conf) - 1]
-    
-        login(request, user)
-        
-    else:
-        messages.error(request, _('No user name found.'))
-    
-    return HttpResponseRedirect(request.GET.get('next'))
-
-def federation_logout(request):
+def met_logout(request):
     logout(request)
-    return HttpResponseRedirect('%s?return=%s' %(getattr(settings, "SHIB_LOGOUT_URL"), request.GET.get('next')))
+    return HttpResponseRedirect(request.GET.get("next", "/"))

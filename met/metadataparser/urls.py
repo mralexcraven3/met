@@ -28,8 +28,7 @@ urlpatterns = patterns('met.metadataparser.views',
 
     url(r'^federation/(?P<federation_slug>[-\w]+)/charts/$', 'federation_charts',
         name='federation_charts'),
-    url(r'^saml2/login/$', 'federation_login', name='federation_login'),
-    url(r'^saml2/logout/$', 'federation_logout', name='federation_logout'),
+    url(r'^logout/$', 'met_logout', name='logout'),
 
     url(r'^entity/(?P<entity_id>.+)/edit/$', 'entity_edit', name='entity_edit'),
     url(r'^entity/(?P<entity_id>.+)/delete/$', 'entity_delete', name='entity_delete'),

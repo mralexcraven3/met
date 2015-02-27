@@ -11,6 +11,7 @@
 import os
 import saml2
 
+HOSTNAME = 'https://met-hostname.example.com'
 BASEURL = '/'
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -51,6 +52,9 @@ ORGANIZATION_NAME = 'Your organization'
 
 SAML2DIR = os.path.join(BASEDIR, 'saml2')
 
+LOGIN_URL = '%s/saml2/login' % BASEURL
+LOGOUT_URL = '%s/met/logout' % BASEURL
+
 SAML_DESCRIPTION = 'Metadata Explorer Tool'
 SAML_ENTITYID = 'https://met-hostname.example.com/saml2/metadata/'
 
@@ -64,31 +68,63 @@ SAML_CONFIG = {
   # directory with attribute mapping
   'attribute_map_dir': os.path.join(SAML2DIR, 'attribute-maps'),
 
+  'name': SAML_DESCRIPTION,
+
   # this block states what services we provide
   'service': {
     # we are just a lonely SP
     'sp': {
-      'name': SAML_DESCRIPTION,
       'endpoints': {
         # url and binding to the assetion consumer service view
         # do not change the binding or service name
         'assertion_consumer_service': [
-          ('https://met-hostname.example.com/met/saml2/acs/',
+          ('%s%s/saml2/acs/' % (HOSTNAME, BASEURL),
           saml2.BINDING_HTTP_POST),
         ],
         # url and binding to the single logout service view
         # do not change the binding or service name
         'single_logout_service': [
-          ('https://met-hostname.example.com/met/saml2/ls/',
-            saml2.BINDING_HTTP_REDIRECT),
+          ('%s%s/saml2/ls/' % (HOSTNAME, BASEURL),
+          saml2.BINDING_HTTP_REDIRECT),
         ],
       },
+
+      #MDUI info to be used to customize UI of federation services
+      'ui_info': {
+        'display_name': {
+          'text': SAML_DESCRIPTION,
+          'lang': 'en',
+        },
+        'description': {
+          'text': 'Metadata Explorer Tool is a fast way to find federations, entities and his relations through entity/federation metadata file information.',
+          'lang': 'en',
+        },
+        'information_url': {
+          'text': '%s%s/static/doc' % (HOSTNAME, BASEURL),
+          'lang': 'en',
+        },
+        'privacy_statement_url': {
+          'text': '%s%s/static/privacy.html' % (HOSTNAME, BASEURL),
+          'lang': 'en',
+        },
+      },
+
       # This is commented to be compatible with simplesamlphp
       # attributes that this project need to identify a user
       'required_attributes': ['eduPersonPrincipalName', 'mail'],
 
       # attributes that may be useful to have but not required
       'optional_attributes': ['givenName', 'sn'],
+
+      # Extensions for request initiator
+      'extensions': {
+        'reqinit': {
+           'RequestInitiator': {
+             'Binding': 'urn:oasis:names:tc:SAML:profiles:SSO:request-init',
+             'Location': "%s%s" % (HOSTNAME, LOGIN_URL),
+           },
+        },
+      },
 
       # in this section the list of IdPs we talk to are defined
       #'idp': {
@@ -142,10 +178,10 @@ SAML_CONFIG = {
       'name': [('Example CO', 'es'), ('Example CO', 'en')],
       'display_name': [('Example', 'es'), ('Example', 'en')],
       'url': [('http://www.example.com', 'es'), ('http://www.example.com', 'en')],
-      },
+  },
 }
 
-DJANGO_FEDERATIONS = [ 'edugain' ]
+DJANGO_FEDERATIONS = ['edugain']
 
 DJANGO_ADDITIONAL_IDPS = [
   {
@@ -158,7 +194,6 @@ DJANGO_ADDITIONAL_IDPS = [
     'keywords': ['Example', 'Test'],
   },
 ]
-
 
 MAIL_CONFIG = {
   # Email server name

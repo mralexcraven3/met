@@ -27,7 +27,7 @@ from django.conf import settings
 from met.metadataparser.utils import compare_filecontents, sendMail
 from met.metadataparser.models import Federation
 
-def refresh(logger = None):
+def refresh(logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 
     federations = Federation.objects.all()
@@ -91,48 +91,31 @@ def fetch_metadata_file(federation, logger=None):
         original_file_content = federation.file.read()
 
     if not federation.file.storage.exists(federation.file) or not compare_filecontents(original_file_content, req.content):
-        #filename = path.basename(parsed_url.path)
         filename = path.basename("%s-metadata.xml" % federation.slug)
         federation.file.save(filename, ContentFile(req.content), save=True)
-        dir_name, file_name = os.path.split(federation.file.name)
-        purge(os.path.join(dir_name, filename), federation.file)
+        purge(federation.file, logger)
         return ('', True)
     
     return ('', False)
 
-def purge(name, the_file):
-    def del_file(file_name):
-        try:
-            the_file.storage.delete(file_name)
-        except:
-            pass
-        
+def purge(the_file, logger=None):
     """
-    Deletes all old versions of the file except the two most recent ones.
+    Deletes all old versions of the federation metadata file.
     """
-    dir_name, file_name = os.path.split(name)
+    dir_name, file_name = os.path.split(the_file.name)
     file_root, file_ext = os.path.splitext(file_name)
-    # If the filename already exists, add an underscore and a number (before
-    # the file extension, if one exists) to the filename until the generated
-    # filename doesn't exist.
-    count = itertools.count(1)
-    file_to_delete = None
-    while the_file.storage.exists(name):
-        if name == the_file.name:
-            break
-        
-        if file_to_delete:
-            del_file(file_to_delete)
-        
-        file_to_delete = name
-        
-        # file_ext includes the dot.
-        name = os.path.join(dir_name, "%s_%s%s" % (file_root, next(count), file_ext))
+    file_root = file_root.split('_', 1)[0]
 
-    return name
+    for fname in the_file.storage.listdir(dir_name)[1]:
+        if fname.startswith(file_root) and fname != file_name:
+            try:
+                log('Deleting old federation file: %s' % fname, logger, logging.DEBUG)
+                the_file.storage.delete(os.path.join(dir_name, fname))
+            except:
+                log('Error while deleting file %s"' % file_name, logger, logging.ERROR)
+                pass
 
-
-def log(message, logger = None, severity = logging.INFO):
+def log(message, logger=None, severity=logging.INFO):
     if logger:
         logger.log(severity, message)
     else:

@@ -178,6 +178,7 @@
       <td>{% trans "No information provided." %}</td>
       {% endif %}
     </tr>
+    {% if 'IDP' in entity.types|display_etype %}
     <tr>
       <td class="first-col"><strong>{% trans "Attribute scopes" %}:</strong></td>
       {% if entity.scopes %}
@@ -192,6 +193,8 @@
       <td>{% trans "No information provided." %}</td>
       {% endif %}
     </tr>
+    {% endif %}
+    {% if 'SP' in entity.types|display_etype %}
     <tr>
       <td class="first-col"><strong>{% trans "Required attributes" %}:</strong></td>
       {% if entity.attributes and entity.display_attributes.items|length > 0 %}
@@ -220,6 +223,7 @@
       <td>{% trans "No information provided." %}</td>
       {% endif %}
     </tr>
+    {% endif %}
     <tr>
       <td class="first-col"><strong>{% trans "Contacts" %}:</strong></td>
       {% if entity.contacts %}

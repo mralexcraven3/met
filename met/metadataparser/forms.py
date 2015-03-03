@@ -31,7 +31,7 @@ class FederationForm(forms.ModelForm):
 
     class Meta:
         model = Federation
-        fields = ['file_url', 'file', 'editor_users', 'name', 'url', 'logo', 'is_interfederation']
+        fields = ['file_url', 'file', 'editor_users', 'name', 'url', 'logo', 'is_interfederation', 'type', 'fee_schedule_url']
 
 
 class EntityForm(forms.ModelForm):

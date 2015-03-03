@@ -90,7 +90,15 @@
     {% endif %}
 
     {% if federation.url %}
-        <p><a href="{{ federation.url }}">{% trans "Federation external website" %}</a></p>
+        <p>{% trans "Federation external website" %}: <a href="{{ federation.url }}">{{ federation.url }}</a></p>
+    {% endif %}
+
+    {% if federation.type %}
+        <p>{% trans "Federation type" %}: {% get_property fed_types federation.type %}</p>
+    {% endif %}
+
+    {% if federation.fee_schedule_url %}
+        <p>{% trans "Fee schedule URL" %}: <a href="{{ federation.fee_schedule_url }}">{{ federation.fee_schedule_url }}</a></p>
     {% endif %}
 </td><td width="50%" align="right">
     {% if statcharts %}

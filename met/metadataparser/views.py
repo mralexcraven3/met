@@ -30,7 +30,7 @@ from django.utils import timezone
 from chartit import DataPool, Chart
 
 from met.metadataparser.decorators import user_can_edit
-from met.metadataparser.models import Federation, Entity, EntityStat, TOP_LENGTH
+from met.metadataparser.models import Federation, Entity, EntityStat, TOP_LENGTH, FEDERATION_TYPES
 from met.metadataparser.forms import (FederationForm, EntityForm, EntityCommentForm,
                                       EntityProposalForm, ServiceSearchForm, ChartForm)
 
@@ -137,6 +137,7 @@ def federation_view(request, federation_slug=None):
             {'federation': federation,
              'entity_types': DESCRIPTOR_TYPES,
              'entity_type': entity_type or 'All',
+             'fed_types': dict(FEDERATION_TYPES),
              'entities': entities,
              'show_filters': True,
              'add_entity': add_entity,

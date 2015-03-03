@@ -41,6 +41,13 @@ from met.metadataparser.templatetags import attributemap
 TOP_LENGTH = getattr(settings, "TOP_LENGTH", 5)
 stats = getattr(settings, "STATS")
 
+FEDERATION_TYPES = (
+    (None, ''),
+    ('hub-and-spoke', 'Hub and Spoke'),
+    ('mesh', 'Full Mesh'),
+)
+
+
 def update_obj(mobj, obj, attrs=None):
     for_attrs = attrs or getattr(mobj, 'all_attrs', [])
     for attrb in attrs or for_attrs:
@@ -164,13 +171,13 @@ class Federation(Base):
                             unique=True, verbose_name=_(u'Name'))
 
     type = models.CharField(blank=True, null=True, max_length=100,
-                            unique=False, verbose_name=_(u'Type'))
+                            unique=False, verbose_name=_(u'Type'), choices=FEDERATION_TYPES)
 
     url = models.URLField(verbose_name='Federation url',
                           blank=True, null=True)
 
-    free_schedule_url = models.URLField(verbose_name='Free schedule url',
-                          blank=True, null=True)
+    fee_schedule_url = models.URLField(verbose_name='Fee schedule url',
+                                       max_length=150, blank=True, null=True)
 
     logo = models.ImageField(upload_to='federation_logo', blank=True,
                              null=True, verbose_name=_(u'Federation logo'))

@@ -187,6 +187,28 @@ it is highly suggested you use the command:
    crontab -u met -e
 
 
+Logrotate configuration
+***********************
+
+Logrotate can be configured to avoid the continuous growth of the refresh metadata script logging:
+
+.. code-block:: logrotate
+
+   /var/log/met_refresh.log {
+        rotate 7
+        daily
+        missingok
+        notifempty
+        delaycompress
+        compress
+        postrotate
+                touch /var/log/met_refresh.log >/dev/null 2>&1 || true
+                chown www-data.www-data /var/log/met_refresh.log >/dev/null 2>&1 || true
+                reload rsyslog >/dev/null 2>&1 || true
+        endscript
+  }
+
+
 Publishing Met Documentation
 ****************************
 

@@ -149,9 +149,10 @@ def organization_property(context, organizations, prop, lang):
         if len(organizations) > 0:
             for organization in organizations:
                 if organization['lang'] == lang:
-                    return organization[prop]
-            return organizations[0][prop]
-
+                    if prop in organization:
+                        return organization[prop]
+            if prop in organizations[0]:
+                return organizations[0][prop]
     return prop
 
 

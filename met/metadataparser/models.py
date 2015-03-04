@@ -143,7 +143,7 @@ class Base(models.Model):
         metadata = MetadataParser(filename=self.file.path)
         return metadata
 
-    def fetch_metadata_file(self):
+    def fetch_metadata_file(self, file_name):
         req = requests.get(self.file_url)
         if req.ok:
             req.raise_for_status()
@@ -154,7 +154,7 @@ class Base(models.Model):
             if compare_filecontents(original_file_content, req.content):
                 return
 
-        filename = path.basename(parsed_url.path)
+        filename = path.basename("%s-metadata.xml" % file_name)
         self.file.save(filename, ContentFile(req.content), save=False)
 
     def process_metadata(self):
@@ -640,7 +640,7 @@ def federation_pre_save(sender, instance, **kwargs):
         return
 
     if instance.file_url:
-        instance.fetch_metadata_file()
+        instance.fetch_metadata_file(instance.slug)
     if instance.name:
         instance.slug = slugify(unicode(instance))[:200]
 
@@ -648,5 +648,6 @@ def federation_pre_save(sender, instance, **kwargs):
 @receiver(pre_save, sender=Entity, dispatch_uid='entity_pre_save')
 def entity_pre_save(sender, instance, **kwargs):
     if instance.file_url:
-        instance.fetch_metadata_file()
+        slug = slugify(unicode(instance.name))[:200]
+        instance.fetch_metadata_file(slug)
         instance.process_metadata()

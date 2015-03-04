@@ -37,7 +37,7 @@ def refresh(logger=None):
     for federation in federations:
         error_msg = None
         try:
-            log('Refreshing metadata for federation %s ...' %federation, logger, logging.INFO)
+            log('Refreshing metadata for federation %s ...'  % federation, logger, logging.INFO)
             error_msg, data_changed = fetch_metadata_file(federation, logger)
     
             if not error_msg and data_changed:
@@ -94,6 +94,7 @@ def fetch_metadata_file(federation, logger=None):
         filename = path.basename("%s-metadata.xml" % federation.slug)
         federation.file.save(filename, ContentFile(req.content), save=True)
         purge(federation.file, logger)
+        federation.save()
         return ('', True)
     
     return ('', False)

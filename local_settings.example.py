@@ -199,7 +199,13 @@ MAIL_CONFIG = {
   # Email server name
   'email_server': 'mailserver.daasi.de',
   # Email server port number
-  'email_server_port': '25',
+  'email_server_port': None,
+  # Login password authenticate
+  'login_type': 'LOGIN PLAIN',
+  # Username to be used to login to SMTP
+  'username': None,
+  # Password to be used to login to SMTP
+  'password': None,
   # Addressee email address
   'to_email_address': ['tamim.ziai@daasi.de'],
   # own email address

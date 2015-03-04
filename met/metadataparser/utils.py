@@ -8,7 +8,7 @@
 # MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
 #########################################################################################
 
-import hashlib,smtplib
+import hashlib, smtplib
 from email.mime.text import MIMEText
 from django.conf import settings
 
@@ -18,13 +18,29 @@ def compare_filecontents(a, b):
     return (md5_a == md5_b)
 
 def sendMail(from_email_address, subject, message):
-    
     mailConfigDict = getattr(settings, "MAIL_CONFIG")
-
-    smtpSend = smtplib.SMTP()
+    smtpSend = None
     
     try:
-        smtpSend.connect(mailConfigDict['email_server'], int(mailConfigDict['email_server_port']))
+        if mailConfigDict['email_server_port']:
+            smtpSend = smtplib.SMTP(mailConfigDict['email_server'], int(mailConfigDict['email_server_port']))
+        else:
+            smtpSend = smtplib.SMTP(mailConfigDict['email_server'])
+
+        smtpSend.ehlo()
+
+        if smtpSend.has_extn('STARTTLS'):
+            smtpSend.starttls()
+            smtpSend.ehlo()
+
+        if mailConfigDict['username'] and mailConfigDict['password']:
+            try:
+                if mailConfigDict['login_type']:
+                    smtpSend.esmtp_features['auth'] = mailConfigDict['login_type']
+                smtpSend.login(mailConfigDict['username'], mailConfigDict['password'])
+            except Exception, errorMessage:
+                print('Error occurred while trying to login to the email server with user %s: %s' % (mailConfigDict['username'], errorMessage))
+                raise
         
         try:
             message = MIMEText(message.encode("utf-8"), "plain", _charset = "UTF-8")
@@ -37,7 +53,6 @@ def sendMail(from_email_address, subject, message):
                 mailConfigDict['to_email_address'],
                 message.as_string()
             )
-        
         except Exception, errorMessage:
             print('Error occurred while trying to send an email to %s: %s' % (mailConfigDict['to_email_address'], errorMessage))
             raise
@@ -48,8 +63,7 @@ def sendMail(from_email_address, subject, message):
     
     finally:
         try:
-            smtpSend.quit()
-          
+            if smtpSend:
+                smtpSend.quit()
         except Exception, errorMessage:
             print('Error occurred while trying to quit email: %s' % (errorMessage))
-  

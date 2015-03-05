@@ -32,6 +32,9 @@ django.setup()
 
 class RefreshMetaData:
     def process(self, options):
+        fed_name = None
+        fed_name = options.fed_name
+
         logger = None
         log_config = options.log
         
@@ -39,12 +42,12 @@ class RefreshMetaData:
             logging.config.fileConfig(log_config)
             logger = logging.getLogger("Refresh")
     
-        refresh(logger)
+        refresh(fed_name, logger)
 
 
 def commandlineCall(argv, ConvertClass=RefreshMetaData):
     optParser = OptionParser()
-    optParser.set_usage("refresh [--log  <file>")
+    optParser.set_usage("refresh [--federation <fed_name>] [--log  <file>]")
     
     optParser.add_option(
         "-l",
@@ -55,6 +58,14 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
         default=None,
         metavar="LOG")
 
+    optParser.add_option(
+        "-f",
+        "--federation",
+        type="string",
+        dest="fed_name",
+        help="The federation to be updated (None for anyone)",
+        default=None,
+        metavar="FED")
 
     (options, args) = optParser.parse_args()
     

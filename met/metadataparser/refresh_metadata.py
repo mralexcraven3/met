@@ -27,7 +27,7 @@ from django.conf import settings
 from met.metadataparser.utils import compare_filecontents, sendMail
 from met.metadataparser.models import Federation
 
-def refresh(logger=None):
+def refresh(fed_name=None, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 
     federations = Federation.objects.all()
@@ -35,6 +35,9 @@ def refresh(logger=None):
     timestamp = timezone.now()
     
     for federation in federations:
+        if fed_name and federation.slug != fed_name:
+            continue
+
         error_msg = None
         try:
             log('Refreshing metadata for federation %s ...'  % federation, logger, logging.INFO)
@@ -94,7 +97,6 @@ def fetch_metadata_file(federation, logger=None):
         filename = path.basename("%s-metadata.xml" % federation.slug)
         federation.file.save(filename, ContentFile(req.content), save=True)
         purge(federation.file, logger)
-        federation.save()
         return ('', True)
     
     return ('', False)
@@ -107,7 +109,9 @@ def purge(the_file, logger=None):
     file_root, file_ext = os.path.splitext(file_name)
     file_root = file_root.split('_', 1)[0]
 
+    print "%s" % file_root
     for fname in the_file.storage.listdir(dir_name)[1]:
+    	print "-> %s" % fname
         if fname.startswith(file_root) and fname != file_name:
             try:
                 log('Deleting old federation file: %s' % fname, logger, logging.DEBUG)
@@ -122,5 +126,3 @@ def log(message, logger=None, severity=logging.INFO):
     else:
         print message
 
-if __name__ == '__main__':
-    refresh()

@@ -571,7 +571,7 @@ class Entity(Base):
         if self.registration_authority:
             entity["registration_authority"] = self.registration_authority
         if self.registration_instant:
-            entity["registration_instant"] = datetime.strptime(self.registration_instant, '%Y-%m-%dT%H:%M%SZ')
+            entity["registration_instant"] = self.registration_instane
 
         if "file_id" in entity.keys():
             del entity["file_id"]

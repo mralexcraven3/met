@@ -1,4 +1,5 @@
 {% extends "metadataparser/base_metadataparser.html" %}
+
 {% load i18n metadataparsertags %}
 
 {% block appendheader %}
@@ -13,24 +14,55 @@
   <a class="btn" href="{% url 'entity_proposal' entity.id %}">{% trans "Proposal" %}</a>
 </div>
 
-{% if entity.name %}
-  <h2>{% l10n_property entity.name %}</h2>
-{% else %}
-  <h2>{{ entity }}</h2>
-{% endif %}
-
-{% endblock %}
-
-{% block content %}
-
 {% canedit entity %}
-
 <div class="btn-group pull-right">
   <a class="btn" href="{% url 'entity_edit' entity.id %}">{% trans "edit" %}</a>
 </div>
 {% endcanedit %}
 
+<div class="btn-group pull-right">
+  <a class="btn" href="{% url 'entity_view' entity.entityid %}?viewxml=true" target="_blank">{% trans "view xml" %}</a>
+</div>
 
+{% if entity.name %}
+  <h2>{% l10n_property entity.name lang %}</h2>
+{% else %}
+  <h2>{{ entity }}</h2>
+{% endif %}
+
+<table class="table table-striped">
+  <tbody>
+    <tr>
+      <td class="first-col"><strong>{% trans "Entity ID" %}:</strong></td>
+      <td>{{ entity.entityid }}</td>
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Entity type" %}:</strong></td>
+      <td>{{ entity.types|display_etype }}</td>
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Registration policy" %}:</strong></td>
+      <td>{{ entity.registration_authority }}
+      {% if entity.registration_instant %}
+         <i>({% trans "since" %} {{ entity.registration_instant|date:"d/m/Y" }})</i></td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Federations" %}:</strong></td>
+      <td>
+          <ul id="pipelist">
+              {% for federation in entity.federations.all %}
+              <li><a href="{% url 'federation_view' federation.slug %}">{{ federation }}</a></li>
+              {% endfor %}
+          </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+{% endblock %}
+
+{% block content %}
 
 {% for logo in entity.logos %}
   {% if logo.external %}
@@ -41,60 +73,172 @@
 {% endfor %}
 
 <ul class="entity unstyled">
-  {% if entity.description %}
-  <li>
-    <strong class="labelview">{% trans "Description" %}: </strong>{% l10n_property entity.description %}
-  </li>
-  {% endif %}
-
-  <li>
-  <strong class="labelview">{% trans "EntityID" %}: </strong>{{ entity.entityid }}
-  </li>
-
-  <li>
-  <strong class="labelview">{% trans "Entity Types" %}: </strong>{{ entity.types|display_etype }}
-  </li>
-
-  {% if entity.displayName %}
-  <li>
-  <strong class="labelview">{% trans "Display Name" %}: </strong>{{ entity.displayName }}
-  </li>
-  {% endif %}
-
-  {% if entity.protocols %}
-  <li>
-  <strong class="labelview">{% trans "Supported protocols" %}: </strong>
-  <ul>
-    {% for proto in entity.display_protocols %}
-      <li>{{ proto }}</li>
+<div class="btn-group pull-right">
+ <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+      {% trans "language" %} [{{lang}}]
+      <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu">
+    {% for lang in entity.languages|split:" " %}
+    <li><a href="?lang={{ lang }}">{{ lang }}</a></li>
     {% endfor %}
   </ul>
-  </li>
-  {% endif %}
-
-  {% if entity.organization %}
+</div>
   <li>
-  <strong class="labelview">{% trans "Organization" %}: </strong>
-    <ul>
-    {% for organization in entity.organization %}
-      {% if organization.URL %}
-       <li><a href="{{ organization.URL }}">{{ organization.displayName }} [{{ organization.lang }}]</a></li>
-      {% else %}
-       <li>{{ organization.displayName }} [{{ organization.lang }}]</li>
-      {% endif %}
-    {% endfor %}
-   </ul>
-  </li>
-  {% endif %}
-
-  <li>
-  <strong class="labelview">{% trans "Federations" %}: </strong>
-    <ul>
-      {% for federation in entity.federations.all %}
-      <li><a href="{% url 'federation_view' federation.slug %}">{{ federation }}</a></li>
-      {% endfor %}
-    </ul>
+  <strong class="labelview">{% trans "Entity properties" %}:</strong>
   </li>
 </ul>
+
+<table class="table table-striped">
+  <tbody>
+    <tr>
+      <td class="first-col"><strong>{% trans "Display name" %}:</strong></td>
+      {% if entity.name %}
+      <td>{% l10n_property entity.display_name lang %}</td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Description" %}:</strong></td>
+      {% if entity.description %}
+      <td>{% l10n_property entity.description lang %}</td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Information URL" %}:</strong></td>
+      {% if entity.infoUrl %}
+      <td><a href="{% l10n_property entity.infoUrl lang %}">{% l10n_property entity.infoUrl lang %}</a></td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Privacy page URL" %}:</strong></td>
+      {% if entity.privacyUrl %}
+      <td><a href="{% l10n_property entity.privacyUrl lang %}">{% l10n_property entity.privacyUrl lang %}</a></td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Organization name" %}:</strong></td>
+      {% if entity.organization %}
+      <td>
+          {% organization_property entity.organization 'name' lang %}
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Organization display name" %}:</strong></td>
+      {% if entity.organization %}
+      <td>
+          {% organization_property entity.organization 'displayName' lang %}
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Organization URL" %}:</strong></td>
+      {% if entity.organization %}
+      <td>
+          <a href="{% organization_property entity.organization 'URL' lang %}">{% organization_property entity.organization 'URL' lang %}</a><br/>
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+  </tbody>
+</table>
+
+<ul class="entity unstyled">
+  <li>
+  <strong class="labelview">{% trans "Technical details" %}:</strong>
+  </li>
+</ul>
+
+<table class="table table-striped">
+  <tbody>
+    <tr>
+      <td class="first-col"><strong>{% trans "Supported protocols" %}:</strong></td>
+      {% if entity.protocols and entity.display_protocols|length > 1 %}
+      <td>
+          <ul>
+              {% for proto in entity.display_protocols %}
+                  <li>{{ proto }}</li>
+              {% endfor %}
+          </ul>
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    {% if 'IDP' in entity.types|display_etype %}
+    <tr>
+      <td class="first-col"><strong>{% trans "Attribute scopes" %}:</strong></td>
+      {% if entity.scopes %}
+      <td>
+          <ul>
+              {% for scope in entity.scopes|split:" " %}
+              <li>{{ scope }}</li>
+              {% endfor %}
+          </ul>
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    {% endif %}
+    {% if 'SP' in entity.types|display_etype %}
+    <tr>
+      <td class="first-col"><strong>{% trans "Required attributes" %}:</strong></td>
+      {% if entity.attributes and entity.display_attributes.items|length > 0 %}
+      <td>
+          <ul>
+              {% for attr in entity.display_attributes.items %}
+                  <li>{{ attr.1 }} [<a href="http://oid-info.com/get/{{ attr.0 }}" target="_blank">{% trans "info" %}</a>]</li>
+              {% endfor %}
+          </ul>
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    <tr>
+      <td class="first-col"><strong>{% trans "Optional attributes" %}:</strong></td>
+      {% if entity.attributes_optional and entity.display_attributes_optional.items|length > 0 %}
+      <td>
+          <ul>
+              {% for attr in entity.display_attributes_optional.items %}
+                  <li>{{ attr.1 }} [<a href="http://oid-info.com/get/{{ attr.0 }}" target="_blank">{% trans "info" %}</a>]</li>
+              {% endfor %}
+          </ul>
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+    {% endif %}
+    <tr>
+      <td class="first-col"><strong>{% trans "Contacts" %}:</strong></td>
+      {% if entity.contacts %}
+      <td>
+          <ul>
+              {% for cont in entity.contacts %}
+                  <li><a href="{{ cont.email }}" target="_blank">{{ cont.name }}</a> [{{ cont.type }}]</li>
+              {% endfor %}
+          </ul>
+      </td>
+      {% else %}
+      <td>{% trans "No information provided." %}</td>
+      {% endif %}
+    </tr>
+  </tbody>
+</table>
 
 {% endblock %}

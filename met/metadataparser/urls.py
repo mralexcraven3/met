@@ -13,6 +13,10 @@ from django.conf.urls import patterns, url
 
 urlpatterns = patterns('met.metadataparser.views',
     url(r'^federation/add/$', 'federation_edit', name='federation_add'),
+    url(r'^federation/(?P<federation_slug>[-\w]+)/entityupdate_progress/$',
+        'entityupdate_progress', name='entityupdate_progress'),
+    url(r'^federation/(?P<federation_slug>[-\w]+)/federation_update_entities/$',
+        'federation_update_entities', name='federation_update_entities'),
     url(r'^federation/(?P<federation_slug>[-\w]+)/edit/$', 'federation_edit',
         name='federation_edit'),
     url(r'^federation/(?P<federation_slug>[-\w]+)/delete/$', 'federation_delete',
@@ -24,8 +28,7 @@ urlpatterns = patterns('met.metadataparser.views',
 
     url(r'^federation/(?P<federation_slug>[-\w]+)/charts/$', 'federation_charts',
         name='federation_charts'),
-    url(r'^saml2/login/$', 'federation_login', name='federation_login'),
-    url(r'^saml2/logout/$', 'federation_logout', name='federation_logout'),
+    url(r'^logout/$', 'met_logout', name='logout'),
 
     url(r'^entity/(?P<entity_id>.+)/edit/$', 'entity_edit', name='entity_edit'),
     url(r'^entity/(?P<entity_id>.+)/delete/$', 'entity_delete', name='entity_delete'),

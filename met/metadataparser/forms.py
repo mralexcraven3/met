@@ -16,7 +16,7 @@ from django.forms.util import ErrorDict
 
 from django.utils import timezone
 
-from met.metadataparser.models import Federation, Entity, Dummy
+from met.metadataparser.models import Federation, Entity
 
 
 class FederationForm(forms.ModelForm):
@@ -31,7 +31,7 @@ class FederationForm(forms.ModelForm):
 
     class Meta:
         model = Federation
-        exclude = ('file_id', 'slug')
+        fields = ['file_url', 'file', 'editor_users', 'name', 'url', 'logo', 'is_interfederation', 'type', 'fee_schedule_url']
 
 
 class EntityForm(forms.ModelForm):
@@ -41,19 +41,14 @@ class EntityForm(forms.ModelForm):
         editor_users_choices = self.fields['editor_users'].widget.choices
         self.fields['editor_users'].widget = CheckboxSelectMultiple(
                                                 choices=editor_users_choices)
-        self.fields['editor_users'].help_text = _("This users can edit only "
+        self.fields['editor_users'].help_text = _("These users can edit only "
                                                   "this entity")
-
-        entity_types = self.fields['types'].widget.choices
-        self.fields['types'].widget = CheckboxSelectMultiple(choices=entity_types)
-        self.fields['types'].help_text = ''
 
     class Meta:
         model = Entity
-        exclude = ('federations', 'file_id')
+        fields = ['file_url', 'file', 'editor_users']
 
-
-class ChartForm(forms.ModelForm):
+class ChartForm(forms.Form):
     fromDate = forms.DateField(label=_(u'Start date'),
                              help_text=_(u"Statistics start date."), initial=timezone.now(),
                              widget=SelectDateWidget(years=range(timezone.datetime.today().year, 2012, -1)))
@@ -74,11 +69,15 @@ class ChartForm(forms.ModelForm):
 
         return result
             
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance')
+        super(ChartForm, self).__init__(*args, **kwargs)
+
     class Meta:
-        model = Dummy
+        exclude = []
 
 
-class EntityCommentForm(forms.ModelForm):
+class EntityCommentForm(forms.Form):
     email = forms.EmailField(label=_(u'Your email address'),
                              help_text=_(u"Please enter your email address here."))
 
@@ -86,11 +85,15 @@ class EntityCommentForm(forms.ModelForm):
                              help_text=_(u"Please enter your comment here."),
                              widget=forms.Textarea(attrs={'cols': '100', 'rows': '10'}))
 
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance')
+        super(EntityCommentForm, self).__init__(*args, **kwargs)
+
     class Meta:
-        model = Dummy
+        exclude = []
 
 
-class EntityProposalForm(forms.ModelForm):
+class EntityProposalForm(forms.Form):
     email = forms.EmailField(label=_(u'Your email address'),
                              help_text=_(u"Please enter your email address here."))
 
@@ -109,10 +112,8 @@ class EntityProposalForm(forms.ModelForm):
     
 
     def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance')
         super(EntityProposalForm, self).__init__(*args, **kwargs)
-#         import sys
-#         sys.path.insert(0, "/home/tamim/.eclipse/org.eclipse.platform_3.7.0_1680470357/plugins/org.python.pydev_2.7.5.2013052819/pysrc/")
-#         import pydevd;pydevd.settrace()
 
         gatherd_federations = self.instance.federations.all()
         federation_choices = []
@@ -122,15 +123,18 @@ class EntityProposalForm(forms.ModelForm):
                 i += i
                 federation_choices.append(('%s' %federation, federation))
             
-#         self.fields['federations'].widget = CheckboxSelectMultiple(attrs={'size': '1'}, choices=federation_choices)
+        #self.fields['federations'].widget = CheckboxSelectMultiple(attrs={'size': '1'}, choices=federation_choices)
         self.fields['federations'].widget.choices = federation_choices
                              
  
     class Meta:
-        model = Dummy
+        exclude = []
 
 
 class ServiceSearchForm(forms.Form):
     entityid = forms.CharField(max_length=200, label=_(u"Search service ID"),
                              help_text=_(u"Enter a full or partial entityid"),
                              widget=forms.TextInput(attrs={'size': '200'}))
+
+    class Meta:
+        exclude = []

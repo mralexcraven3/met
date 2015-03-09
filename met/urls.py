@@ -24,8 +24,7 @@ urlpatterns = patterns('',
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     url(r'^about/$', TemplateView.as_view(template_name='about.html'), name='about'),
-
-#     url(r'^saml2/', include('djangosaml2.urls')),
+    url(r'^saml2/', include('djangosaml2.urls')),
     url(r'^test/', 'djangosaml2.views.echo_attributes'),
     url(r'^admin/', include(admin.site.urls)),
 
@@ -33,7 +32,8 @@ urlpatterns = patterns('',
     url(r'^error404.html$', 'met.portal.views.error404'),
     url(r'^error500.html$', 'met.portal.views.error500'),
 
-
+    # Uncomment the silk line below to enable Silk profiling tool pages:
+    # url(r'^silk/', include('silk.urls', namespace='silk')),
 )
 
 handler403 = 'met.portal.views.error403'

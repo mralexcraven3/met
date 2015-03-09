@@ -3,11 +3,11 @@ from xml.dom.minidom import Document
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
-from django.utils import simplejson as json
+import simplejson as json
 
 
 def export_summary_csv(qs, relation, filename, counters):
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = ('attachment; filename=%s.csv'
                                        % slugify(filename))
     writer = csv.writer(response)
@@ -33,7 +33,7 @@ def export_summary_json(qs, relation, filename, counters=None):
         objs[unicode(obj)] = item
     # Return JS file to browser as download
     serialized = json.dumps(objs)
-    response = HttpResponse(serialized, mimetype='application/json')
+    response = HttpResponse(serialized, content_type='application/json')
     response['Content-Disposition'] = ('attachment; filename=%s.json'
                                        % slugify(filename))
     return response
@@ -59,7 +59,7 @@ def export_summary_xml(qs, relation, filename, counters):
         root.appendChild(item)
 
     # Return XML file to browser as download
-    response = HttpResponse(xml.toxml(), mimetype='application/xml')
+    response = HttpResponse(xml.toxml(), content_type='application/xml')
     response['Content-Disposition'] = ('attachment; filename=%s.xml'
                                        % slugify(filename))
     return response

@@ -23,6 +23,7 @@ System packages (ubuntu-1204)
 * libpq-dev
 * xmlsec1
 * memcached
+* libffi-dev
 * django_chartit
 * dateutils
 
@@ -86,6 +87,12 @@ Project deployment
 
       cp local_settings.example.py local_settings.py
       python manage.py syncdb
+
+* To initialize static files for admin page of Django execute:
+
+  .. code-block:: bash
+
+      python manage.py collectstatic
 
 
 Apache configuration
@@ -168,25 +175,38 @@ you just need to configure a cronjob on your server such as:
 
 .. code-block:: bash
 
-   0 * * * * /home/met/start_met_refresh.sh
-
-where start_met_refresh.sh is a shell script like
-
-.. code-block:: bash
-
-   #! /bin/sh
-   su - met -c /home/met/met_refresh.sh
-
-and met_refresh.sh is a script that finally calls the python script that refershes
-the metadata:
-
-.. code-block:: bash
-
-   #! /bin/bash
-   source /home/met/met-venv/bin/activate
-   python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
+   0 * * * * python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
 
 With the option --log the script will log as configured in the logging configuration file.
+
+This cron code must be inserted for the met user, so to edit the proper cron file,
+it is highly suggested you use the command:
+
+.. code-block:: bash
+
+   crontab -u met -e
+
+
+Logrotate configuration
+***********************
+
+Logrotate can be configured to avoid the continuous growth of the refresh metadata script logging:
+
+.. code-block:: logrotate
+
+   /var/log/met_refresh.log {
+        rotate 7
+        daily
+        missingok
+        notifempty
+        delaycompress
+        compress
+        postrotate
+                touch /var/log/met_refresh.log >/dev/null 2>&1 || true
+                chown www-data.www-data /var/log/met_refresh.log >/dev/null 2>&1 || true
+                reload rsyslog >/dev/null 2>&1 || true
+        endscript
+  }
 
 
 Publishing Met Documentation

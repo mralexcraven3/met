@@ -12,37 +12,27 @@
 
 import os
 
-BASEDIR = os.path.abspath(os.path.dirname(__file__))
-
-DEBUG = False
-TEMPLATE_DEBUG = DEBUG
-
-ADMINS = (
-    # ('Your Name', 'your_email@example.com'),
-)
+try:
+    from local_settings import *
+except:
+    pass
 
 MANAGERS = ADMINS
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                      # Or path to database file if using sqlite3.
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-    }
-}
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # although not all choices may be available on all operating systems.
 # In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'Europe/Madrid'
+TIME_ZONE = 'Europe/Rome'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
+
+LANGUAGES = (
+    ('en', 'English'),
+    ('it', 'Italian'),
+)
 
 SITE_ID = 1
 
@@ -59,22 +49,22 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/media/"
-MEDIA_ROOT = os.path.join(BASEDIR, 'media')
+MEDIA_ROOT = os.path.join(BASEDIR, 'met', 'media')
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://media.lawrence.com/media/", "http://example.com/media/"
-MEDIA_URL = '/media/'
+MEDIA_URL = '%s/media/' % BASEURL
 
 # Absolute path to the directory static files should be collected to.
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = os.path.join(BASEDIR, 'collected_static')
+STATIC_ROOT = os.path.join(BASEDIR, 'met', 'static')
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
-STATIC_URL = '/static/'
+STATIC_URL = '%s/static/' % BASEURL
 
 # Additional locations of static files
 STATICFILES_DIRS = (
@@ -92,15 +82,11 @@ STATICFILES_FINDERS = (
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
-LOGIN_URL = '/saml2/login/'
-LOGOUT_URL = '/saml2/logout/'
-REDIRECT_LOGIN_URL = '/'
-REDIRECT_LOGOUT_URL = '/'
-
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'wcc$cfn0p!+@kv%@9y^u3^6fax5_a-n84^o*gl94!%kqc!fm-n'
+
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -110,28 +96,22 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    # Uncomment the next line to profile django app with Silk:
+    # 'silk.middleware.SilkyMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'pagination.middleware.PaginationMiddleware',
-
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'pagination.middleware.PaginationMiddleware',
 )
 
 ROOT_URLCONF = 'met.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'met.wsgi.application'
-
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    # os.path.join(BASEDIR, 'templates'),
-)
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -144,13 +124,20 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'pagination',
-
+    # Uncomment the next line to enable Silk profiling tool:
+    # 'silk',
     'met.portal',
     'met.metadataparser',
-
-    # 'djangosaml2',
+    'djangosaml2',
     'chartit',
 )
+
+# Uncomment this options if you're using Silk
+#SILKY_META = True
+#SILKY_PYTHON_PROFILER = True
+#SILKY_INTERCEPT_PERCENT = 100
+## SILKY_AUTHENTICATION = True
+## SILKY_AUTHORISATION = True
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -174,6 +161,11 @@ LOGGING = {
         },
     },
     'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
@@ -196,14 +188,16 @@ LOGGING = {
              'handlers': ['saml2file'],
              'level': 'DEBUG',
         },
+        'silk': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     }
 }
 
-
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
-#    'django.core.context_processors.debug',
-
+    # 'django.core.context_processors.debug',
     'django.core.context_processors.media',
     'django.core.context_processors.static',
     'django.core.context_processors.tz',
@@ -222,6 +216,12 @@ PAGE_LENGTH = 25
 
 TOP_LENGTH = 3
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
 SAML_CREATE_UNKNOWN_USER = True
 
 SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'email'
@@ -232,8 +232,52 @@ SAML_ATTRIBUTE_MAPPING = {
     'sn': ('last_name', ),
 }
 
+TEMPLATE_DIRS = (
+    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    os.path.join(BASEDIR, 'met/metadataparser/templates'),
+)
 
-try:
-    from local_settings import *
-except:
-    pass
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+STATS = {
+    # Features that have to be saved in the database
+    'features': {
+        'sp': 'SPSSODescriptor',
+        'idp': 'IDPSSODescriptor',
+        'sp_saml1': 'urn:oasis:names:tc:SAML:1.1:protocol',
+        'sp_saml2': 'urn:oasis:names:tc:SAML:2.0:protocol',
+        'sp_shib1': 'urn:mace:shibboleth:1.0',
+        'idp_saml1': 'urn:oasis:names:tc:SAML:1.1:protocol',
+        'idp_saml2': 'urn:oasis:names:tc:SAML:2.0:protocol',
+        'idp_shib1': 'urn:mace:shibboleth:1.0',
+    },
+
+    # Protocols
+    'protocols': ['saml1', 'saml2', 'shib1'],
+
+    # Feature names
+    'feature_names': {
+        'sp': 'SP',
+        'idp': 'IDP',
+        'sp_saml1': 'SP SAML 1.1',
+        'sp_saml2': 'SP SAML 2.0',
+        'sp_shib1': 'SP Shibboleth 1.0',
+        'idp_saml1': 'IDP SAML 1.1',
+        'idp_saml2': 'IDP SAML 2.0',
+        'idp_shib1': 'IDP Shibboleth 1.0',
+    },
+
+    # Statistics that can be shown (values are keys for 'features')
+    'statistics': {
+        'entity_by_type': {'terms': ['sp', 'idp'], 'title': 'Services', 'x_title': 'Time', 'y_title': 'Count'},
+        'entity_by_protocol': {'terms': ['sp_saml1', 'sp_saml2', 'sp_shib1', 'idp_saml1', 'idp_saml2', 'idp_shib1'], 'title': 'Protocols', 'x_title': 'Time', 'y_title': 'Count'},
+    },
+
+    # Time format in the x axis
+    'time_format': '%m/%d/%Y %H:%M',
+}
+

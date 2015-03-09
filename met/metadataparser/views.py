@@ -9,24 +9,28 @@
 #########################################################################################
 
 import re, time
+import pytz
+import simplejson as json
 from urllib import unquote
 from datetime import datetime
 from dateutil import tz
 
 from django.conf import settings
+from django.db.models import Max
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
+from django.utils import timezone
 
 from chartit import DataPool, Chart
 
 from met.metadataparser.decorators import user_can_edit
-from met.metadataparser.models import Federation, Entity, EntityStat, TOP_LENGTH
+from met.metadataparser.models import Federation, Entity, EntityStat, TOP_LENGTH, FEDERATION_TYPES
 from met.metadataparser.forms import (FederationForm, EntityForm, EntityCommentForm,
                                       EntityProposalForm, ServiceSearchForm, ChartForm)
 
@@ -98,11 +102,18 @@ def index(request):
            'federations': federations,
            'entities': Entity.objects.all(),
            'entity_types': DESCRIPTOR_TYPES,
+           'federation_path': request.path,
            'most_federated_entities': most_federated_entities,
            }, context_instance=RequestContext(request))
 
 
 def federation_view(request, federation_slug=None):
+    if federation_slug:
+        request.session['%s_process_done' % federation_slug] = False
+        request.session['%s_num_entities' % federation_slug] = 0
+        request.session['%s_cur_entities' % federation_slug] = 0
+        request.session.save()
+
     federation = get_object_or_404(Federation, slug=federation_slug)
 
     entity_type = None
@@ -116,12 +127,24 @@ def federation_view(request, federation_slug=None):
     if 'format' in request.GET:
         return export_query_set(request.GET.get('format'), entities,
                                 'entities_search_result', ('', 'types', 'federations'))
+
+    context = RequestContext(request)
+    user = context.get('user', None)
+    add_entity = user and user.has_perm('metadataparser.add_federation')
+    pie_chart = fed_pie_chart(request, federation.id)
+
     return render_to_response('metadataparser/federation_view.html',
             {'federation': federation,
+             'entity_types': DESCRIPTOR_TYPES,
              'entity_type': entity_type or 'All',
+             'fed_types': dict(FEDERATION_TYPES),
              'entities': entities,
              'show_filters': True,
-            }, context_instance=RequestContext(request))
+             'add_entity': add_entity,
+             'lang': request.GET.get('lang', 'en'),
+             'update_entities': request.GET.get('update', 'false'),
+             'statcharts': [pie_chart],
+            }, context_instance=context)
 
 
 @user_can_edit(Federation)
@@ -139,13 +162,13 @@ def federation_edit(request, federation_slug=None):
                 form.instance.editor_users.add(request.user)
             if 'file' in form.changed_data or 'file_url' in form.changed_data:
                 form.instance.process_metadata()
-                form.instance.process_metadata_entities(request=request)
+                #form.instance.process_metadata_entities(request=request)
             if federation:
                 messages.success(request, _('Federation modified successfully'))
             else:
                 messages.success(request, _('Federation created successfully'))
 
-            return HttpResponseRedirect(form.instance.get_absolute_url())
+            return HttpResponseRedirect(form.instance.get_absolute_url() + '?update=true')
 
         else:
             messages.error(request, _('Please correct the errors indicated'
@@ -153,14 +176,45 @@ def federation_edit(request, federation_slug=None):
     else:
         form = FederationForm(instance=federation)
 
+    context = RequestContext(request)
+    user = context.get('user', None)
+    delete_federation = user and user.has_perm('metadataparser.delete_federation')
     return render_to_response('metadataparser/federation_edit.html',
-                              {'form': form},
+                              {'form': form,
+                               'delete_federation': delete_federation},
                               context_instance=RequestContext(request))
 
 
 @user_can_edit(Federation)
+def federation_update_entities(request, federation_slug=None):
+    federation = get_object_or_404(Federation, slug=federation_slug)
+    federation.process_metadata_entities(request=request, federation_slug=federation_slug)
+
+    messages.success(request, _('Federation entities updated succesfully'))
+    return HttpResponse("Done. All entities updated.", content_type='text/plain')
+
+
+def entityupdate_progress(request, federation_slug=None):
+    data = { 'done': False }
+    if federation_slug:
+        data = { 'done': request.session.get('%s_process_done' % federation_slug, False),
+                 'tot': request.session.get('%s_num_entities' % federation_slug, 0),
+                 'num': request.session.get('%s_cur_entities' % federation_slug, 0) }
+
+    return HttpResponse(json.dumps(data), content_type='application/javascript')
+
+
+@user_can_edit(Federation, True)
 def federation_delete(request, federation_slug):
     federation = get_object_or_404(Federation, slug=federation_slug)
+
+    for entity in federation.entity_set.all():
+        if len(entity.federations.all()) == 1:
+            #messages.success(request,
+            #                 _(u"%(entity)s entity was deleted succesfully"
+            #                 % {'entity': unicode(entity)}))
+            entity.delete()
+
     messages.success(request,
                      _(u"%(federation)s federation was deleted successfully"
                      % {'federation': unicode(federation)}))
@@ -194,7 +248,9 @@ def federation_charts(request, federation_slug=None):
             protocols = statsConfigDict['protocols']
 
             from_time = datetime.fromordinal(form.cleaned_data['fromDate'].toordinal())
+            if timezone.is_naive(from_time): from_time = pytz.utc.localize(from_time)
             to_time = datetime.fromordinal(form.cleaned_data['toDate'].toordinal() + 1)
+            if timezone.is_naive(to_time): to_time = pytz.utc.localize(to_time)
 
             service_stats = EntityStat.objects.filter(  federation=federation \
                                               , feature__in = service_terms \
@@ -227,6 +283,39 @@ def federation_charts(request, federation_slug=None):
                               },
                               context_instance=RequestContext(request))
 
+
+def fed_pie_chart(request, federation_id):
+    statsConfigDict = getattr(settings, "STATS")
+    terms = statsConfigDict['statistics']['entity_by_type']['terms']
+    stats = model=EntityStat.objects.filter(federation = federation_id, \
+                                            feature__in = terms).order_by('-time')[0:len(terms)]
+    term_names = statsConfigDict['feature_names']
+
+    #Step 1: Create a DataPool with the data we want to retrieve.
+    statdata = \
+        DataPool(
+           series=[{'options': { 'source': stats },
+                    'legend_by': 'feature',
+                    'terms': ['feature', 'value'],
+                  }]
+        )
+
+    #Step 2: Create the Chart object
+    series_options = \
+          [{'options': { 'type': 'pie', 'stacking': False, 'size': '70%' },
+            'terms':{ 'feature': [ 'value' ] }}]
+
+    cht = Chart(
+            datasource = statdata,
+            series_options = series_options,
+            chart_options = {
+               'title': { 'text': ' ' },
+               'credits': { 'enabled': False}
+            },
+    )
+
+    #Step 3: Send the chart object to the template.
+    return cht
 
 def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stacking, term_names, time_format, protocols = None):
     #Step 1: Create a DataPool with the data we want to retrieve.
@@ -308,8 +397,16 @@ def entity_view(request, entityid):
     if 'format' in request.GET:
         return export_entity(request.GET.get('format'), entity)
 
+    if 'viewxml' in request.GET:
+        serialized = entity.xml
+        response = HttpResponse(serialized, content_type='application/xml')
+        #response['Content-Disposition'] = ('attachment; filename=%s.xml'
+        #                               % slugify(entity))
+        return response
+
     return render_to_response('metadataparser/entity_view.html',
             {'entity': entity,
+             'lang': request.GET.get('lang', 'en') 
             }, context_instance=RequestContext(request))
 
 
@@ -351,7 +448,7 @@ def entity_edit(request, federation_slug=None, entity_id=None):
                               context_instance=RequestContext(request))
 
 
-@user_can_edit(Entity)
+@user_can_edit(Entity, True)
 def entity_delete(request, entity_id):
     entity = get_object_or_404(Entity, id=entity_id)
     messages.success(request,
@@ -475,55 +572,6 @@ def search_service(request):
          'show_filters': False,
         }, context_instance=RequestContext(request))
 
-def federation_login(request):
-#     import sys
-#     sys.path.insert(0, "/home/tamim/.eclipse/org.eclipse.platform_3.7.0_1680470357/plugins/org.python.pydev_2.7.5.2013052819/pysrc/")
-#     import pydevd;pydevd.settrace()
-
-    saml_attr_mapping_dict = getattr(settings, "SAML_ATTRIBUTE_MAPPING")
-    attr_dict = {}
-    user = User()
-
-    # Build a dictionary where keys are configured attributes of the User class
-    for key in saml_attr_mapping_dict.keys():
-        if request.environ.has_key(key):
-            var = request.environ[key]
-            for attr in saml_attr_mapping_dict[key]:
-                if hasattr(user, attr):
-                    attr_dict[attr] = var
-    
-    if attr_dict.has_key('username'):          
-        name = attr_dict['username']
-#         index = name.find('@')
-#         if index > 0:
-#             name = name[:index]
-        
-        user = User.objects.filter(username=name)
-    
-        if user:
-            user = user[0]
-        else:
-            user = User.objects.create_superuser(name, email=None, password=None)
-
-            # Set other attributes
-            for attr in attr_dict.keys():
-                setattr(user, attr, attr_dict[attr])
-            user.save()
-        
-        user.backend = 'djangosaml2.backends.Saml2Backend'
-        backend_conf = getattr(settings, "AUTHENTICATION_BACKENDS")
-        if backend_conf:
-            user.backend = backend_conf[len(backend_conf) - 1]
-    
-        login(request, user)
-        
-    else:
-        messages.error(request, _('No user name found.'))
-    
-    return HttpResponseRedirect(request.GET.get('next'))
-
-def federation_logout(request):
+def met_logout(request):
     logout(request)
-#     return HttpResponseRedirect('/Shibboleth.sso/Logout')
-    messages.warning(request, _('Local logout was successful. No IdP logout was performed!'))
-    return HttpResponseRedirect('%s?return=%s' %(getattr(settings, "SHIB_LOGOUT_URL"), request.GET.get('next')))
+    return HttpResponseRedirect(request.GET.get("next", "/"))

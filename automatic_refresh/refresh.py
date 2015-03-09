@@ -17,29 +17,37 @@ import sys, os
 import logging.config
 from optparse import OptionParser
 
-# from django.core import management;import met.settings as settings;management.setup_environ(settings)
+current_directory = os.path.join(os.path.dirname(__file__), '..')
+activate_this = os.path.join(current_directory, '..', 'met-venv/bin/activate_this.py')
+execfile(activate_this, dict(__file__=activate_this))
+
+sys.path.append(current_directory)
+sys.path.append(os.path.join(current_directory, 'met'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'met.settings'
 
+import django
 from met.metadataparser.refresh_metadata import refresh
 
-class RefreshMetaData:
+django.setup()
 
+class RefreshMetaData:
     def process(self, options):
+        fed_name = None
+        fed_name = options.fed_name
+
         logger = None
         log_config = options.log
         
         if log_config:
-        
             logging.config.fileConfig(log_config)
             logger = logging.getLogger("Refresh")
     
-        refresh(logger)
+        refresh(fed_name, logger)
 
 
 def commandlineCall(argv, ConvertClass=RefreshMetaData):
-
     optParser = OptionParser()
-    optParser.set_usage("refresh [--log  <file>")
+    optParser.set_usage("refresh [--federation <fed_name>] [--log  <file>]")
     
     optParser.add_option(
         "-l",
@@ -50,6 +58,14 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
         default=None,
         metavar="LOG")
 
+    optParser.add_option(
+        "-f",
+        "--federation",
+        type="string",
+        dest="fed_name",
+        help="The federation to be updated (None for anyone)",
+        default=None,
+        metavar="FED")
 
     (options, args) = optParser.parse_args()
     
@@ -68,5 +84,4 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
 
 
 if __name__ == '__main__':
-
     commandlineCall(sys.argv)

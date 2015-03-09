@@ -27,8 +27,7 @@ from django.conf import settings
 from met.metadataparser.utils import compare_filecontents, sendMail
 from met.metadataparser.models import Federation
 
-def refresh(logger = None):
-    
+def refresh(fed_name=None, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 
     federations = Federation.objects.all()
@@ -36,10 +35,13 @@ def refresh(logger = None):
     timestamp = timezone.now()
     
     for federation in federations:
+        if fed_name and federation.slug != fed_name:
+            continue
+
         error_msg = None
         try:
-            log('Refreshing metadata for federation %s ...' %federation, logger, logging.INFO)
-            error_msg, data_changed = fetch_metadata_file(federation)
+            log('Refreshing metadata for federation %s ...'  % federation, logger, logging.INFO)
+            error_msg, data_changed = fetch_metadata_file(federation, logger)
     
             if not error_msg and data_changed:
                 log('Updating database ...', logger, logging.INFO)
@@ -70,79 +72,57 @@ def refresh(logger = None):
     
     log('Refreshing metadata terminated.', logger, logging.INFO)
 
-def fetch_metadata_file(federation):
+def fetch_metadata_file(federation, logger=None):
+    file_url = federation.file_url
+    if not file_url or file_url == '':
+        log('Federation has no URL configured.', logger, logging.INFO)
+        return ('', False)
 
-    req = requests.get(federation.file_url)
-    error_msg = ''
-    data_changed = False
-
+    req = requests.get(file_url)
     if req.ok:
         if 400 <= req.status_code < 500:
-            error_msg = '%s Client Error: %s' % (req.status_code, req.reason)
-
+            return ('%s Client Error: %s' % (req.status_code, req.reason), False)
         elif 500 <= req.status_code < 600:
-            error_msg = '%s Server Error: %s' % (req.status_code, req.reason)
-
+            return ('%s Server Error: %s' % (req.status_code, req.reason), False)
     else:
-        error_msg = 'Getting metadata from %s failed.' % federation.file_url
+        return ('Getting metadata from %s failed.' % federation.file_url, False)
     
-    if not error_msg:
-        parsed_url = urlsplit(federation.file_url)
+    parsed_url = urlsplit(federation.file_url)
 
-        if federation.file and federation.file.storage.exists(federation.file):
-            federation.file.seek(0)
-            original_file_content = federation.file.read()
+    if federation.file and federation.file.storage.exists(federation.file):
+        federation.file.seek(0)
+        original_file_content = federation.file.read()
 
-        if not federation.file.storage.exists(federation.file) or not compare_filecontents(original_file_content, req.content):
-            filename = path.basename(parsed_url.path)
-            federation.file.save(filename, ContentFile(req.content), save=True)
-            data_changed = True
-#                 dir_name, file_name = os.path.split(federation.file.name)
-#                 purge(os.path.join(dir_name, filename), federation.file)
+    if not federation.file.storage.exists(federation.file) or not compare_filecontents(original_file_content, req.content):
+        filename = path.basename("%s-metadata.xml" % federation.slug)
+        federation.file.save(filename, ContentFile(req.content), save=True)
+        purge(federation.file, logger)
+        return ('', True)
     
-    return (error_msg, data_changed)
+    return ('', False)
 
-def purge(name, the_file):
-    
-    def del_file(file_name):
-        try:
-            the_file.storage.delete(file_name)
-        except:
-            pass
-        
+def purge(the_file, logger=None):
     """
-    Deletes all old versions of the file except the two most recent ones.
+    Deletes all old versions of the federation metadata file.
     """
-    dir_name, file_name = os.path.split(name)
+    dir_name, file_name = os.path.split(the_file.name)
     file_root, file_ext = os.path.splitext(file_name)
-    # If the filename already exists, add an underscore and a number (before
-    # the file extension, if one exists) to the filename until the generated
-    # filename doesn't exist.
-    count = itertools.count(1)
-    file_to_delete = None
-    while the_file.storage.exists(name):
-        if name == the_file.name:
-            break
-        
-        if file_to_delete:
-            del_file(file_to_delete)
-        
-        file_to_delete = name
-        
-        # file_ext includes the dot.
-        name = os.path.join(dir_name, "%s_%s%s" % (file_root, next(count), file_ext))
+    file_root = file_root.split('_', 1)[0]
 
-    return name
+    print "%s" % file_root
+    for fname in the_file.storage.listdir(dir_name)[1]:
+    	print "-> %s" % fname
+        if fname.startswith(file_root) and fname != file_name:
+            try:
+                log('Deleting old federation file: %s' % fname, logger, logging.DEBUG)
+                the_file.storage.delete(os.path.join(dir_name, fname))
+            except:
+                log('Error while deleting file %s"' % file_name, logger, logging.ERROR)
+                pass
 
-
-def log(message, logger = None, severity = logging.INFO):
-    
+def log(message, logger=None, severity=logging.INFO):
     if logger:
         logger.log(severity, message)
-        
     else:
         print message
 
-if __name__ == '__main__':
-
-    refresh()

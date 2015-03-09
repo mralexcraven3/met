@@ -8,14 +8,18 @@
 # MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
 #########################################################################################
 
-from os import path
 import requests
-from urlparse import urlsplit
+import simplejson as json
+
+from os import path
+from urlparse import urlsplit, urlparse
 from urllib import quote_plus
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.core import validators
 from django.core.cache import get_cache
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
@@ -31,10 +35,18 @@ from django.utils import timezone
 
 from met.metadataparser.utils import compare_filecontents
 from met.metadataparser.xmlparser import MetadataParser, DESCRIPTOR_TYPES_DISPLAY
+from met.metadataparser.templatetags import attributemap
 
 
 TOP_LENGTH = getattr(settings, "TOP_LENGTH", 5)
 stats = getattr(settings, "STATS")
+
+FEDERATION_TYPES = (
+    (None, ''),
+    ('hub-and-spoke', 'Hub and Spoke'),
+    ('mesh', 'Full Mesh'),
+)
+
 
 def update_obj(mobj, obj, attrs=None):
     for_attrs = attrs or getattr(mobj, 'all_attrs', [])
@@ -43,6 +55,62 @@ def update_obj(mobj, obj, attrs=None):
             getattr(obj, attrb, None) and
             getattr(mobj, attrb) != getattr(obj, attrb)):
             setattr(obj, attrb,  getattr(mobj, attrb))
+
+class JSONField(models.CharField):
+    """JSONField is a generic textfield that neatly serializes/unserializes
+    JSON objects seamlessly
+
+    The json spec claims you must use a collection type at the top level of
+    the data structure.  However the simplesjon decoder and Firefox both encode
+    and decode non collection types that do not exist inside a collection.
+    The to_python method relies on the value being an instance of basestring
+    to ensure that it is encoded.  If a string is the sole value at the
+    point the field is instanced, to_python attempts to decode the sting because
+    it is derived from basestring but cannot be encodeded and throws the
+    exception ValueError: No JSON object could be decoded.
+    """
+
+    # Used so to_python() is called
+    __metaclass__ = models.SubfieldBase
+    description = _("JSON object")
+
+    def __init__(self, *args, **kwargs):
+        super(JSONField, self).__init__(*args, **kwargs)
+        self.validators.append(validators.MaxLengthValidator(self.max_length))
+
+    def get_internal_type(self):
+        return "TextField"
+
+    def to_python(self, value):
+        """Convert our string value to JSON after we load it from the DB"""
+        if value == "":
+            return None
+
+        try:
+            if isinstance(value, basestring):
+                return json.loads(value)
+        except ValueError:
+            return value
+
+        return value
+
+    def get_prep_value(self, value):
+        """Convert our JSON object to a string before we save"""
+
+        if not value or value == "":
+            return None
+
+        db_value = json.dumps(value)
+        return super(JSONField, self).get_prep_value(db_value)
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        """Convert our JSON object to a string before we save"""
+
+        if not value or value == "":
+            return None
+
+        db_value = json.dumps(value)
+        return super(JSONField, self).get_db_prep_value(db_value, connection, prepared)
 
 
 class Base(models.Model):
@@ -53,7 +121,7 @@ class Base(models.Model):
                             verbose_name=_(u'metadata xml file'),
                             help_text=_("if url is set, metadata url will be "
                                         "fetched and replace file value"))
-    file_id = models.CharField(blank=True, null=True, max_length=100,
+    file_id = models.CharField(blank=True, null=True, max_length=500,
                                verbose_name=_(u'File ID'))
 
     editor_users = models.ManyToManyField(User, null=True, blank=True,
@@ -75,7 +143,7 @@ class Base(models.Model):
         metadata = MetadataParser(filename=self.file.path)
         return metadata
 
-    def fetch_metadata_file(self):
+    def fetch_metadata_file(self, file_name):
         req = requests.get(self.file_url)
         if req.ok:
             req.raise_for_status()
@@ -86,14 +154,11 @@ class Base(models.Model):
             if compare_filecontents(original_file_content, req.content):
                 return
 
-        filename = path.basename(parsed_url.path)
+        filename = path.basename("%s-metadata.xml" % file_name)
         self.file.save(filename, ContentFile(req.content), save=False)
 
     def process_metadata(self):
         raise NotImplemented()
-
-    def can_edit(self, user):
-        return (user.is_superuser or user in self.editor_users.all())
 
 
 class XmlDescriptionError(Exception):
@@ -102,17 +167,17 @@ class XmlDescriptionError(Exception):
 
 class Federation(Base):
 
-    name = models.CharField(blank=False, null=False, max_length=100,
+    name = models.CharField(blank=False, null=False, max_length=200,
                             unique=True, verbose_name=_(u'Name'))
 
     type = models.CharField(blank=True, null=True, max_length=100,
-                            unique=False, verbose_name=_(u'Type'))
+                            unique=False, verbose_name=_(u'Type'), choices=FEDERATION_TYPES)
 
     url = models.URLField(verbose_name='Federation url',
                           blank=True, null=True)
 
-    free_schedule_url = models.URLField(verbose_name='Free schedule url',
-                          blank=True, null=True)
+    fee_schedule_url = models.URLField(verbose_name='Fee schedule url',
+                                       max_length=150, blank=True, null=True)
 
     logo = models.ImageField(upload_to='federation_logo', blank=True,
                              null=True, verbose_name=_(u'Federation logo'))
@@ -122,7 +187,6 @@ class Federation(Base):
 
     @property
     def _metadata(self):
-
         if not hasattr(self, '_metadata_cache'):
             self._metadata_cache = self.load_file()
         return self._metadata_cache
@@ -151,11 +215,7 @@ class Federation(Base):
 
         update_obj(metadata.get_federation(), self)
 
-    def process_metadata_entities(self, request=None, timestamp = timezone.now()):
-#         import sys
-#         sys.path.insert(0, "/home/tamim/.eclipse/org.eclipse.platform_3.7.0_1680470357/plugins/org.python.pydev_2.7.5.2013052819/pysrc/")
-#         import pydevd;pydevd.settrace()
-        
+    def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
         entities_from_xml = self._metadata.get_entities()
 
         for entity in self.entity_set.all():
@@ -167,7 +227,17 @@ class Federation(Base):
                         mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
                                 (entity.get_absolute_url(), entity.entityid))))
 
+        if request and federation_slug:
+            request.session['%s_num_entities' % federation_slug] = len(entities_from_xml)
+            request.session['%s_cur_entities' % federation_slug] = 0
+            request.session['%s_process_done' % federation_slug] = False
+            request.session.save()
+
         for m_id in entities_from_xml:
+            if request and federation_slug:
+                request.session['%s_cur_entities' % federation_slug] += 1
+                request.session.save()
+
             try:
                 entity = self.get_entity(entityid=m_id)
             except Entity.DoesNotExist:
@@ -177,7 +247,11 @@ class Federation(Base):
                 except Entity.DoesNotExist:
                     entity = self.entity_set.create(entityid=m_id)
             entity.process_metadata(self._metadata.get_entity(m_id))
-            
+
+        if request and federation_slug:
+            request.session['%s_process_done' % federation_slug] = True
+            request.session.save()
+
         for feature in stats['features'].keys():
             fun = getattr(self, 'get_%s' %feature, None)
 
@@ -220,11 +294,17 @@ class Federation(Base):
     def get_stat_protocol(self, xml_name, service_type):
         count = 0
         for entity in self.entity_set.all().filter(types=EntityType.objects.get(xmlname=service_type)):
-#             if Entity.READABLE_PROTOCOLS.has_key(xml_name) and entity.protocols and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols():
             if Entity.READABLE_PROTOCOLS.has_key(xml_name) and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols(self):
                 count += 1
             
         return count
+
+    def can_edit(self, user, delete):
+        permission = 'delete_federation' if delete else 'change_federation'
+        if user.has_perm('metadataparser.%s' % permission):
+            if user in self.editor_users.all():
+                return True
+        return False
 
 
 class EntityQuerySet(QuerySet):
@@ -255,7 +335,7 @@ class EntityQuerySet(QuerySet):
 
 
 class EntityManager(models.Manager):
-    def get_query_set(self):
+    def get_queryset(self):
         return EntityQuerySet(self.model, using=self._db)
 
 
@@ -283,27 +363,65 @@ class Entity(Base):
                                          verbose_name=_(u'Federations'))
 
     types = models.ManyToManyField(EntityType, verbose_name=_(u'Type'))
+
+    name = JSONField(blank=True, null=True, max_length=2000,
+                     verbose_name=_(u'Display Name'))
+
     objects = models.Manager()
     longlist = EntityManager()
 
     @property
+    def registration_authority(self):
+        return self._get_property('registration_authority')
+
+    @property
+    def registration_instant(self):
+        return datetime.strptime(self._get_property('registration_instant'), '%Y-%m-%dT%H:%M:%SZ')
+
+    @property
+    def protocols(self):
+        return ' '.join(self._get_property('protocols'))
+
+    @property
+    def languages(self):
+        return ' '.join(self._get_property('languages'))
+
+    @property
+    def scopes(self):
+        return ' '.join(self._get_property('scopes'))
+
+    @property
+    def attributes(self):
+        attributes = self._get_property('attr_requested')
+        if not attributes:
+            return ''
+        return ' '.join(attributes['required'])
+
+    @property
+    def attributes_options(self):
+        attributes = self._get_property('attr_requested')
+        if not attributes:
+            return ''
+        return ' '.join(attributes['optional'])
+
+    @property
     def organization(self):
-        return self._get_property('organization')
+        organization = self._get_property('organization')
+
+        names = []
+        urls = []
+        displayNames = []
+
+        vals = []
+        for lang, data in organization.items():
+            data['lang'] = lang
+            vals.append(data)
+
+        return vals
 
     @property
-    def name(self):
-        return self._get_property('displayname')
-
-    @property
-    def displayName(self):
-        displayName = "";
-        displayNameDict = self._get_property('displayname')
-        if displayNameDict:
-            if displayNameDict.has_key('en'):
-                displayName = displayNameDict['en']
-            else:
-                displayName = displayNameDict.itervalues().next()
-        return displayName
+    def display_name(self):
+        return self._get_property('displayName')
 
     @property
     def federationsCount(self):
@@ -314,25 +432,75 @@ class Entity(Base):
         return self._get_property('description')
 
     @property
-    def xml_types(self):
-        return self._get_property('entity_types')
+    def infoUrl(self):
+        return self._get_property('infoUrl')
 
     @property
-    def protocols(self):
-        return self._get_property('protocols')
+    def privacyUrl(self):
+        return self._get_property('privacyUrl')
+
+    @property
+    def xml(self):
+         return self._get_property('xml')
+
+    @property
+    def xml_types(self):
+         return self._get_property('entity_types')
 
     def display_protocols(self, federation = None):
         protocols = []
-
         if self._get_property('protocols', federation):
             for proto in self._get_property('protocols', federation):
                 protocols.append(self.READABLE_PROTOCOLS.get(proto, proto))
 
         return protocols
 
+    def display_attributes(self):
+        attributes = {}
+        for attr in self.attributes.split(' '):
+            oid = attr.replace('urn:oid:', '')
+            if attr in attributemap.MAP['fro']:
+                attributes[oid] = attributemap.MAP['fro'][attr]
+            else:
+                attributes[oid] = attr
+        return attributes
+
+    def display_attributes_optional(self):
+        attributes = {}
+        for attr in self.attributes_optional.split(' '):
+            oid = attr.replace('urn:oid:', '')
+            if attr in attributemap.MAP['fro']:
+                attributes[oid] = attributemap.MAP['fro'][attr]
+            else:
+                attributes[oid] = attr
+        return attributes
+
+    @property
+    def contacts(self):
+        contacts = []
+        for cur_contact in self._get_property('contacts'):
+            if cur_contact['name'] and cur_contact['surname']:
+                contact_name = '%s %s' % (cur_contact['name'], cur_contact['surname'])
+            elif cur_contact['name']:
+                contact_name = cur_contact['name']
+            elif cur_contact['surname']:
+                contact_name = cur_contact['surname']
+            else:
+                contact_name = urlparse(cur_contact['email']).path.partition('?')[0]
+            c_type = 'undefined'
+            if cur_contact['type']:
+                c_type = cur_contact['type']
+            contacts.append({ 'name': contact_name, 'email': cur_contact['email'], 'type': c_type })
+        return contacts
+
     @property
     def logos(self):
-        return list(self._get_property('logos')) + list(self.entitylogo_set.all())
+        logos = []
+        for cur_logo in self._get_property('logos'):
+            cur_logo['external'] = True
+            logos.append(cur_logo)
+
+        return logos
 
     class Meta:
         verbose_name = _(u'Entity')
@@ -389,26 +557,28 @@ class Entity(Base):
                                               name=DESCRIPTOR_TYPES_DISPLAY[etype])
                 if entity_type not in self.types.all():
                     self.types.add(entity_type)
+            self.name = self._get_property('displayName')
+            self.save()
 
     def to_dict(self):
-        self.description
+        self.load_metadata()
+
         entity = self._entity_cached.copy()
         entity["types"] = [(unicode(f)) for f in self.types.all()]
-        entity["federations"] = [{u"name": unicode(f), u"url":f.get_absolute_url()}
+        entity["federations"] = [{u"name": unicode(f), u"url": f.get_absolute_url()}
                                     for f in self.federations.all()]
+
+        if self.registration_authority:
+            entity["registration_authority"] = self.registration_authority
+        if self.registration_instant:
+            entity["registration_instant"] = self.registration_instane
+
         if "file_id" in entity.keys():
             del entity["file_id"]
         if "entity_types" in entity.keys():
             del entity["entity_types"]
 
         return entity
-
-    def can_edit(self, user):
-        if super(Entity, self).can_edit(user):
-            return True
-        for federation in self.federations.all():
-            if federation.can_edit(user):
-                return True
 
     @classmethod
     def get_most_federated_entities(self, maxlength=TOP_LENGTH, cache_expire=None):
@@ -431,19 +601,17 @@ class Entity(Base):
     def get_absolute_url(self):
         return reverse('entity_view', args=[quote_plus(self.entityid)])
 
+    def can_edit(self, user, delete):
+        permission = 'delete_entity' if delete else 'change_entity'
+        if user.has_perm('metadataparser.%s' % permission):
+            if user in self.editor_users.all():
+                return True
 
-class EntityLogo(models.Model):
-    logo = models.ImageField(upload_to='entity_logo', blank=True,
-                             null=True, verbose_name=_(u'Entity logo'))
-    alt = models.CharField(max_length=100, blank=True, null=True,
-                           verbose_name=(u'Alternative text'))
+        for federation in self.federations.all():
+            if federation.can_edit(user, False):
+                return True
 
-    entity = models.ForeignKey(Entity, blank=False,
-                        verbose_name=_('Entity'))
-
-    def __unicode__(self):
-        return self.alt or u"logo %i" % self.id
-
+        return False
 
 class EntityStat(models.Model):
     time = models.DateTimeField(blank=False, null=False, 
@@ -472,7 +640,7 @@ def federation_pre_save(sender, instance, **kwargs):
         return
 
     if instance.file_url:
-        instance.fetch_metadata_file()
+        instance.fetch_metadata_file(instance.slug)
     if instance.name:
         instance.slug = slugify(unicode(instance))[:200]
 
@@ -480,5 +648,6 @@ def federation_pre_save(sender, instance, **kwargs):
 @receiver(pre_save, sender=Entity, dispatch_uid='entity_pre_save')
 def entity_pre_save(sender, instance, **kwargs):
     if instance.file_url:
-        instance.fetch_metadata_file()
+        slug = slugify(unicode(instance.name))[:200]
+        instance.fetch_metadata_file(slug)
         instance.process_metadata()

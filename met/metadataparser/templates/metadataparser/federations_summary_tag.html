@@ -4,7 +4,7 @@
 {% if federations %}
 {% export_summary_menu queryname %}
 {% endif %}
-{% if user.is_superuser %}
+{% if add_federation %}
 <a class="btn" href="{% url 'federation_add' %}">{% trans "Add federation" %}</a>
 {% endif %}
 </div>

@@ -1,5 +1,7 @@
 from django import template
 from django.template.base import Node, TemplateSyntaxError
+from django.template.defaultfilters import stringfilter
+from django.utils.safestring import mark_safe, SafeData
 from met.metadataparser.models import Federation
 from met.metadataparser.xmlparser import DESCRIPTOR_TYPES, DESCRIPTOR_TYPES_DISPLAY
 from met.metadataparser.query_export import export_modes
@@ -26,19 +28,28 @@ def federations_summary(context, queryname, federations=None):
     if not federations:
         federations = Federation.objects.all()
 
+    user = context.get('user', None)
+    add_federation = user and user.has_perm('metadataparser.add_federation')
+
     return {'federations': federations,
-            'user': context.get('user', None),
+            'add_federation': add_federation,
             'queryname': queryname,
             'entity_types': DESCRIPTOR_TYPES}
 
 
 @register.inclusion_tag('metadataparser/tag_entity_list.html', takes_context=True)
 def entity_list(context, entities, show_total=True, append_query=None):
-    return {'request': context.get('request', None),
+    request = context.get('request', None)
+    lang = 'en'
+    if request:
+        lang = request.GET.get('lang', 'en')
+
+    return {'request': request,
             'entities': entities,
             'show_filters': context.get('show_filters'),
             'append_query': append_query,
             'show_total': show_total,
+            'lang': lang,
             'entity_types': DESCRIPTOR_TYPES}
 
 
@@ -118,13 +129,30 @@ def entities_count(entity_qs, entity_type=None):
 
 
 @register.simple_tag(takes_context=True)
-def l10n_property(context, prop):
+def l10n_property(context, prop, lang):
     if isinstance(prop, dict):
-        lang = context.get('LANGUAGE_CODE', None)
+        if not lang:
+            lang = context.get('LANGUAGE_CODE', None)
         if lang and lang in prop:
             return prop.get(lang)
         else:
             return prop[prop.keys()[0]]
+    return prop
+
+
+
+@register.simple_tag(takes_context=True)
+def organization_property(context, organizations, prop, lang):
+    if isinstance(organizations, list):
+        if not lang:
+           lang = context.get('LANGUAGE_CODE', None)
+        if len(organizations) > 0:
+            for organization in organizations:
+                if organization['lang'] == lang:
+                    if prop in organization:
+                        return organization[prop]
+            if prop in organizations[0]:
+                return organizations[0][prop]
     return prop
 
 
@@ -186,7 +214,7 @@ class CanEdit(Node):
     def render(self, context):
         obj = self.obj.resolve(context, True)
         user = context.get('user')
-        if obj.can_edit(user):
+        if obj.can_edit(user, False):
             return self.nodelist.render(context)
         else:
             return ''
@@ -215,3 +243,10 @@ def canedit(parser, token):
         {% endcanedit %}
     """
     return do_canedit(parser, token)
+
+@register.filter
+@stringfilter
+def split(value, splitter='|'):
+    if not isinstance(value, SafeData):
+        value = mark_safe(value)
+    return value.split(splitter)

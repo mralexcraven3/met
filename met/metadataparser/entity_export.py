@@ -3,11 +3,11 @@ from xml.dom.minidom import Document
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
-from django.utils import simplejson as json
+import simplejson as json
 
 
 def export_entity_csv(entity):
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = ('attachment; filename=%s.csv'
                                        % slugify(entity))
     writer = csv.writer(response)
@@ -39,7 +39,7 @@ def export_entity_csv(entity):
 def export_entity_json(entity):
     # Return JS file to browser as download
     serialized = json.dumps(entity.to_dict())
-    response = HttpResponse(serialized, mimetype='application/json')
+    response = HttpResponse(serialized, content_type='application/json')
     response['Content-Disposition'] = ('attachment; filename=%s.json'
                                        % slugify(entity))
     return response
@@ -88,7 +88,7 @@ def export_entity_xml(entity):
     entity_xml = dict2xml({"Entity": entity.to_dict()})
 
     # Return XML file to browser as download
-    response = HttpResponse(str(entity_xml), mimetype='application/xml')
+    response = HttpResponse(str(entity_xml), content_type='application/xml')
     response['Content-Disposition'] = ('attachment; filename=%s.xml'
                                        % slugify(entity))
     return response

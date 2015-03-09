@@ -41,7 +41,7 @@ of IDP and SP can be bigger than the number of entities
       {{ entity.types|display_etype }}
     </td>
     <td>
-      {{ entity.displayName }}
+      {% l10n_property entity.name lang %}
     </td>
     <td>
     {% for federation in entity.federations.all %}

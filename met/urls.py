@@ -31,6 +31,9 @@ urlpatterns = patterns('',
     url(r'^error403.html$', 'met.portal.views.error403'),
     url(r'^error404.html$', 'met.portal.views.error404'),
     url(r'^error500.html$', 'met.portal.views.error500'),
+
+    # Uncomment the silk line below to enable Silk profiling tool pages:
+    # url(r'^silk/', include('silk.urls', namespace='silk')),
 )
 
 handler403 = 'met.portal.views.error403'

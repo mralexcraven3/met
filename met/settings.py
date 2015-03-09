@@ -29,6 +29,11 @@ TIME_ZONE = 'Europe/Rome'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
+LANGUAGES = (
+    ('en', 'English'),
+    ('it', 'Italian'),
+)
+
 SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
@@ -67,6 +72,8 @@ STATICFILES_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     os.path.join(BASEDIR, 'static'),
+    # Uncomment the following like if you want to use static files in Silk
+    # os.path.join(BASEDIR, 'static'),
 )
 
 # List of finder classes that know how to find static files in
@@ -91,15 +98,16 @@ TEMPLATE_LOADERS = (
 )
 
 MIDDLEWARE_CLASSES = (
+    # Uncomment the next line to profile django app with Silk:
+    # 'silk.middleware.SilkyMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'pagination.middleware.PaginationMiddleware',
-
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'pagination.middleware.PaginationMiddleware',
 )
 
 ROOT_URLCONF = 'met.urls'
@@ -118,11 +126,20 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'pagination',
+    # Uncomment the next line to enable Silk profiling tool:
+    # 'silk',
     'met.portal',
     'met.metadataparser',
     'djangosaml2',
     'chartit',
 )
+
+# Uncomment this options if you're using Silk
+SILKY_META = True
+SILKY_PYTHON_PROFILER = True
+# SILKY_AUTHENTICATION = True
+# SILKY_AUTHORISATION = True
+SILKY_INTERCEPT_PERCENT = 100
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -146,6 +163,11 @@ LOGGING = {
         },
     },
     'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
@@ -167,6 +189,10 @@ LOGGING = {
          'djangosaml2': {
              'handlers': ['saml2file'],
              'level': 'DEBUG',
+        },
+        'silk': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
         },
     }
 }
@@ -213,7 +239,6 @@ TEMPLATE_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     os.path.join(BASEDIR, 'met/metadataparser/templates'),
-    os.path.join(BASEDIR, 'met/portal/templates'),
 )
 
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'

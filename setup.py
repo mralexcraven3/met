@@ -62,6 +62,7 @@ setup(name='met',
           'django-chartit',
 	  'python-memcached==1.48',
           'simplejson',
+          'django-silk',
       ],
       entry_points="""
       # -*- Entry points: -*-

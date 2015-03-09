@@ -40,6 +40,11 @@ from met.metadataparser.entity_export import export_entity
 from met.metadataparser.xmlparser import DESCRIPTOR_TYPES
 from met.metadataparser.utils import sendMail
 
+if settings.PROFILE:
+    from silk.profiling.profiler import silk_profile as profile
+else:
+    from met.metadataparser.templatetags.decorators import noop_decorator as profile
+
 RESCUE_SLASH = re.compile(r"^(http(?:|s):/)([^/])")
 
 global currentTopLength
@@ -65,7 +70,7 @@ def decrement_current_toplength(request):
 
     return HttpResponseRedirect(reverse('index'))
     
-    
+@profile(name='Index page')
 def index(request):
     federations = Federation.objects.filter(is_interfederation=False)
 
@@ -107,6 +112,7 @@ def index(request):
            }, context_instance=RequestContext(request))
 
 
+@profile(name='Federation view')
 def federation_view(request, federation_slug=None):
     if federation_slug:
         request.session['%s_process_done' % federation_slug] = False
@@ -222,6 +228,7 @@ def federation_delete(request, federation_slug):
     return HttpResponseRedirect(reverse('index'))
 
 
+@profile(name='Index charts')
 def federation_charts(request, federation_slug=None):
     if federation_slug is None:
         federation = None
@@ -389,6 +396,7 @@ def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stac
     return cht
 
 
+@profile(name='Entity view')
 def entity_view(request, entityid):
     entityid = unquote(entityid)
     entityid = RESCUE_SLASH.sub("\\1/\\2", entityid)

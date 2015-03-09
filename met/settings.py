@@ -29,11 +29,6 @@ TIME_ZONE = 'Europe/Rome'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
-LANGUAGES = (
-    ('en', 'English'),
-    ('it', 'Italian'),
-)
-
 SITE_ID = 1
 
 # If you set this to False, Django will make some optimizations so as not
@@ -95,9 +90,8 @@ TEMPLATE_LOADERS = (
      #'django.template.loaders.eggs.Loader',
 )
 
-MIDDLEWARE_CLASSES = (
-    # Uncomment the next line to profile django app with Silk:
-    # 'silk.middleware.SilkyMiddleware',
+MIDDLEWARE_CLASSES = filter(None, (
+    'silk.middleware.SilkyMiddleware' if PROFILE else None,
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -106,14 +100,14 @@ MIDDLEWARE_CLASSES = (
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'pagination.middleware.PaginationMiddleware',
-)
+))
 
 ROOT_URLCONF = 'met.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'met.wsgi.application'
 
-INSTALLED_APPS = (
+INSTALLED_APPS = filter(None, (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -124,20 +118,19 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'pagination',
-    # Uncomment the next line to enable Silk profiling tool:
-    # 'silk',
+    'silk' if PROFILE else None,
     'met.portal',
     'met.metadataparser',
     'djangosaml2',
     'chartit',
-)
+))
 
-# Uncomment this options if you're using Silk
-#SILKY_META = True
-#SILKY_PYTHON_PROFILER = True
-#SILKY_INTERCEPT_PERCENT = 100
-## SILKY_AUTHENTICATION = True
-## SILKY_AUTHORISATION = True
+if PROFILE:
+    SILKY_META = True
+    SILKY_PYTHON_PROFILER = True
+    SILKY_INTERCEPT_PERCENT = 100
+    # SILKY_AUTHENTICATION = True
+    # SILKY_AUTHORISATION = True
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

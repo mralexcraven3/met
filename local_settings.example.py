@@ -15,8 +15,8 @@ HOSTNAME = 'https://met-hostname.example.com'
 BASEURL = '/'
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
-DEBUG = True
-#DEBUG = True
+DEBUG = False
+PROFILE = DEBUG
 TEMPLATE_DEBUG = DEBUG
 
 DATABASES = {

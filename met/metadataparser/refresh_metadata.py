@@ -27,6 +27,12 @@ from django.conf import settings
 from met.metadataparser.utils import compare_filecontents, sendMail
 from met.metadataparser.models import Federation
 
+if settings.PROFILE:
+    from silk.profiling.profiler import silk_profile as profile
+else:
+    from met.metadataparser.templatetags.decorators import noop_decorator as profile
+
+@profile(name='Metadata refresh')
 def refresh(fed_name=None, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 

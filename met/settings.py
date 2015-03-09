@@ -72,8 +72,6 @@ STATICFILES_DIRS = (
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     os.path.join(BASEDIR, 'static'),
-    # Uncomment the following like if you want to use static files in Silk
-    # os.path.join(BASEDIR, 'static'),
 )
 
 # List of finder classes that know how to find static files in
@@ -135,11 +133,11 @@ INSTALLED_APPS = (
 )
 
 # Uncomment this options if you're using Silk
-SILKY_META = True
-SILKY_PYTHON_PROFILER = True
-# SILKY_AUTHENTICATION = True
-# SILKY_AUTHORISATION = True
-SILKY_INTERCEPT_PERCENT = 100
+#SILKY_META = True
+#SILKY_PYTHON_PROFILER = True
+#SILKY_INTERCEPT_PERCENT = 100
+## SILKY_AUTHENTICATION = True
+## SILKY_AUTHORISATION = True
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -199,7 +197,7 @@ LOGGING = {
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
-#    'django.core.context_processors.debug',
+    # 'django.core.context_processors.debug',
     'django.core.context_processors.media',
     'django.core.context_processors.static',
     'django.core.context_processors.tz',

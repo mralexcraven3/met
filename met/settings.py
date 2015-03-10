@@ -167,23 +167,28 @@ LOGGING = {
         'saml2file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/tmp/djangosaml2.log',
+            'filename': '/var/log/djangosaml2.log',
             'formatter': 'verbose',
          }
     },
     'loggers': {
+       'django': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'INFO',
+        },
         'django.request': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': True,
         },
-         'djangosaml2': {
+        'djangosaml2': {
              'handlers': ['saml2file'],
-             'level': 'DEBUG',
+             'level': 'ERROR',
         },
         'silk': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'ERROR',
         },
     }
 }

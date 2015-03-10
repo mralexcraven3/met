@@ -145,7 +145,7 @@ def federation_view(request, federation_slug=None):
     else:
         entities = Entity.objects.filter(federations__id=federation.id)
 
-    entities = entities.prefetch_related('federations')
+    #entities = entities.prefetch_related('federations')
 
     if 'format' in request.GET:
         return export_query_set(request.GET.get('format'), entities,

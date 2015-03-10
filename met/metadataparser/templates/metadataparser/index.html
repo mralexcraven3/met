@@ -52,9 +52,9 @@
   </thead>
   <tbody>
     <tr>
-      <td>{% entities_count entities %}</td>
+      <td>{% get_fed_count counts 'All' %}</td>
       {% for etype in entity_types %}
-      <td class="entitytype">{% entities_count entities etype %}</td>
+      <td class="entitytype">{% get_fed_count counts 'All' etype %}</td>
       {% endfor %}
     </tr>
   </tbody>
@@ -82,13 +82,13 @@
 {% if interfederations %}
 <div class="summary">
 <h2 id="interfederationsummary">{% trans "Interfederations summary" %}</h2>
-{% federations_summary "interfederations" interfederations %}
+{% federations_summary "interfederations" counts interfederations %}
 </div>
 {% endif %}
 
 <div class="summary">
 <h2 id="federationssummary">{% trans "Federations summary" %}</h2>
-{% federations_summary "federations" federations %}
+{% federations_summary "federations" counts federations %}
 </div>
 
 <p class="text-muted">

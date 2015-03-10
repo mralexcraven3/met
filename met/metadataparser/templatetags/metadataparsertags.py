@@ -24,7 +24,7 @@ def bootstrap_searchform(form):
 
 
 @register.inclusion_tag('metadataparser/federations_summary_tag.html', takes_context=True)
-def federations_summary(context, queryname, federations=None):
+def federations_summary(context, queryname, counts, federations=None):
     if not federations:
         federations = Federation.objects.all()
 
@@ -34,6 +34,7 @@ def federations_summary(context, queryname, federations=None):
     return {'federations': federations,
             'add_federation': add_federation,
             'queryname': queryname,
+            'counts': counts,
             'entity_types': DESCRIPTOR_TYPES}
 
 
@@ -128,6 +129,17 @@ def entities_count(entity_qs, entity_type=None):
         return entity_qs.count()
 
 
+@register.simple_tag()
+def get_fed_count(counts, federation='All', entity_type='All'):
+    count = counts[entity_type]
+
+    fed_count = 0
+    for curcount in count:
+        if federation == 'All' or curcount['federations__id'] == federation:
+            fed_count += curcount['federations__id__count']
+    return fed_count
+
+
 @register.simple_tag(takes_context=True)
 def l10n_property(context, prop, lang):
     if isinstance(prop, dict):
@@ -185,7 +197,8 @@ def active_url(context, pattern):
 @register.filter(name='display_etype')
 def display_etype(value, separator=', '):
     if hasattr(value, 'all'):
-        return separator.join([unicode(item) for item in value.all()])
+        #return separator.join([unicode(item) for item in value.all()])
+        return separator.join([unicode(item) for item in DESCRIPTOR_TYPES_DISPLAY.values()])
     else:
         if value in DESCRIPTOR_TYPES_DISPLAY:
             return DESCRIPTOR_TYPES_DISPLAY.get(value)

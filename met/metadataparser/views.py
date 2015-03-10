@@ -16,7 +16,7 @@ from datetime import datetime
 from dateutil import tz
 
 from django.conf import settings
-from django.db.models import Max
+from django.db.models import Max, Count
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
@@ -72,12 +72,27 @@ def decrement_current_toplength(request):
     
 @profile(name='Index page')
 def index(request):
-    federations = Federation.objects.filter(is_interfederation=False)
+    ff = Federation.objects.all()
+    federations = []
+    interfederations = []
+    for f in ff:
+        if f.is_interfederation:
+            interfederations.append(f)
+        else:
+            federations.append(f)
 
-    interfederations = Federation.objects.filter(is_interfederation=True)
+    cc = Entity.objects.values('federations__id', 'types__xmlname').annotate(Count('federations__id'), Count('types__xmlname'))
+    counts = {}
+    for curtype in DESCRIPTOR_TYPES:
+        counts[curtype] = []
+        for c in cc:
+            if c['types__xmlname'] == curtype:
+                counts[curtype].append(c)
+    counts['All'] = Entity.objects.values('federations__id').annotate(Count('federations__id'))
 
     # Entities with count how many federations belongs to, and sorted by most first
     most_federated_entities = Entity.get_most_federated_entities(maxlength=currentTopLength, cache_expire=(24 * 60 * 60))
+    most_federated_entities = most_federated_entities.prefetch_related('federations')
 
     export = request.GET.get('export', None)
     format = request.GET.get('format', None)
@@ -101,13 +116,13 @@ def index(request):
                                 'most_federated_entities', ('', 'types', 'displayName', 'federations', 'federationsCount'))
         else:
             return HttpResponseBadRequest('Not valid export query')
-
+    
     return render_to_response('metadataparser/index.html', {
            'interfederations': interfederations,
            'federations': federations,
-           'entities': Entity.objects.all(),
            'entity_types': DESCRIPTOR_TYPES,
            'federation_path': request.path,
+           'counts': counts,
            'most_federated_entities': most_federated_entities,
            }, context_instance=RequestContext(request))
 
@@ -129,6 +144,8 @@ def federation_view(request, federation_slug=None):
         entities = Entity.objects.filter(entityid__in=entities_id)
     else:
         entities = Entity.objects.filter(federations__id=federation.id)
+
+    entities = entities.prefetch_related('federations')
 
     if 'format' in request.GET:
         return export_query_set(request.GET.get('format'), entities,
@@ -400,6 +417,7 @@ def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stac
 def entity_view(request, entityid):
     entityid = unquote(entityid)
     entityid = RESCUE_SLASH.sub("\\1/\\2", entityid)
+
     entity = get_object_or_404(Entity, entityid=entityid)
 
     if 'format' in request.GET:

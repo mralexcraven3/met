@@ -30,6 +30,14 @@ DATABASES = {
     }
 }
 
+MYSQLPOOL_BACKEND = 'QueuePool'
+
+MYSQLPOOL_ARGUMENTS = {
+    'use_threadlocal': False,
+    'pool_size': 5,
+    'max_overflow': 10,
+}
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )

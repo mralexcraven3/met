@@ -9,7 +9,6 @@
 #########################################################################################
 
 import requests
-import logging
 import simplejson as json
 
 from os import path
@@ -591,8 +590,6 @@ class Entity(Base):
         if not entities or entities.count() != maxlength:
             # Entities with count how many federations belongs to, and sorted by most first
             entities = Entity.objects.all().annotate(federationslength=Count("federations")).order_by("-federationslength")[:maxlength]
-            logger = logging.getLogger("silk")
-            logger.error("----> %s" % entities)
 
         if cache_expire:
             cache = get_cache("default")

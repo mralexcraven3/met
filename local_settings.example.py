@@ -36,6 +36,12 @@ ADMINS = (
 
 INTERNAL_IPS = ('192.168.122.1',)
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
 SAML_CREATE_UNKNOWN_USER = True
 
 SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'username'

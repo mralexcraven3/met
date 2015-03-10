@@ -209,12 +209,6 @@ PAGE_LENGTH = 25
 
 TOP_LENGTH = 3
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-    }
-}
-
 SAML_CREATE_UNKNOWN_USER = True
 
 SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'email'

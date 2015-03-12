@@ -21,7 +21,7 @@ of IDP and SP can be bigger than the number of entities
 {% if pagination %}
 <div class="pagination">
     <ul>
-        <li class="{% if pagination.cur_page_number == 1 %}active{% endif %}"><a href="?page=1">{% trans "First" %}</a></li>
+        <li class="{% if pagination.cur_page_number == 1 %}active{% endif %}"><a href="?page=1">&laquo;</a></li>
 
         {% for page in pagination.page_range %}
             {% if forloop.first and page != 1 %}
@@ -35,7 +35,7 @@ of IDP and SP can be bigger than the number of entities
             {% endif %}
         {% endfor %}
 
-        <li class="{% if pagination.cur_page_number == pagination.num_pages %}active{% endif %}"><a href="?page={{ pagination.num_pages }}">{% trans "Last" %}</a></li>
+        <li class="{% if pagination.cur_page_number == pagination.num_pages %}active{% endif %}"><a href="?page={{ pagination.num_pages }}">&raquo;</a></li>
     </ul>
 </div>
 {% endif %}

@@ -599,7 +599,7 @@ class Entity(Base):
             cache = get_cache("default")
             entities = cache.get("most_federated_entities")
 
-        if not entities or len(entities) != maxlength:
+        if not entities or len(entities) < maxlength:
             # Entities with count how many federations belongs to, and sorted by most first
             ob_entities = Entity.objects.all().annotate(federationslength=Count("federations")).order_by("-federationslength")[:maxlength]
 
@@ -617,7 +617,7 @@ class Entity(Base):
             cache = get_cache("default")
             cache.set("most_federated_entities", entities, cache_expire)
 
-        return entities
+        return entities[:maxlength]
 
     def get_absolute_url(self):
         return reverse('entity_view', args=[quote_plus(self.entityid)])

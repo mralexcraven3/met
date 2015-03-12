@@ -2,12 +2,13 @@
 
 NAME="met"                                        # Name of the application
 DJANGODIR=/opt/met                                # Django project directory
-SOCKFILE=/tmp/gunicorn.sock                   # we will communicte using this unix socket
+SOCKFILE=/run/met/gunicorn.sock                   # we will communicte using this unix socket
 USER=www-data                                     # the user to run as
 GROUP=www-data                                    # the group to run as
 NUM_WORKERS=3                                     # how many worker processes should Gunicorn spawn
 DJANGO_SETTINGS_MODULE=met.settings               # which settings file should Django use
 DJANGO_WSGI_MODULE=met.wsgi                       # WSGI module name
+TIMEOUT=900
 
 echo "Starting $NAME as `whoami`"
 
@@ -28,5 +29,6 @@ exec ../met-venv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
   --workers $NUM_WORKERS \
   --user=$USER --group=$GROUP \
   --bind=unix:$SOCKFILE \
+  --timeout $TIMEOUT \
   --log-level=error \
   --log-file=-

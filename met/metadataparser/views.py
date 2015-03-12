@@ -48,27 +48,24 @@ else:
 
 RESCUE_SLASH = re.compile(r"^(http(?:|s):/)([^/])")
 
-global currentTopLength
-
-if not 'currentTopLength' in globals():
-    currentTopLength = TOP_LENGTH
-
 def increment_current_toplength(request):
-    global currentTopLength
+    currentTopLength = request.session.get('currentTopLength', TOP_LENGTH)
     currentTopLength += TOP_LENGTH
 
     if currentTopLength > Entity.objects.all().count():
         currentTopLength -= TOP_LENGTH
 
+    request.session['currentTopLength'] = currentTopLength
     return HttpResponseRedirect(reverse('index'))
     
 def decrement_current_toplength(request):
-    global currentTopLength
+    currentTopLength = request.session.get('currentTopLength', TOP_LENGTH)
     currentTopLength -= TOP_LENGTH
 
     if currentTopLength <= 0:
         currentTopLength = TOP_LENGTH
 
+    request.session['currentTopLength'] = currentTopLength
     return HttpResponseRedirect(reverse('index'))
     
 @profile(name='Index page')
@@ -92,6 +89,7 @@ def index(request):
     counts['All'] = Entity.objects.values('federations__id').annotate(Count('federations__id'))
 
     # Entities with count how many federations belongs to, and sorted by most first
+    currentTopLength = request.session.get('currentTopLength', TOP_LENGTH)
     most_federated_entities = Entity.get_most_federated_entities(maxlength=currentTopLength, cache_expire=(24 * 60 * 60))
 
     export = request.GET.get('export', None)

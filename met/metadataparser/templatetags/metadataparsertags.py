@@ -39,7 +39,7 @@ def federations_summary(context, queryname, counts, federations=None):
 
 
 @register.inclusion_tag('metadataparser/tag_entity_list.html', takes_context=True)
-def entity_list(context, entities, show_total=True, append_query=None):
+def entity_list(context, entities, pagination=None, show_total=True, append_query=None):
     request = context.get('request', None)
     lang = 'en'
     if request:
@@ -51,6 +51,7 @@ def entity_list(context, entities, show_total=True, append_query=None):
             'append_query': append_query,
             'show_total': show_total,
             'lang': lang,
+            'pagination': pagination,
             'entity_types': DESCRIPTOR_TYPES}
 
 
@@ -196,9 +197,10 @@ def active_url(context, pattern):
 
 @register.filter(name='display_etype')
 def display_etype(value, separator=', '):
-    if hasattr(value, 'all'):
-        #return separator.join([unicode(item) for item in value.all()])
-        return separator.join([unicode(item) for item in DESCRIPTOR_TYPES_DISPLAY.values()])
+    if isinstance(value, list):
+        return separator.join(value)
+    elif hasattr(value, 'all'):
+        return separator.join([unicode(item) for item in value.all()])
     else:
         if value in DESCRIPTOR_TYPES_DISPLAY:
             return DESCRIPTOR_TYPES_DISPLAY.get(value)

@@ -20,6 +20,7 @@ from django.db.models import Max, Count
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render_to_response, get_object_or_404
@@ -92,7 +93,6 @@ def index(request):
 
     # Entities with count how many federations belongs to, and sorted by most first
     most_federated_entities = Entity.get_most_federated_entities(maxlength=currentTopLength, cache_expire=(24 * 60 * 60))
-    most_federated_entities = most_federated_entities.prefetch_related('federations')
 
     export = request.GET.get('export', None)
     format = request.GET.get('format', None)
@@ -140,12 +140,40 @@ def federation_view(request, federation_slug=None):
     entity_type = None
     if (request.GET and 'entity_type' in request.GET):
         entity_type = request.GET['entity_type']
-        entities_id = federation._metadata.entities_by_type(entity_type)
-        entities = Entity.objects.filter(entityid__in=entities_id)
+        ob_entities = Entity.objects.filter(types__xmlname=entity_type)
     else:
-        entities = Entity.objects.filter(federations__id=federation.id)
+        ob_entities = Entity.objects.filter(federations__id=federation.id)
+    
+    ob_entities = ob_entities.prefetch_related('types', 'federations')
+    paginator = Paginator(ob_entities, 20)
 
-    #entities = entities.prefetch_related('federations')
+    try:
+        ob_entities = paginator.page(request.GET.get('page'))
+    except PageNotAnInteger:
+        ob_entities = paginator.page(1)
+    except EmptyPage:
+        ob_entities = paginator.page(paginator.num_pages)
+
+    adjacent_pages = 5
+    page_range = [n for n in \
+                  range(ob_entities.number - adjacent_pages, ob_entities.number + adjacent_pages + 1) \
+                  if n > 0 and n <= ob_entities.paginator.num_pages]
+
+    pagination = {
+        'page_range': page_range,
+        'cur_page_number': ob_entities.number,
+        'num_pages': ob_entities.paginator.num_pages,
+    }
+
+    entities = []
+    for entity in ob_entities:
+        entities.append({
+            'entityid': entity.entityid,
+            'name': entity.name,
+            'absolute_url': entity.get_absolute_url(),
+            'types': [unicode(item) for item in entity.types.all()],
+            'federations': [(unicode(item.name), item.get_absolute_url()) for item in entity.federations.all()],
+        })
 
     if 'format' in request.GET:
         return export_query_set(request.GET.get('format'), entities,
@@ -167,6 +195,7 @@ def federation_view(request, federation_slug=None):
              'lang': request.GET.get('lang', 'en'),
              'update_entities': request.GET.get('update', 'false'),
              'statcharts': [pie_chart],
+             'pagination': pagination,
             }, context_instance=context)
 
 

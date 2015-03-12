@@ -10,7 +10,6 @@
 
 from lxml import etree
 
-
 NAMESPACES = {
     'xml': 'http://www.w3.org/XML/1998/namespace',
     'xs': 'xs="http://www.w3.org/2001/XMLSchema',
@@ -63,25 +62,89 @@ ENTITY_ROOT_TAG = addns('EntityDescriptor')
 
 
 class MetadataParser(object):
+    def __init__(self, filename=None):
+        if filename is None:
+            raise ValueError('filename is required')
 
-    def __init__(self, filename=None, data=None):
-        if filename:
-            try:
-                etree_parser = etree.parse(filename)
-            except etree.XMLSyntaxError:
-                raise ValueError('invalid metadata XML')
-        elif data:
-            try:
-                etree_parser = etree.XML(data)
-            except etree.XMLSyntaxError:
-                raise ValueError('invalid metadata XML')
-        else:
-            raise ValueError('filename or data are required')
-
-        self.etree = etree_parser.getroot()
-        self.file_id = self.etree.get('ID', None)
-        self.is_federation = (self.etree.tag == FEDERATION_ROOT_TAG)
+        self.filename = filename
+        context = etree.iterparse(self.filename, events=('start',))
+        context = iter(context)
+        event, self.rootelem = context.next()
+        self.file_id = self.rootelem.get('ID', None)
+        self.is_federation = (self.rootelem.tag == FEDERATION_ROOT_TAG)
         self.is_entity = not self.is_federation
+
+    def _get_entity_by_id(self, context, entityid):
+        for event, element in context:
+            if element.attrib['entityID'] == entityid:
+                entity_attrs = (('entityid', 'entityID'), ('file_id', 'ID'))
+                lang_seen = []
+                entity = {}
+                for (dict_attr, etree_attr) in entity_attrs:
+                   entity[dict_attr] = element.get(etree_attr, None)
+                entity['xml'] = etree.tostring(element, pretty_print=True)
+
+                entity_types = self.entity_types(element)
+                e_type = None
+                if entity_types:
+                    entity['entity_types'] = entity_types
+                    e_type = entity_types[0]
+                displayName = self.entity_displayname(element)
+                if displayName:
+                    entity['displayName'] = displayName
+                    for lang in displayName.keys():
+                        if not lang in lang_seen:
+                            lang_seen.append(lang)
+                description = self.entity_description(element)
+                if description:
+                    entity['description'] = description
+                    for lang in description.keys():
+                        if not lang in lang_seen:
+                            lang_seen.append(lang)
+                info_url = self.entity_information_url(element)
+                if info_url:
+                    entity['infoUrl'] = info_url
+                    for lang in info_url.keys():
+                        if not lang in lang_seen:
+                            lang_seen.append(lang)
+                privacy_url = self.entity_privacy_url(element)
+                if privacy_url:
+                    entity['privacyUrl'] = privacy_url
+                    for lang in privacy_url.keys():
+                        if not lang in lang_seen:
+                            lang_seen.append(lang)
+                protocols = self.entity_protocols(element, e_type)
+                if protocols:
+                    entity['protocols'] = protocols
+                organization = self.entity_organization(element)
+                if organization:
+                    entity['organization'] = organization
+                    for lang in organization.keys():
+                        if not lang in lang_seen:
+                            lang_seen.append(lang)
+                logos = self.entity_logos(element)
+                if logos:
+                    entity['logos'] = logos
+                reg_info = self.registration_information(element)
+                if reg_info and 'authority' in reg_info:
+                   entity['registration_authority'] = reg_info['authority']
+                if reg_info and 'instant' in reg_info:
+                   entity['registration_instant'] = reg_info['instant']
+                entity['languages'] = lang_seen
+                scopes = self.entity_attribute_scope(element)
+                if scopes:
+                    entity['scopes'] = scopes
+                attr_requested = self.entity_requested_attributes(element)
+                if attr_requested:
+                    entity['attr_requested'] = attr_requested
+                contacts = self.entity_contacts(element)
+                if contacts:
+                    entity['contacts'] = contacts
+                yield entity
+            element.clear()
+            while element.getprevious() is not None:
+                del element.getparent()[0]
+        del context
 
     def get_federation(self, attrs=None):
         assert self.is_federation
@@ -89,91 +152,37 @@ class MetadataParser(object):
         federation = {}
 
         for attr in federation_attrs:
-            federation[attr] = self.etree.get(attr, None)
+            federation[attr] = self.rootelem.get(attr, None)
 
         return federation
 
     def get_entity(self, entityid):
-        entity_xpath = self.etree.xpath("//md:EntityDescriptor[@entityID='%s']"
-                                         % entityid, namespaces=NAMESPACES)
-        if len(entity_xpath):
-            entity_etree = entity_xpath[0]
-        else:
-            raise ValueError("Entity not found: %s" % entityid)
+        context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',))
 
-        entity_attrs = (('entityid', 'entityID'), ('file_id', 'ID'))
-        lang_seen = []
-        entity = {}
-        for (dict_attr, etree_attr) in entity_attrs:
-           entity[dict_attr] = entity_etree.get(etree_attr, None)
-        entity['xml'] = etree.tostring(entity_etree, pretty_print=True)
+        element = None
+        for element in self._get_entity_by_id(context, entityid):
+            return element
 
-        entity_types = self.entity_types(entity_etree)
-        e_type = None
-        if entity_types:
-            entity['entity_types'] = entity_types
-            e_type = entity_types[0]
-        displayName = self.entity_displayname(entity_etree)
-        if displayName:
-            entity['displayName'] = displayName
-            for lang in displayName.keys():
-                if not lang in lang_seen:
-                    lang_seen.append(lang)
-        description = self.entity_description(entity_etree)
-        if description:
-            entity['description'] = description
-            for lang in description.keys():
-                if not lang in lang_seen:
-                    lang_seen.append(lang)
-        info_url = self.entity_information_url(entity_etree)
-        if info_url:
-            entity['infoUrl'] = info_url
-            for lang in info_url.keys():
-                if not lang in lang_seen:
-                    lang_seen.append(lang)
-        privacy_url = self.entity_privacy_url(entity_etree)
-        if privacy_url:
-            entity['privacyUrl'] = privacy_url
-            for lang in privacy_url.keys():
-                if not lang in lang_seen:
-                    lang_seen.append(lang)
-        protocols = self.entity_protocols(entity_etree, e_type)
-        if protocols:
-            entity['protocols'] = protocols
-        organization = self.entity_organization(entity_etree)
-        if organization:
-            entity['organization'] = organization
-            for lang in organization.keys():
-                if not lang in lang_seen:
-                    lang_seen.append(lang)
-        logos = self.entity_logos(entity_etree)
-        if logos:
-            entity['logos'] = logos
-        reg_info = self.registration_information(entity_etree)
-        if reg_info and 'authority' in reg_info:
-           entity['registration_authority'] = reg_info['authority']
-        if reg_info and 'instant' in reg_info:
-           entity['registration_instant'] = reg_info['instant']
-        entity['languages'] = lang_seen
-        scopes = self.entity_attribute_scope(entity_etree)
-        if scopes:
-            entity['scopes'] = scopes
-        attr_requested = self.entity_requested_attributes(entity_etree)
-        if attr_requested:
-            entity['attr_requested'] = attr_requested
-        contacts = self.entity_contacts(entity_etree)
-        if contacts:
-            entity['contacts'] = contacts
-        return entity
+        raise ValueError("Entity not found: %s" % entityid)
 
     def entity_exist(self, entityid):
-        entity_xpath = self.etree.xpath("//md:EntityDescriptor[@entityID='%s']"
+        entity_xpath = self.rootelem.xpath("//md:EntityDescriptor[@entityID='%s']"
                                          % entityid, namespaces=NAMESPACES)
         return (len(entity_xpath) > 0)
 
+    def _get_entities_id(self, context):
+        for event, element in context:
+            yield element.attrib['entityID']
+            element.clear()
+            while element.getprevious() is not None:
+                del element.getparent()[0]
+        del context
+
     def get_entities(self):
         # Return entityid list
-        return self.etree.xpath("//@entityID")
+        context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',))
+        return self._get_entities_id(context)
+        #return self.rootelem.xpath("//@entityID")
 
     def entity_types(self, entity):
         expression = ("|".join([desc for desc in DESCRIPTOR_TYPES_UTIL]))
@@ -181,18 +190,6 @@ class MetadataParser(object):
         elements = entity.xpath(expression, namespaces=NAMESPACES)
         types = [element.tag.split("}")[1] for element in elements]
         return types
-
-    def entities_by_type(self, entity_type):
-        return self.etree.xpath("//md:EntityDescriptor[md:%s]/@entityID"
-                                % entity_type, namespaces=NAMESPACES)
-
-    def count_entities_by_type(self, entity_type):
-        return int(self.etree.xpath("count(//md:EntityDescriptor[md:%s])" %
-                               entity_type, namespaces=NAMESPACES))
-
-    def count_entities(self):
-        return int(self.etree.xpath("count(//md:EntityDescriptor)",
-                                namespaces=NAMESPACES))
 
     def entity_protocols(self, entity, entity_type='IDPSSODescriptor'):
         raw_protocols = entity.xpath("./md:%s"

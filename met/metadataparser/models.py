@@ -124,6 +124,9 @@ class Base(models.Model):
     file_id = models.CharField(blank=True, null=True, max_length=500,
                                verbose_name=_(u'File ID'))
 
+    registration_authority = models.CharField(verbose_name=_('Registration Authority'),
+                                              max_length=200, blank=True, null=True)
+
     editor_users = models.ManyToManyField(User, null=True, blank=True,
                                           verbose_name=_('editor users'))
 
@@ -137,11 +140,12 @@ class Base(models.Model):
         return self.url or u"Metadata %s" % self.id
 
     def load_file(self):
-        """Only load file and parse it, don't create/update any objects"""
-        if not self.file:
-            return None
-        metadata = MetadataParser(filename=self.file.path)
-        return metadata
+        if not hasattr(self, '_loaded_file'):
+            """Only load file and parse it, don't create/update any objects"""
+            if not self.file:
+                return None
+            self._loaded_file = MetadataParser(filename=self.file.path)
+        return self._loaded_file
 
     def fetch_metadata_file(self, file_name):
         req = requests.get(self.file_url)
@@ -225,7 +229,7 @@ class Federation(Base):
                 if request and not entity.federations.exists():
                     messages.warning(request,
                         mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
-                                (entity.get_absolute_url(), entity.entityid))))
+                                   (entity.get_absolute_url(), entity.entityid))))
 
         if request and federation_slug:
             request.session['%s_num_entities' % federation_slug] = len(entities_from_xml)
@@ -350,7 +354,6 @@ class EntityType(models.Model):
 
 
 class Entity(Base):
-
     READABLE_PROTOCOLS = {
         'urn:oasis:names:tc:SAML:1.1:protocol': 'SAML 1.1',
         'urn:oasis:names:tc:SAML:2.0:protocol': 'SAML 2.0',
@@ -369,10 +372,6 @@ class Entity(Base):
 
     objects = models.Manager()
     longlist = EntityManager()
-
-    @property
-    def registration_authority(self):
-        return self._get_property('registration_authority')
 
     @property
     def registration_instant(self):
@@ -510,31 +509,40 @@ class Entity(Base):
         return self.entityid
 
     def load_metadata(self, federation=None, entity_data=None):
-        if not hasattr(self, '_entity_cached'):
-            if self.file:
-                self._entity_cached = self.load_file().get_entity(self.entityid)
-            elif federation:
-                self._entity_cached = federation.get_entity_metadata(self.entityid)
-            elif entity_data:
-                self._entity_cached = entity_data
-            else:
-                for federation in self.federations.all():
-                    try:
-                        entity_cached = federation.get_entity_metadata(self.entityid)
-                        if entity_cached and hasattr(self, '_entity_cached'):
-                            self._entity_cached.update(entity_cached)
-                        else:
-                            self._entity_cached = entity_cached
-                    except ValueError:
-                        continue
-            if not hasattr(self, '_entity_cached'):
-                raise ValueError("Can't find entity metadata")
+        if hasattr(self, '_entity_cached'):
+            return
 
-    def _get_property(self, prop, federation = None):
+        if self.file:
+            self._entity_cached = self.load_file().get_entity(self.entityid)
+        elif federation:
+            self._entity_cached = federation.get_entity_metadata(self.entityid)
+        elif entity_data:
+            self._entity_cached = entity_data
+        else:
+            right_fed = None
+            first_fed = None
+            for fed in self.federations.all():
+                if fed.registration_authority == self.registration_authority:
+                    right_fed = fed
+                if first_fed is None:
+                    first_fed = fed
+
+            if right_fed is not None:
+                entity_cached = right_fed.get_entity_metadata(self.entityid)
+                self._entity_cached = entity_cached
+            else:
+                entity_cached = first_fed.get_entity_metadata(self.entityid)
+                self._entity_cached = entity_cached
+
+        if not hasattr(self, '_entity_cached'):
+            raise ValueError("Can't find entity metadata")
+
+    def _get_property(self, prop, federation=None):
         try:
             self.load_metadata(federation)
         except ValueError:
             return None
+
         if hasattr(self, '_entity_cached'):
             return self._entity_cached.get(prop, None)
         else:
@@ -558,6 +566,7 @@ class Entity(Base):
                 if entity_type not in self.types.all():
                     self.types.add(entity_type)
             self.name = self._get_property('displayName')
+            self.registration_authority = self._get_property('registration_authority')
             self.save()
 
     def to_dict(self):
@@ -580,6 +589,9 @@ class Entity(Base):
 
         return entity
 
+    def display_etype(value, separator=', '):
+            return separator.join([unicode(item) for item in value.all()])
+
     @classmethod
     def get_most_federated_entities(self, maxlength=TOP_LENGTH, cache_expire=None):
         entities = None
@@ -587,9 +599,19 @@ class Entity(Base):
             cache = get_cache("default")
             entities = cache.get("most_federated_entities")
 
-        if not entities or entities.count() != maxlength:
+        if not entities or len(entities) != maxlength:
             # Entities with count how many federations belongs to, and sorted by most first
-            entities = Entity.objects.all().annotate(federationslength=Count("federations")).order_by("-federationslength")[:maxlength]
+            ob_entities = Entity.objects.all().annotate(federationslength=Count("federations")).order_by("-federationslength")[:maxlength]
+
+            entities = []
+            for entity in ob_entities:
+                entities.append({
+                    'entityid': entity.entityid,
+                    'name': entity.name,
+                    'absolute_url': entity.get_absolute_url(),
+                    'types': [unicode(item) for item in entity.types.all()],
+                    'federations': [(unicode(item.name), item.get_absolute_url()) for item in entity.federations.all()],
+                })
 
         if cache_expire:
             cache = get_cache("default")

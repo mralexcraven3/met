@@ -89,6 +89,10 @@
         <p><img alt="{{ federation }} logo" src="{{ MEDIA_URL }}{{ federation.logo }}"/></p>
     {% endif %}
 
+    {% if federation.registration_authority %}
+        <p>{% trans "Registration authority" %}: {{ federation.registration_authority }}</p>
+    {% endif %}
+
     {% if federation.url %}
         <p>{% trans "Federation external website" %}: <a href="{{ federation.url }}">{{ federation.url }}</a></p>
     {% endif %}
@@ -109,6 +113,6 @@
     {% endif %}
 </td></tr></table>
 
-{% entity_list entities %}
+{% entity_list entities pagination %}
 
 {% endblock %}

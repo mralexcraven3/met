@@ -56,7 +56,7 @@ def refresh(fed_name=None, logger=None):
                 federation.process_metadata()
     
                 log('Updating federation entities ...', logger, logging.DEBUG)
-                federation.process_metadata_entities(timestamp = timestamp)
+                federation.process_metadata_entities(timestamp=timestamp)
     
                 log('Updating federation file ...', logger, logging.DEBUG)
                 federation.save(update_fields = ['file'])
@@ -115,9 +115,7 @@ def purge(the_file, logger=None):
     file_root, file_ext = os.path.splitext(file_name)
     file_root = file_root.split('_', 1)[0]
 
-    print "%s" % file_root
     for fname in the_file.storage.listdir(dir_name)[1]:
-    	print "-> %s" % fname
         if fname.startswith(file_root) and fname != file_name:
             try:
                 log('Deleting old federation file: %s' % fname, logger, logging.DEBUG)

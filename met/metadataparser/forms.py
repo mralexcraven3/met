@@ -31,7 +31,7 @@ class FederationForm(forms.ModelForm):
 
     class Meta:
         model = Federation
-        fields = ['file_url', 'file', 'editor_users', 'name', 'url', 'logo', 'is_interfederation', 'type', 'fee_schedule_url']
+        fields = ['name', 'url', 'registration_authority', 'logo', 'is_interfederation', 'type', 'fee_schedule_url', 'file_url', 'file', 'editor_users']
 
 
 class EntityForm(forms.ModelForm):
@@ -46,7 +46,7 @@ class EntityForm(forms.ModelForm):
 
     class Meta:
         model = Entity
-        fields = ['file_url', 'file', 'editor_users']
+        fields = ['registration_authority', 'file_url', 'file', 'editor_users']
 
 class ChartForm(forms.Form):
     fromDate = forms.DateField(label=_(u'Start date'),

@@ -192,7 +192,7 @@ Logrotate configuration
 
 Logrotate can be configured to avoid the continuous growth of the refresh metadata script logging:
 
-.. code-block:: logrotate
+.. code-block:: javascript
 
    /var/log/met_refresh.log {
         rotate 7

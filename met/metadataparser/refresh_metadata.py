@@ -32,7 +32,6 @@ if settings.PROFILE:
 else:
     from met.metadataparser.templatetags.decorators import noop_decorator as profile
 
-@profile(name='Metadata refresh')
 def refresh(fed_name=None, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 

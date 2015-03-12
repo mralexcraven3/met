@@ -601,7 +601,9 @@ class Entity(Base):
 
         if not entities or len(entities) < maxlength:
             # Entities with count how many federations belongs to, and sorted by most first
-            ob_entities = Entity.objects.all().annotate(federationslength=Count("federations")).order_by("-federationslength")[:maxlength]
+            ob_entities = Entity.objects.all().annotate(federationslength=Count("federations")).order_by("-federationslength")
+            ob_entities = ob_entities.prefetch_related('types', 'federations')
+            ob_entities = ob_entities[:maxlength]
 
             entities = []
             for entity in ob_entities:

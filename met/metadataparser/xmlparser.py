@@ -181,8 +181,7 @@ class MetadataParser(object):
     def get_entities(self):
         # Return entityid list
         context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',))
-        return self._get_entities_id(context)
-        #return self.rootelem.xpath("//@entityID")
+        return list(self._get_entities_id(context))
 
     def entity_types(self, entity):
         expression = ("|".join([desc for desc in DESCRIPTOR_TYPES_UTIL]))

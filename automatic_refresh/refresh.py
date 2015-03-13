@@ -32,22 +32,20 @@ django.setup()
 
 class RefreshMetaData:
     def process(self, options):
-        fed_name = None
         fed_name = options.fed_name
-
-        logger = None
-        log_config = options.log
+        force_refresh = options.force_refresh
         
-        if log_config:
-            logging.config.fileConfig(log_config)
+        logger = None
+        if options.log:
+            logging.config.fileConfig(options.log)
             logger = logging.getLogger("Refresh")
     
-        refresh(fed_name, logger)
+        refresh(fed_name, force_refresh, logger)
 
 
 def commandlineCall(argv, ConvertClass=RefreshMetaData):
     optParser = OptionParser()
-    optParser.set_usage("refresh [--federation <fed_name>] [--log  <file>]")
+    optParser.set_usage("refresh [--federation <fed_name>] [--log  <file>] [--force-refresh]")
     
     optParser.add_option(
         "-l",
@@ -66,6 +64,14 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
         help="The federation to be updated (None for anyone)",
         default=None,
         metavar="FED")
+
+    optParser.add_option(
+        "-r",
+        "--force-refresh",
+        action="store_true",
+        dest="force_refresh",
+        help="Force refresh of metadata information (even if file has not changed)",
+        metavar="REF")
 
     (options, args) = optParser.parse_args()
     

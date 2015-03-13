@@ -74,7 +74,7 @@ class MetadataParser(object):
         self.is_federation = (self.rootelem.tag == FEDERATION_ROOT_TAG)
         self.is_entity = not self.is_federation
 
-    def _get_entity_by_id(self, context, entityid):
+    def _get_entity_by_id(self, context, entityid, details):
         for event, element in context:
             if element.attrib['entityID'] == entityid:
                 entity_attrs = (('entityid', 'entityID'), ('file_id', 'ID'))
@@ -95,51 +95,54 @@ class MetadataParser(object):
                     for lang in displayName.keys():
                         if not lang in lang_seen:
                             lang_seen.append(lang)
-                description = self.entity_description(element)
-                if description:
-                    entity['description'] = description
-                    for lang in description.keys():
-                        if not lang in lang_seen:
-                            lang_seen.append(lang)
-                info_url = self.entity_information_url(element)
-                if info_url:
-                    entity['infoUrl'] = info_url
-                    for lang in info_url.keys():
-                        if not lang in lang_seen:
-                            lang_seen.append(lang)
-                privacy_url = self.entity_privacy_url(element)
-                if privacy_url:
-                    entity['privacyUrl'] = privacy_url
-                    for lang in privacy_url.keys():
-                        if not lang in lang_seen:
-                            lang_seen.append(lang)
-                protocols = self.entity_protocols(element, e_type)
-                if protocols:
-                    entity['protocols'] = protocols
-                organization = self.entity_organization(element)
-                if organization:
-                    entity['organization'] = organization
-                    for lang in organization.keys():
-                        if not lang in lang_seen:
-                            lang_seen.append(lang)
-                logos = self.entity_logos(element)
-                if logos:
-                    entity['logos'] = logos
                 reg_info = self.registration_information(element)
                 if reg_info and 'authority' in reg_info:
                    entity['registration_authority'] = reg_info['authority']
-                if reg_info and 'instant' in reg_info:
-                   entity['registration_instant'] = reg_info['instant']
-                entity['languages'] = lang_seen
-                scopes = self.entity_attribute_scope(element)
-                if scopes:
-                    entity['scopes'] = scopes
-                attr_requested = self.entity_requested_attributes(element)
-                if attr_requested:
-                    entity['attr_requested'] = attr_requested
-                contacts = self.entity_contacts(element)
-                if contacts:
-                    entity['contacts'] = contacts
+
+                if details:
+                    description = self.entity_description(element)
+                    if description:
+                       entity['description'] = description
+                       for lang in description.keys():
+                            if not lang in lang_seen:
+                                lang_seen.append(lang)
+                    info_url = self.entity_information_url(element)
+                    if info_url:
+                        entity['infoUrl'] = info_url
+                        for lang in info_url.keys():
+                            if not lang in lang_seen:
+                                lang_seen.append(lang)
+                    privacy_url = self.entity_privacy_url(element)
+                    if privacy_url:
+                        entity['privacyUrl'] = privacy_url
+                        for lang in privacy_url.keys():
+                            if not lang in lang_seen:
+                                lang_seen.append(lang)
+                    protocols = self.entity_protocols(element, e_type)
+                    if protocols:
+                        entity['protocols'] = protocols
+                    organization = self.entity_organization(element)
+                    if organization:
+                        entity['organization'] = organization
+                        for lang in organization.keys():
+                            if not lang in lang_seen:
+                                lang_seen.append(lang)
+                    logos = self.entity_logos(element)
+                    if logos:
+                        entity['logos'] = logos
+                    if reg_info and 'instant' in reg_info:
+                       entity['registration_instant'] = reg_info['instant']
+                    entity['languages'] = lang_seen
+                    scopes = self.entity_attribute_scope(element)
+                    if scopes:
+                        entity['scopes'] = scopes
+                    attr_requested = self.entity_requested_attributes(element)
+                    if attr_requested:
+                        entity['attr_requested'] = attr_requested
+                    contacts = self.entity_contacts(element)
+                    if contacts:
+                        entity['contacts'] = contacts
+
                 yield entity
             element.clear()
             while element.getprevious() is not None:
@@ -156,11 +159,11 @@ class MetadataParser(object):
 
         return federation
 
-    def get_entity(self, entityid):
+    def get_entity(self, entityid, details=True):
         context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',))
 
         element = None
-        for element in self._get_entity_by_id(context, entityid):
+        for element in self._get_entity_by_id(context, entityid, details):
             return element
 
         raise ValueError("Entity not found: %s" % entityid)

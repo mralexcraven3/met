@@ -23,7 +23,7 @@ from django.core import validators
 from django.core.cache import get_cache
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import pre_save
 from django.db.models.query import QuerySet
@@ -219,45 +219,64 @@ class Federation(Base):
 
         update_obj(metadata.get_federation(), self)
 
-    def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
-        entities_from_xml = self._metadata.get_entities()
-
+    def _remove_deleted_entities(self, entities_from_xml):
+        entities_to_remove = []
         for entity in self.entity_set.all():
             """Remove entity relation if does not exist in metadata"""
-            if not self._metadata.entity_exist(entity.entityid):
-                self.entity_set.remove(entity)
-                if request and not entity.federations.exists():
-                    messages.warning(request,
-                        mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
-                                   (entity.get_absolute_url(), entity.entityid))))
+            if not entity.entityid in entities_from_xml:
+                entities_to_remove.append(entity)
 
-        if request and federation_slug:
-            request.session['%s_num_entities' % federation_slug] = len(entities_from_xml)
-            request.session['%s_cur_entities' % federation_slug] = 0
-            request.session['%s_process_done' % federation_slug] = False
-            request.session.save()
+        if len(entities_to_remove) > 0:
+            self.entity_set.remove(*entities_to_remove)
+
+            if request and not entity.federations.exists():
+                for entity in entities_to_remove:
+                    messages.warning(request,
+                                     mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
+                                     (entity.get_absolute_url(), entity.entityid))))
+
+    def _add_new_entities(self, entities, entities_from_xml, request, federation_slug):
+        db_entity_types = EntityType.objects.all()
+        cached_entity_types = { entity_type.xmlname: entity_type for entity_type in db_entity_types }
+
+        entities_to_add = []
+        entities_to_insert = []
+        entities_to_update = []
 
         for m_id in entities_from_xml:
             if request and federation_slug:
                 request.session['%s_cur_entities' % federation_slug] += 1
                 request.session.save()
 
-            try:
-                entity = self.get_entity(entityid=m_id)
-            except Entity.DoesNotExist:
+            if m_id in entities:
+                entity = entities[m_id]
+                entities_to_update.append(entity)
+            else:
                 try:
                     entity = Entity.objects.get(entityid=m_id)
-                    self.entity_set.add(entity)
+                    entities_to_update.append(entity)
                 except Entity.DoesNotExist:
                     entity = self.entity_set.create(entityid=m_id)
-            entity.process_metadata(self._metadata.get_entity(m_id))
+                    entities_to_insert.append(entity)
 
-        if request and federation_slug:
-            request.session['%s_process_done' % federation_slug] = True
-            request.session.save()
+            entity_from_xml = self._metadata.get_entity(m_id, True)
+            entity.process_metadata(False, entity_from_xml, cached_entity_types)
+            entities_to_add.append(entity)
 
+        if len(entities_to_insert) > 0:
+            Entity.objects.bulk_create(entities_to_insert)
+
+        transaction.set_autocommit(False)
+        for e in entities_to_update:
+            e.save()
+        transaction.set_autocommit(True)
+
+        self.entity_set.add(*entities_to_add)
+
+    def _compute_new_stats(self, timestamp):
+        entity_stats = []
         for feature in stats['features'].keys():
-            fun = getattr(self, 'get_%s' %feature, None)
+            fun = getattr(self, 'get_%s' % feature, None)
 
             if callable(fun):
                 stat = EntityStat()
@@ -265,9 +284,35 @@ class Federation(Base):
                 stat.time = timestamp
                 stat.federation = self
                 stat.value = fun(stats['features'][feature])
-            
-                stat.save()
-            
+                entity_stats.append(stat)
+
+        EntityStat.objects.bulk_create(entity_stats)
+
+    def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
+        entities_from_xml = self._metadata.get_entities()
+        self._remove_deleted_entities(entities_from_xml)
+
+        entities = {}
+        db_entities = Entity.objects.filter(entityid__in=entities_from_xml)
+        db_entities = db_entities.prefetch_related('types')
+
+        for entity in db_entities.all():
+            entities[entity.entityid] = entity
+
+        if request and federation_slug:
+            request.session['%s_num_entities' % federation_slug] = len(entities_from_xml)
+            request.session['%s_cur_entities' % federation_slug] = 0
+            request.session['%s_process_done' % federation_slug] = False
+            request.session.save()
+
+        self._add_new_entities(entities, entities_from_xml, request, federation_slug)
+
+        if request and federation_slug:
+            request.session['%s_process_done' % federation_slug] = True
+            request.session.save()
+
+        self._compute_new_stats(timestamp)
+
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])
     
@@ -548,7 +593,7 @@ class Entity(Base):
         else:
             raise ValueError("Not metadata loaded")
 
-    def process_metadata(self, entity_data=None):
+    def process_metadata(self, auto_save=True, entity_data=None, cached_entity_types=None):
         if not entity_data:
             self.load_metadata()
 
@@ -557,17 +602,30 @@ class Entity(Base):
 
         self._entity_cached = entity_data
         if self.xml_types:
+            cur_cached_types = [t.xmlname for t in self.types.all()]
+            entity_types = []
             for etype in self.xml_types:
-                try:
-                    entity_type = EntityType.objects.get(xmlname=etype)
-                except EntityType.DoesNotExist:
-                    entity_type = EntityType.objects.create(xmlname=etype,
-                                              name=DESCRIPTOR_TYPES_DISPLAY[etype])
-                if entity_type not in self.types.all():
-                    self.types.add(entity_type)
+                if etype in cur_cached_types:
+                   break
+
+                if cached_entity_types is None:
+                    entity_type, created = EntityType.objects.get_or_create(xmlname=etype,
+                                                                            name=DESCRIPTOR_TYPES_DISPLAY[etype])
+                else:
+                    if etype in cached_entity_types:
+                        entity_type = cached_entity_types[etype]
+                    else:
+                        entity_type = EntityType.objects.create(xmlname=etype,
+                                                                name=DESCRIPTOR_TYPES_DISPLAY[etype])
+                entity_types.append(entity_type)
+
+            if len(entity_types) > 0:
+                self.types.add(*entity_types)
+
             self.name = self._get_property('displayName')
             self.registration_authority = self._get_property('registration_authority')
-            self.save()
+            if auto_save:
+                self.save()
 
     def to_dict(self):
         self.load_metadata()

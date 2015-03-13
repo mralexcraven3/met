@@ -54,7 +54,7 @@ setup(name='met',
       install_requires=[
           'Django>=1.7',
           'MySQL-python',
-          'lxml==2.3.5',
+          'lxml>=2.3.5',
           'PIL',
           'requests>=1.0.0',
           'djangosaml2>=0.9.0',

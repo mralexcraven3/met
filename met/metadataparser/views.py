@@ -619,9 +619,19 @@ def search_service(request):
         return export_query_set(request.GET.get('format'), objects,
                                 'entities_search_result', ('', 'types', 'federations'))
 
+    entities = []
+    for entity in objects:
+        entities.append({
+            'entityid': entity.entityid,
+            'name': entity.name,
+            'absolute_url': entity.get_absolute_url(),
+            'types': [unicode(item) for item in entity.types.all()],
+            'federations': [(unicode(item.name), item.get_absolute_url()) for item in entity.federations.all()],
+        })
+
     return render_to_response('metadataparser/service_search.html',
         {'searchform': form,
-         'object_list': objects,
+         'object_list': entities,
          'show_filters': False,
         }, context_instance=RequestContext(request))
 

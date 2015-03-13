@@ -32,10 +32,12 @@ if settings.PROFILE:
 else:
     from met.metadataparser.templatetags.decorators import noop_decorator as profile
 
-def refresh(fed_name=None, logger=None):
+def refresh(fed_name=None, force_refresh=False, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 
     federations = Federation.objects.all()
+    federations.prefetch_related('etypes', 'federations')
+
     # All entries must have the same time stamp 
     timestamp = timezone.now()
     
@@ -48,7 +50,7 @@ def refresh(fed_name=None, logger=None):
             log('Refreshing metadata for federation %s ...'  % federation, logger, logging.INFO)
             error_msg, data_changed = fetch_metadata_file(federation, logger)
     
-            if not error_msg and data_changed:
+            if not error_msg and (force_refresh or data_changed):
                 log('Updating database ...', logger, logging.INFO)
     
                 log('Updating federation ...', logger, logging.DEBUG)
@@ -58,7 +60,7 @@ def refresh(fed_name=None, logger=None):
                 federation.process_metadata_entities(timestamp=timestamp)
     
                 log('Updating federation file ...', logger, logging.DEBUG)
-                federation.save(update_fields = ['file'])
+                federation.save(update_fields=['file'])
 
         except Exception, errorMessage:
             error_msg = errorMessage
@@ -73,7 +75,7 @@ def refresh(fed_name=None, logger=None):
                     from_address = mailConfigDict['from_email_address']
                     sendMail(from_address, subject, error_msg)
                 except Exception, errorMessage:
-                    log('Message could not be posted successfully: %s' %errorMessage, logger, logging.ERROR)
+                    log('Message could not be posted successfully: %s' % errorMessage, logger, logging.ERROR)
     
     log('Refreshing metadata terminated.', logger, logging.INFO)
 

@@ -10,11 +10,14 @@ DJANGO_SETTINGS_MODULE=met.settings               # which settings file should D
 DJANGO_WSGI_MODULE=met.wsgi                       # WSGI module name
 TIMEOUT=900
 
+VENV=../met-venv
+#VENV=../met-venv-pypy
+
 echo "Starting $NAME as `whoami`"
 
 # Activate the virtual environment
 cd $DJANGODIR
-source ../met-venv/bin/activate
+source $VENV/bin/activate
 export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
 export PYTHONPATH=$DJANGODIR:$PYTHONPATH
 
@@ -24,7 +27,7 @@ test -d $RUNDIR || mkdir -p $RUNDIR
 
 # Start your Django Unicorn
 # Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
-exec ../met-venv/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
+exec $VENV/bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
   --name $NAME \
   --workers $NUM_WORKERS \
   --user=$USER --group=$GROUP \

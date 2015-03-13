@@ -73,7 +73,7 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 try:
                     subject = mailConfigDict['refresh_subject'] %federation
                     from_address = mailConfigDict['from_email_address']
-                    sendMail(from_address, subject, error_msg)
+                    sendMail(from_address, subject, '%s' % error_msg)
                 except Exception, errorMessage:
                     log('Message could not be posted successfully: %s' % errorMessage, logger, logging.ERROR)
     

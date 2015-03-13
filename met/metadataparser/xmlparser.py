@@ -98,6 +98,9 @@ class MetadataParser(object):
                 reg_info = self.registration_information(element)
                 if reg_info and 'authority' in reg_info:
                    entity['registration_authority'] = reg_info['authority']
+                protocols = self.entity_protocols(element, e_type)
+                if protocols:
+                    entity['protocols'] = protocols
 
                 if details:
                     description = self.entity_description(element)
@@ -118,9 +121,6 @@ class MetadataParser(object):
                         for lang in privacy_url.keys():
                             if not lang in lang_seen:
                                 lang_seen.append(lang)
-                    protocols = self.entity_protocols(element, e_type)
-                    if protocols:
-                        entity['protocols'] = protocols
                     organization = self.entity_organization(element)
                     if organization:
                         entity['organization'] = organization

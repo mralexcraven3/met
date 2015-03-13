@@ -273,7 +273,7 @@ class Federation(Base):
 
         self.entity_set.add(*entities_to_add)
 
-    def _compute_new_stats(self, timestamp):
+    def _compute_new_stats(self, timestamp, entities):
         entity_stats = []
         for feature in stats['features'].keys():
             fun = getattr(self, 'get_%s' % feature, None)
@@ -283,7 +283,7 @@ class Federation(Base):
                 stat.feature = feature
                 stat.time = timestamp
                 stat.federation = self
-                stat.value = fun(stats['features'][feature])
+                stat.value = fun(entities, stats['features'][feature])
                 entity_stats.append(stat)
 
         EntityStat.objects.bulk_create(entity_stats)
@@ -311,41 +311,51 @@ class Federation(Base):
             request.session['%s_process_done' % federation_slug] = True
             request.session.save()
 
-        self._compute_new_stats(timestamp)
+        self._compute_new_stats(timestamp, entities.values())
 
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])
     
-    def get_sp(self, xml_name):
-        return self.entity_set.all().filter(types=EntityType.objects.get(xmlname=xml_name)).count()
-
-    def get_idp(self, xml_name):
-        return self.entity_set.all().filter(types=EntityType.objects.get(xmlname=xml_name)).count()
-
-    def get_sp_saml1(self, xml_name):
-        return self.get_stat_protocol(xml_name, 'SPSSODescriptor')
-
-    def get_sp_saml2(self, xml_name):
-        return self.get_stat_protocol(xml_name, 'SPSSODescriptor')
-
-    def get_sp_shib1(self, xml_name):
-        return self.get_stat_protocol(xml_name, 'SPSSODescriptor')
-
-    def get_idp_saml1(self, xml_name):
-        return self.get_stat_protocol(xml_name, 'IDPSSODescriptor')
-
-    def get_idp_saml2(self, xml_name):
-        return self.get_stat_protocol(xml_name, 'IDPSSODescriptor')
-
-    def get_idp_shib1(self, xml_name):
-        return self.get_stat_protocol(xml_name, 'IDPSSODescriptor')
-
-    def get_stat_protocol(self, xml_name, service_type):
+    def get_sp(self, entities, xml_name):
         count = 0
-        for entity in self.entity_set.all().filter(types=EntityType.objects.get(xmlname=service_type)):
-            if Entity.READABLE_PROTOCOLS.has_key(xml_name) and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols(self):
+        for entity in entities:
+            cur_cached_types = [t.xmlname for t in entity.types.all()]
+            if xml_name in cur_cached_types:
                 count += 1
-            
+        return count
+
+    def get_idp(self, entities, xml_name):
+        count = 0
+        for entity in entities:
+            cur_cached_types = [t.xmlname for t in entity.types.all()]
+            if xml_name in cur_cached_types:
+                count += 1
+        return count
+
+    def get_sp_saml1(self, entities, xml_name):
+        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor')
+
+    def get_sp_saml2(self, entities, xml_name):
+        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor')
+
+    def get_sp_shib1(self, entities, xml_name):
+        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor')
+
+    def get_idp_saml1(self, entities, xml_name):
+        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor')
+
+    def get_idp_saml2(self, entities, xml_name):
+        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor')
+
+    def get_idp_shib1(self, entities, xml_name):
+        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor')
+
+    def get_stat_protocol(self, entities, xml_name, service_type):
+        count = 0
+        for entity in entities:
+            cur_cached_types = [t.xmlname for t in entity.types.all()]
+            if service_type in cur_cached_types and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols(self):
+                count += 1
         return count
 
     def can_edit(self, user, delete):
@@ -491,7 +501,7 @@ class Entity(Base):
     def xml_types(self):
          return self._get_property('entity_types')
 
-    def display_protocols(self, federation = None):
+    def display_protocols(self, federation=None):
         protocols = []
         if self._get_property('protocols', federation):
             for proto in self._get_property('protocols', federation):

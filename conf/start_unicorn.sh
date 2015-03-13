@@ -1,8 +1,9 @@
 #!/bin/bash
 
-NAME="met"                                        # Name of the application
+NAME="met"                                        # name of the application
 DJANGODIR=/opt/met                                # Django project directory
-SOCKFILE=/run/met/gunicorn.sock                   # we will communicte using this unix socket
+SOCKDIR=/run/met                                  # path where to create sock file
+SOCKFILE=$SOCKDIR/gunicorn.sock                   # we will communicte using this unix socket
 USER=www-data                                     # the user to run as
 GROUP=www-data                                    # the group to run as
 NUM_WORKERS=3                                     # how many worker processes should Gunicorn spawn
@@ -12,6 +13,11 @@ TIMEOUT=900
 
 VENV=../met-venv
 #VENV=../met-venv-pypy
+
+if [ ! -d "$SOCKDIR" ]; then
+	mkdir $SOCKDIR
+	chown $USER.$GROUP $SOCKDIR
+fi
 
 echo "Starting $NAME as `whoami`"
 

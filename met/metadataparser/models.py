@@ -648,7 +648,7 @@ class Entity(Base):
         if self.registration_authority:
             entity["registration_authority"] = self.registration_authority
         if self.registration_instant:
-            entity["registration_instant"] = self.registration_instane
+            entity["registration_instant"] = '%s' % self.registration_instant
 
         if "file_id" in entity.keys():
             del entity["file_id"]

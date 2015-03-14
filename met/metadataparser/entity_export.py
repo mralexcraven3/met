@@ -5,6 +5,17 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
 import simplejson as json
 
+def _serialize_value_to_csv(value):
+    if type(value) is list:
+        vallist = [_serialize_value_to_csv(v) for v in value]
+        serialized = ", ".join(vallist)
+    elif type(value) is dict:
+        vallist = [_serialize_value_to_csv(v) for v in value.values()]
+        serialized = ", ".join(vallist)
+    else:
+        serialized = "%s" % value
+
+    return serialized
 
 def export_entity_csv(entity):
     response = HttpResponse(content_type='text/csv')
@@ -17,18 +28,7 @@ def export_entity_csv(entity):
     # Write data to CSV file
     row = []
     for (key, value) in edict.items():
-        if type(value) is list:
-            if len(value) > 0 and type(value[0]) == dict:
-                row.append(", ".join([v.values()[0] for v in value]))
-            else:
-                row.append(", ".join(value))
-        elif type(value) in (str, int):
-            row.append(value)
-        elif type(value) is unicode:
-            row.append(value.encode("ascii", "ignore"))
-        elif type(value) is dict:
-            row.append(", ".join(value.values()))
-
+        row.append(_serialize_value_to_csv(value))
     row_ascii = [v.encode("ascii", "ignore") for v in row]
 
     writer.writerow(row_ascii)

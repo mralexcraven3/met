@@ -219,7 +219,7 @@ class Federation(Base):
 
         update_obj(metadata.get_federation(), self)
 
-    def _remove_deleted_entities(self, entities_from_xml):
+    def _remove_deleted_entities(self, entities_from_xml, request):
         entities_to_remove = []
         for entity in self.entity_set.all():
             """Remove entity relation if does not exist in metadata"""
@@ -290,7 +290,7 @@ class Federation(Base):
 
     def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
         entities_from_xml = self._metadata.get_entities()
-        self._remove_deleted_entities(entities_from_xml)
+        self._remove_deleted_entities(entities_from_xml, request)
 
         entities = {}
         db_entities = Entity.objects.filter(entityid__in=entities_from_xml)

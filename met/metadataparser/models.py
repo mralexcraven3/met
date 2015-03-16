@@ -429,6 +429,10 @@ class Entity(Base):
     longlist = EntityManager()
 
     @property
+    def registration_authority_xml(self):
+        return self._get_property('registration_authority')
+
+    @property
     def registration_instant(self):
         return datetime.strptime(self._get_property('registration_instant'), '%Y-%m-%dT%H:%M:%SZ')
 

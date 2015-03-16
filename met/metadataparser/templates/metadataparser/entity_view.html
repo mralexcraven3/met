@@ -42,7 +42,7 @@
     </tr>
     <tr>
       <td class="first-col"><strong>{% trans "Registration policy" %}:</strong></td>
-      <td>{{ entity.registration_authority }}
+      <td>{{ entity.registration_authority_xml }}
       {% if entity.registration_instant %}
          <i>({% trans "since" %} {{ entity.registration_instant|date:"d/m/Y" }})</i></td>
       {% endif %}

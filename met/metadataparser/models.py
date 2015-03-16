@@ -633,7 +633,9 @@ class Entity(Base):
                 self.types.add(*entity_types)
 
             self.name = self._get_property('displayName')
-            self.registration_authority = self._get_property('registration_authority')
+            if str(self._get_property('registration_authority')) != '':
+                self.registration_authority = self._get_property('registration_authority')
+
             if auto_save:
                 self.save()
 

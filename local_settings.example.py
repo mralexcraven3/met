@@ -43,6 +43,7 @@ ADMINS = (
 )
 
 INTERNAL_IPS = ('192.168.122.1',)
+ALLOWED_HOSTS = ('met.mi.garr.it',)
 
 CACHES = {
     'default': {

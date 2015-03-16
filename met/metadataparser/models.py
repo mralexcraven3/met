@@ -256,7 +256,7 @@ class Federation(Base):
                     entity = Entity.objects.get(entityid=m_id)
                     entities_to_update.append(entity)
                 except Entity.DoesNotExist:
-                    entity = self.entity_set.create(entityid=m_id)
+                    entity = Entity(entityid=m_id)
                     entities_to_insert.append(entity)
 
             entity_from_xml = self._metadata.get_entity(m_id, True)

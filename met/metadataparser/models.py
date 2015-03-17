@@ -240,7 +240,6 @@ class Federation(Base):
         cached_entity_types = { entity_type.xmlname: entity_type for entity_type in db_entity_types }
 
         entities_to_add = []
-        entities_to_insert = []
         entities_to_update = []
 
         for m_id in entities_from_xml:
@@ -252,19 +251,12 @@ class Federation(Base):
                 entity = entities[m_id]
                 entities_to_update.append(entity)
             else:
-                try:
-                    entity = Entity.objects.get(entityid=m_id)
-                    entities_to_update.append(entity)
-                except Entity.DoesNotExist:
-                    entity = Entity(entityid=m_id)
-                    entities_to_insert.append(entity)
+                entity, created = Entity.objects.get_or_create(entityid=m_id)
+                entities_to_update.append(entity)
 
             entity_from_xml = self._metadata.get_entity(m_id, True)
             entity.process_metadata(False, entity_from_xml, cached_entity_types)
             entities_to_add.append(entity)
-
-        if len(entities_to_insert) > 0:
-            Entity.objects.bulk_create(entities_to_insert)
 
         transaction.set_autocommit(False)
         for e in entities_to_update:

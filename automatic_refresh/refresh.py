@@ -30,6 +30,36 @@ from met.metadataparser.refresh_metadata import refresh
 
 django.setup()
 
+class SingleRun():
+    class InstanceRunningException(Exception):
+        pass
+
+    def __init__(self, lock_file):
+        #define the lock file name
+        self.lock_file =  "/tmp/%s.pid" % lock_file
+
+    def __call__(self, func):
+        def f(*args, **kwargs):
+            if os.path.exists(self.lock_file):
+                #get process id, if lock file exists
+                pid = open(self.lock_file, "rt").read()
+                if not os.path.exists("/proc/%s" % pid):
+                    #if process is not alive remove the lock file
+                    os.unlink(self.lock_file)
+                else:
+                    #process is running
+                    raise self.InstanceRunningException(pid)
+
+            try:
+                #store process id
+                open(self.lock_file, "wt").write(str(os.getpid()))
+                #execute wrapped function
+                func(*args,**kwargs)
+            finally:
+                if os.path.exists(self.lock_file):
+                    os.unlink(self.lock_file)
+        return f
+
 class RefreshMetaData:
     def process(self, options):
         fed_name = options.fed_name
@@ -42,7 +72,7 @@ class RefreshMetaData:
     
         refresh(fed_name, force_refresh, logger)
 
-
+@SingleRun(lock_file="met-metadatarefresh")
 def commandlineCall(argv, ConvertClass=RefreshMetaData):
     optParser = OptionParser()
     optParser.set_usage("refresh [--federation <fed_name>] [--log  <file>] [--force-refresh]")

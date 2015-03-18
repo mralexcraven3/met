@@ -1,3 +1,15 @@
+#################################################################
+# MET v2 Metadate Explorer Tool
+#
+# This Software is Open Source. See License: https://github.com/TERENA/met/blob/master/LICENSE.md
+# Copyright (c) 2012, TERENA All rights reserved.
+#
+# This Software is based on MET v1 developed for TERENA by Yaco Sistemas, http://www.yaco.es/
+# MET v2 was developed for TERENA by Tamim Ziai, DAASI International GmbH, http://www.daasi.de
+# Current version of MET has been revised for performance improvements by Andrea Biancini,
+# Consortium GARR, http://www.garr.it
+#########################################################################################
+
 EDUCOURSE_OID = 'urn:oid:1.3.6.1.4.1.5923.1.6.1.'
 EDUPERSON_OID = 'urn:oid:1.3.6.1.4.1.5923.1.1.1.'
 LDAPGVAT_OID = 'urn:oid:1.2.40.0.10.2.1.1.' # ldap.gv.at definitions as specified in http://www.ref.gv.at/AG-IZ-PVP2-Version-2-1-0-2.2754.0.html

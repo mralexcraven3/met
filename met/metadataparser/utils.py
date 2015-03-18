@@ -20,6 +20,9 @@ def compare_filecontents(a, b):
 def sendMail(from_email_address, subject, message):
     mailConfigDict = getattr(settings, "MAIL_CONFIG")
     smtpSend = None
+
+    if mailConfigDict['email_server'] is None:
+        return
     
     try:
         if mailConfigDict['email_server_port']:

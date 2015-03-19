@@ -736,8 +736,9 @@ def federation_pre_save(sender, instance, **kwargs):
     if kwargs.has_key('update_fields') and kwargs['update_fields'] == set(['file']):
         return
 
+    slug = slugify(unicode(instance.name))[:200]
     if instance.file_url:
-        instance.fetch_metadata_file(instance.slug)
+        instance.fetch_metadata_file(slug)
     if instance.name:
         instance.slug = slugify(unicode(instance))[:200]
 

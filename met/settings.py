@@ -216,16 +216,6 @@ PAGE_LENGTH = 25
 
 TOP_LENGTH = 3
 
-SAML_CREATE_UNKNOWN_USER = True
-
-SAML_DJANGO_USER_MAIN_ATTRIBUTE = 'email'
-
-SAML_ATTRIBUTE_MAPPING = {
-    'mail': ('username', 'email', ),
-    'cn': ('first_name', ),
-    'sn': ('last_name', ),
-}
-
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.

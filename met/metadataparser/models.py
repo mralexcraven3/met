@@ -353,6 +353,9 @@ class Federation(Base):
         return count
 
     def can_edit(self, user, delete):
+        if user.is_superuser:
+            return True
+
         permission = 'delete_federation' if delete else 'change_federation'
         if user.has_perm('metadataparser.%s' % permission):
             if user in self.editor_users.all():
@@ -693,6 +696,9 @@ class Entity(Base):
         return reverse('entity_view', args=[quote_plus(self.entityid)])
 
     def can_edit(self, user, delete):
+        if user.is_superuser:
+            return True
+
         permission = 'delete_entity' if delete else 'change_entity'
         if user.has_perm('metadataparser.%s' % permission):
             if user in self.editor_users.all():

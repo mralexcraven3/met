@@ -11,6 +11,8 @@ DJANGO_SETTINGS_MODULE=met.settings               # which settings file should D
 DJANGO_WSGI_MODULE=met.wsgi                       # WSGI module name
 TIMEOUT=900
 
+export PYTHON_EGG_CACHE=/tmp/.python-eggs
+
 VENV=../met-venv
 #VENV=../met-venv-pypy
 

@@ -14,6 +14,8 @@ import sys, os
 import logging.config
 from optparse import OptionParser
 
+os.environ['PYTHON_EGG_CACHE'] = '/tmp/.python-eggs/'
+
 current_directory = os.path.join(os.path.dirname(__file__), '..')
 activate_this = os.path.join(current_directory, '..', 'met-venv/bin/activate_this.py')
 execfile(activate_this, dict(__file__=activate_this))

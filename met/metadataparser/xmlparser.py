@@ -84,13 +84,7 @@ class MetadataParser(object):
                 entity = {}
                 for (dict_attr, etree_attr) in entity_attrs:
                    entity[dict_attr] = element.get(etree_attr, None)
-                entity['xml'] = etree.tostring(element, pretty_print=True)
 
-                entity_types = self.entity_types(element)
-                e_type = None
-                if entity_types:
-                    entity['entity_types'] = entity_types
-                    e_type = entity_types[0]
                 displayName = self.entity_displayname(element)
                 if displayName:
                     entity['displayName'] = displayName
@@ -100,11 +94,18 @@ class MetadataParser(object):
                 reg_info = self.registration_information(element)
                 if reg_info and 'authority' in reg_info:
                    entity['registration_authority'] = reg_info['authority']
+                entity_types = self.entity_types(element)
+                e_type = None
+                if entity_types:
+                    entity['entity_types'] = entity_types
+                    e_type = entity_types[0]
                 protocols = self.entity_protocols(element, e_type)
                 if protocols:
                     entity['protocols'] = protocols
 
                 if details:
+                    entity['xml'] = etree.tostring(element, pretty_print=True)
+
                     description = self.entity_description(element)
                     if description:
                        entity['description'] = description

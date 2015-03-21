@@ -54,7 +54,8 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 federation.process_metadata()
     
                 log('Updating federation entities ...', logger, logging.DEBUG)
-                federation.process_metadata_entities(timestamp=timestamp)
+                removed, updated = federation.process_metadata_entities(timestamp=timestamp)
+                log('Removed %s old entities and updated %s entities.' % (removed, updated), logger, logging.INFO)
     
                 log('Updating federation file ...', logger, logging.DEBUG)
                 federation.save(update_fields=['file'])
@@ -82,7 +83,8 @@ def fetch_metadata_file(federation, logger=None):
         log('Federation has no URL configured.', logger, logging.INFO)
         return ('', False)
 
-    req = requests.get(file_url)
+    # Timeouts: 10 seconds for connect call, 120 seconds for total download
+    req = requests.get(file_url, timeout=(10, 120))
     if req.ok:
         if 400 <= req.status_code < 500:
             return ('%s Client Error: %s' % (req.status_code, req.reason), False)

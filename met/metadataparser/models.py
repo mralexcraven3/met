@@ -208,8 +208,8 @@ class Federation(Base):
 
     def process_metadata(self):
         metadata = self.load_file()
-        if (self.file_id and metadata.file_id and
-                metadata.file_id == self.file_id):
+
+        if self.file_id and metadata.file_id and metadata.file_id == self.file_id:
             return
         else:
             self.file_id = metadata.file_id
@@ -237,6 +237,8 @@ class Federation(Base):
                                      mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
                                      (entity.get_absolute_url(), entity.entityid))))
 
+        return len(entities_to_remove)
+
     def _add_new_entities(self, entities, entities_from_xml, request, federation_slug):
         db_entity_types = EntityType.objects.all()
         cached_entity_types = { entity_type.xmlname: entity_type for entity_type in db_entity_types }
@@ -249,15 +251,22 @@ class Federation(Base):
                 request.session['%s_cur_entities' % federation_slug] += 1
                 request.session.save()
 
+            created = False
             if m_id in entities:
                 entity = entities[m_id]
-                entities_to_update.append(entity)
             else:
                 entity, created = Entity.objects.get_or_create(entityid=m_id)
-                entities_to_update.append(entity)
 
+            entityid = entity.entityid
+            name = entity.name
+            registration_authority = entity.registration_authority
+ 
             entity_from_xml = self._metadata.get_entity(m_id, True)
             entity.process_metadata(False, entity_from_xml, cached_entity_types)
+
+            if created or entity.entityid != entityid or entity.name != name or entity.registration_authority != registration_authority:
+                entities_to_update.append(entity)
+
             entities_to_add.append(entity)
 
         transaction.set_autocommit(False)
@@ -266,6 +275,7 @@ class Federation(Base):
         transaction.set_autocommit(True)
 
         self.entity_set.add(*entities_to_add)
+        return len(entities_to_update) 
 
     def _compute_new_stats(self, timestamp, entities):
         entity_stats = []
@@ -284,7 +294,7 @@ class Federation(Base):
 
     def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
         entities_from_xml = self._metadata.get_entities()
-        self._remove_deleted_entities(entities_from_xml, request)
+        removed = self._remove_deleted_entities(entities_from_xml, request)
 
         entities = {}
         db_entities = Entity.objects.filter(entityid__in=entities_from_xml)
@@ -299,13 +309,14 @@ class Federation(Base):
             request.session['%s_process_done' % federation_slug] = False
             request.session.save()
 
-        self._add_new_entities(entities, entities_from_xml, request, federation_slug)
+        updated = self._add_new_entities(entities, entities_from_xml, request, federation_slug)
 
         if request and federation_slug:
             request.session['%s_process_done' % federation_slug] = True
             request.session.save()
 
         self._compute_new_stats(timestamp, entities.values())
+        return (removed, updated)
 
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])

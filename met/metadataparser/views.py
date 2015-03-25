@@ -113,7 +113,7 @@ def index(request):
                                   counters)
         elif export == 'most_federated_entities':
             return export_query_set(request.GET.get('format'), most_federated_entities,
-                                'most_federated_entities', ('', 'types', 'displayName', 'federations', 'federationsCount'))
+                                'most_federated_entities', ('entityid', 'types', 'name', 'federations'))
         else:
             return HttpResponseBadRequest('Not valid export query')
     
@@ -177,7 +177,7 @@ def federation_view(request, federation_slug=None):
 
     if 'format' in request.GET:
         return export_query_set(request.GET.get('format'), entities,
-                                'entities_search_result', ('', 'types', 'federations'))
+                                'entities_search_result', ('entityid', 'types', 'federations'))
 
     context = RequestContext(request)
     user = context.get('user', None)
@@ -619,7 +619,7 @@ def search_service(request):
 
     if objects and 'format' in request.GET.keys():
         return export_query_set(request.GET.get('format'), objects,
-                                'entities_search_result', ('', 'types', 'federations'))
+                                'entities_search_result', ('entityid', 'types', 'federations'))
 
     entities = []
     for entity in objects:

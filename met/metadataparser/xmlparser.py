@@ -200,8 +200,8 @@ class MetadataParser(object):
         return types
 
     def entity_protocols(self, entity, entity_type='IDPSSODescriptor'):
-        raw_protocols = entity.xpath("./md:%s"
-                                     "/@protocolSupportEnumeration" % (entity_type),
+        raw_protocols = entity.xpath(".//md:%s"
+                                     "/@protocolSupportEnumeration" % entity_type,
                                      namespaces=NAMESPACES)
         if raw_protocols:
             protocols = raw_protocols[0]

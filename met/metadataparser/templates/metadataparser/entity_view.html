@@ -170,7 +170,7 @@
   <tbody>
     <tr>
       <td class="first-col"><strong>{% trans "Supported protocols" %}:</strong></td>
-      {% if entity.display_protocols and entity.display_protocols|length > 1 %}
+      {% if entity.display_protocols and entity.display_protocols|length > 0 %}
       <td>
           <ul>
               {% for proto in entity.display_protocols %}

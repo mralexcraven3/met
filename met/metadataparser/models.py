@@ -519,8 +519,10 @@ class Entity(Base):
 
     def display_protocols(self, federation=None):
         protocols = []
-        if self._get_property('protocols', federation):
-            for proto in self._get_property('protocols', federation):
+
+        xml_protocols = self._get_property('protocols', federation)
+        if xml_protocols:
+            for proto in xml_protocols:
                 protocols.append(self.READABLE_PROTOCOLS.get(proto, proto))
 
         return protocols

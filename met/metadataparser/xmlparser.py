@@ -94,6 +94,8 @@ class MetadataParser(object):
                 reg_info = self.registration_information(element)
                 if reg_info and 'authority' in reg_info:
                    entity['registration_authority'] = reg_info['authority']
+                if reg_info and 'instant' in reg_info:
+                   entity['registration_instant'] = reg_info['instant']
                 entity_types = self.entity_types(element)
                 e_type = None
                 if entity_types:
@@ -133,8 +135,6 @@ class MetadataParser(object):
                     logos = self.entity_logos(element)
                     if logos:
                         entity['logos'] = logos
-                    if reg_info and 'instant' in reg_info:
-                       entity['registration_instant'] = reg_info['instant']
                     entity['languages'] = lang_seen
                     scopes = self.entity_attribute_scope(element)
                     if scopes:
@@ -145,6 +145,9 @@ class MetadataParser(object):
                     contacts = self.entity_contacts(element)
                     if contacts:
                         entity['contacts'] = contacts
+                    registration_policy = self.registration_policy(element)
+                    if registration_policy:
+                       entity['registration_policy'] = registration_policy
 
                 yield entity
             element.clear()
@@ -316,6 +319,21 @@ class MetadataParser(object):
             info['instant'] = reg_info[0].attrib.get('registrationInstant')
         return info
 
+    def registration_policy(self, entity):
+        reg_policy = entity.xpath(".//md:Extensions"
+                                "/mdrpi:RegistrationInfo"
+                                "/mdrpi:RegistrationPolicy",
+                                namespaces=NAMESPACES)
+        languages = {}
+        for dn_node in reg_policy:
+            lang = getlang(dn_node)
+            if lang is None:
+                continue  # the lang attribute is required
+
+            languages[lang] = dn_node.text
+
+        return languages
+
     def entity_attribute_scope(self, entity):
         scope_node = entity.xpath(".//md:Extensions"
                                   "/shibmd:Scope",
@@ -336,9 +354,7 @@ class MetadataParser(object):
         attrs['optional'] = []
         for attr_node in xmllogos:
             required = attr_node.attrib.get('isRequired', 'false')
-            index = 'optional'
-            if required == 'true':
-                index = 'required'
+            index = 'required' if required == 'true' else 'optional'
             attrs[index].append(attr_node.attrib.get('Name', None))
         return attrs
 

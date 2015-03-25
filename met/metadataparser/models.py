@@ -441,6 +441,10 @@ class Entity(Base):
         return self._get_property('registration_authority')
 
     @property
+    def registration_policy(self):
+        return self._get_property('registration_policy')
+
+    @property
     def registration_instant(self):
         return datetime.strptime(self._get_property('registration_instant'), '%Y-%m-%dT%H:%M:%SZ')
 
@@ -464,7 +468,7 @@ class Entity(Base):
         return ' '.join(attributes['required'])
 
     @property
-    def attributes_options(self):
+    def attributes_optional(self):
         attributes = self._get_property('attr_requested')
         if not attributes:
             return ''

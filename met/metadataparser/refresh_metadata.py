@@ -84,7 +84,7 @@ def fetch_metadata_file(federation, logger=None):
         return ('', False)
 
     # Timeouts: 10 seconds for connect call, 120 seconds for total download
-    req = requests.get(file_url, timeout=(10, 120))
+    req = requests.get(file_url, timeout=(10, 120), verify=False)
     if req.ok:
         if 400 <= req.status_code < 500:
             return ('%s Client Error: %s' % (req.status_code, req.reason), False)
@@ -95,6 +95,7 @@ def fetch_metadata_file(federation, logger=None):
     
     parsed_url = urlsplit(federation.file_url)
 
+    original_file_content = None
     if federation.file and federation.file.storage.exists(federation.file):
         federation.file.seek(0)
         original_file_content = federation.file.read()

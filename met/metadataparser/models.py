@@ -150,7 +150,7 @@ class Base(models.Model):
         return self._loaded_file
 
     def fetch_metadata_file(self, file_name):
-        req = requests.get(self.file_url)
+        req = requests.get(self.file_url, verify=False)
         if req.ok:
             req.raise_for_status()
         parsed_url = urlsplit(self.file_url)

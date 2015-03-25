@@ -15,6 +15,11 @@ from email.mime.text import MIMEText
 from django.conf import settings
 
 def compare_filecontents(a, b):
+    if a is None:
+        return b is None
+    if b is None:
+        return a is None
+
     md5_a = hashlib.md5(a).hexdigest()
     md5_b = hashlib.md5(b).hexdigest()
     return (md5_a == md5_b)

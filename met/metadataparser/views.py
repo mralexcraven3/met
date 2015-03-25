@@ -140,7 +140,7 @@ def federation_view(request, federation_slug=None):
     entity_type = None
     if (request.GET and 'entity_type' in request.GET):
         entity_type = request.GET['entity_type']
-        ob_entities = Entity.objects.filter(types__xmlname=entity_type)
+        ob_entities = Entity.objects.filter(federations__id=federation.id).filter(types__xmlname=entity_type)
     else:
         ob_entities = Entity.objects.filter(federations__id=federation.id)
     

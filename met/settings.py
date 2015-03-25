@@ -157,7 +157,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
@@ -167,7 +167,7 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler'
         },
         'saml2file': {
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'logging.FileHandler',
             'filename': '/var/log/djangosaml2.log',
             'formatter': 'verbose',
@@ -177,7 +177,7 @@ LOGGING = {
        'django': {
             'handlers': ['console'],
             'propagate': True,
-            'level': 'INFO',
+            'level': 'ERROR',
         },
         'django.request': {
             'handlers': ['mail_admins'],

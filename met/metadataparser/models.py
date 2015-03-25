@@ -277,7 +277,7 @@ class Federation(Base):
         self.entity_set.add(*entities_to_add)
         return len(entities_to_update) 
 
-    def _compute_new_stats(self, timestamp):
+    def _compute_new_stats(self, entities_from_xml, timestamp):
         entities = {}
         db_entities = Entity.objects.filter(entityid__in=entities_from_xml)
         db_entities = db_entities.prefetch_related('types')
@@ -322,7 +322,7 @@ class Federation(Base):
             request.session['%s_process_done' % federation_slug] = True
             request.session.save()
 
-        self._compute_new_stats(timestamp)
+        self._compute_new_stats(entities_from_xml, timestamp)
         return (removed, updated)
 
     def get_absolute_url(self):

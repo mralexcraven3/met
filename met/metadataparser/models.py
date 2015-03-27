@@ -278,12 +278,8 @@ class Federation(Base):
         return len(entities_to_update) 
 
     def _compute_new_stats(self, entities_from_xml, timestamp):
-        entities = {}
-        db_entities = Entity.objects.filter(entityid__in=entities_from_xml)
-        db_entities = db_entities.prefetch_related('types')
-
-        for entity in db_entities.all():
-            entities[entity.entityid] = entity
+        entities = Entity.objects.filter(entityid__in=entities_from_xml)
+        entities = entities.prefetch_related('types')
 
         entity_stats = []
         for feature in stats['features'].keys():

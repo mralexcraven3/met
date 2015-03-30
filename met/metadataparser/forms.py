@@ -17,6 +17,7 @@ from django.forms.extras.widgets import SelectDateWidget
 from django.forms.util import ErrorDict
 
 from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 from met.metadataparser.models import Federation, Entity
 
@@ -52,7 +53,7 @@ class EntityForm(forms.ModelForm):
 
 class ChartForm(forms.Form):
     fromDate = forms.DateField(label=_(u'Start date'),
-                             help_text=_(u"Statistics start date."), initial=timezone.now(),
+                             help_text=_(u"Statistics start date."), initial=timezone.now()-relativedelta(months=1),
                              widget=SelectDateWidget(years=range(timezone.datetime.today().year, 2012, -1)))
 
     toDate = forms.DateField(label=_(u'End date'),

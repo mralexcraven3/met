@@ -52,9 +52,9 @@
   </thead>
   <tbody>
     <tr>
-      <td>{% get_fed_count counts 'All' %}</td>
+      <td>{% get_fed_total totals 'All' %}</td>
       {% for etype in entity_types %}
-      <td class="entitytype">{% get_fed_count counts 'All' etype %}</td>
+      <td class="entitytype">{% get_fed_total totals etype %}</td>
       {% endfor %}
     </tr>
   </tbody>

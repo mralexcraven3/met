@@ -22,58 +22,51 @@ def compare_filecontents(a, b):
 
     md5_a = hashlib.md5(a).hexdigest()
     md5_b = hashlib.md5(b).hexdigest()
-    return (md5_a == md5_b)
+    return md5_a == md5_b
 
-def sendMail(from_email_address, subject, message):
-    mailConfigDict = getattr(settings, "MAIL_CONFIG")
-    smtpSend = None
+def _connect_to_smtp(server, port=25, login_type=None, username=None, password=None):
+    smtpSend = smtplib.SMTP(server, port)
+    smtpSend.ehlo()
 
-    if mailConfigDict['email_server'] is None:
-        return
-    
-    try:
-        if mailConfigDict['email_server_port']:
-            smtpSend = smtplib.SMTP(mailConfigDict['email_server'], int(mailConfigDict['email_server_port']))
-        else:
-            smtpSend = smtplib.SMTP(mailConfigDict['email_server'])
-
+    if smtpSend.has_extn('STARTTLS'):
+        smtpSend.starttls()
         smtpSend.ehlo()
 
-        if smtpSend.has_extn('STARTTLS'):
-            smtpSend.starttls()
-            smtpSend.ehlo()
-
-        if mailConfigDict['username'] and mailConfigDict['password']:
-            try:
-                if mailConfigDict['login_type']:
-                    smtpSend.esmtp_features['auth'] = mailConfigDict['login_type']
-                smtpSend.login(mailConfigDict['username'], mailConfigDict['password'])
-            except Exception, errorMessage:
-                print('Error occurred while trying to login to the email server with user %s: %s' % (mailConfigDict['username'], errorMessage))
-                raise
-        
+    if username and password:
         try:
-            message = MIMEText(message.encode("utf-8"), "plain", _charset = "UTF-8")
-            message['From'] = from_email_address
-            message['To'] = ",".join(mailConfigDict['to_email_address'])
-            message['Subject'] = subject
-            
-            smtpSend.sendmail(
-                from_email_address, 
-                mailConfigDict['to_email_address'],
-                message.as_string()
-            )
+            if login_type:
+                smtpSend.esmtp_features['auth'] = login_type
+            smtpSend.login(username, password)
         except Exception, errorMessage:
-            print('Error occurred while trying to send an email to %s: %s' % (mailConfigDict['to_email_address'], errorMessage))
+            print('Error occurred while trying to login to the email server with user %s: %s' % (username, errorMessage))
             raise
+
+    return smtpSend
+
+def send_mail(from_email_address, subject, message):
+    mailConfigDict = getattr(settings, "MAIL_CONFIG")
+    server = mailConfigDict['email_server']
+    smtpSend = None
+
+    if server is None:
+        return
     
+    smtpSend = _connect_to_smtp(server, mailConfigDict['email_server_port'], mailConfigDict['login_type'], mailConfigDict['username'], mailConfigDict['password'])
+        
+    try:
+        message = MIMEText(message.encode("utf-8"), "plain", _charset = "UTF-8")
+        message['From'] = from_email_address
+        message['To'] = ",".join(mailConfigDict['to_email_address'])
+        message['Subject'] = subject
+            
+        smtpSend.sendmail(
+            from_email_address, 
+            mailConfigDict['to_email_address'],
+            message.as_string()
+        )
     except Exception, errorMessage:
-        print('Error occurred while trying to connect to the email server %s with port %s: %s' % (mailConfigDict['email_server'], mailConfigDict['email_server_port'], errorMessage))
+        print('Error occurred while trying to send an email to %s: %s' % (mailConfigDict['to_email_address'], errorMessage))
         raise
-    
     finally:
-        try:
-            if smtpSend:
-                smtpSend.quit()
-        except Exception, errorMessage:
-            print('Error occurred while trying to quit email: %s' % (errorMessage))
+        if smtpSend:
+            smtpSend.quit()

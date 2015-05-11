@@ -80,10 +80,12 @@ class JSONField(models.CharField):
         super(JSONField, self).__init__(*args, **kwargs)
         self.validators.append(validators.MaxLengthValidator(self.max_length))
 
-    def get_internal_type(self):
+    @classmethod
+    def get_internal_type(cls):
         return "TextField"
 
-    def to_python(self, value):
+    @classmethod
+    def to_python(cls, value):
         """Convert our string value to JSON after we load it from the DB"""
         if value == "":
             return None
@@ -163,7 +165,8 @@ class Base(models.Model):
         filename = path.basename("%s-metadata.xml" % file_name)
         self.file.save(filename, ContentFile(req.content), save=False)
 
-    def process_metadata(self):
+    @classmethod
+    def process_metadata(cls):
         raise NotImplemented()
 
 
@@ -239,6 +242,23 @@ class Federation(Base):
 
         return len(entities_to_remove)
 
+    def _update_entities(self, entities_to_update, entities_to_add):
+        for e in entities_to_update:
+            e.save()
+
+        self.entity_set.add(*entities_to_add)
+
+    @staticmethod
+    def _entity_has_changed(entity, entityid, name, registration_authority):
+        if entity.entityid != entityid:
+            return True
+        if entity.name != name:
+            return True
+        if entity.registration_authority != registration_authority:
+            return True
+
+        return False
+
     def _add_new_entities(self, entities, entities_from_xml, request, federation_slug):
         db_entity_types = EntityType.objects.all()
         cached_entity_types = { entity_type.xmlname: entity_type for entity_type in db_entity_types }
@@ -264,20 +284,17 @@ class Federation(Base):
             entity_from_xml = self._metadata.get_entity(m_id, True)
             entity.process_metadata(False, entity_from_xml, cached_entity_types)
 
-            if created or entity.entityid != entityid or entity.name != name or entity.registration_authority != registration_authority:
+            if created or self._entity_has_changed(entity, entityid, name, registration_authority):
                 entities_to_update.append(entity)
 
             entities_to_add.append(entity)
 
-        transaction.set_autocommit(False)
-        for e in entities_to_update:
-            e.save()
-        transaction.set_autocommit(True)
-
-        self.entity_set.add(*entities_to_add)
+        self._update_entities(entities_to_update, entities_to_add)
         return len(entities_to_update) 
 
-    def _compute_new_stats(self, entities_from_xml, timestamp):
+    def compute_new_stats(self, timestamp=timezone.now()):
+        entities_from_xml = self._metadata.get_entities()
+
         entities = Entity.objects.filter(entityid__in=entities_from_xml)
         entities = entities.prefetch_related('types')
 
@@ -318,13 +335,13 @@ class Federation(Base):
             request.session['%s_process_done' % federation_slug] = True
             request.session.save()
 
-        self._compute_new_stats(entities_from_xml, timestamp)
-        return (removed, updated)
+        return removed, updated
 
     def get_absolute_url(self):
         return reverse('federation_view', args=[self.slug])
-    
-    def get_sp(self, entities, xml_name):
+
+    @classmethod
+    def get_sp(cls, entities, xml_name):
         count = 0
         for entity in entities:
             cur_cached_types = [t.xmlname for t in entity.types.all()]
@@ -332,7 +349,8 @@ class Federation(Base):
                 count += 1
         return count
 
-    def get_idp(self, entities, xml_name):
+    @classmethod
+    def get_idp(cls, entities, xml_name):
         count = 0
         for entity in entities:
             cur_cached_types = [t.xmlname for t in entity.types.all()]
@@ -371,9 +389,8 @@ class Federation(Base):
             return True
 
         permission = 'delete_federation' if delete else 'change_federation'
-        if user.has_perm('metadataparser.%s' % permission):
-            if user in self.editor_users.all():
-                return True
+        if user.has_perm('metadataparser.%s' % permission) and user in self.editor_users.all():
+            return True
         return False
 
 
@@ -381,25 +398,27 @@ class EntityQuerySet(QuerySet):
     def iterator(self):
         cached_federations = {}
         for entity in super(EntityQuerySet, self).iterator():
-            if not entity.file:
-                federations = entity.federations.all()
-                if federations:
-                    federation = federations[0]
+            if entity.file:
+                continue
+
+            federations = entity.federations.all()
+            if federations:
+                federation = federations[0]
+            else:
+                raise ValueError("Can't find entity metadata")
+
+            for federation in federations:
+                if not federation.id in cached_federations:
+                    cached_federations[federation.id] = federation
+
+                cached_federation = cached_federations[federation.id]
+                try:
+                    entity.load_metadata(federation=cached_federation)
+                except ValueError:
+                    # Allow entity in federation but not in federation file
+                    continue
                 else:
-                    raise ValueError("Can't find entity metadata")
-
-                for federation in federations:
-                    if not federation.id in cached_federations:
-                        cached_federations[federation.id] = federation
-
-                    cached_federation = cached_federations[federation.id]
-                    try:
-                        entity.load_metadata(federation=cached_federation)
-                    except ValueError:
-                        # Allow entity in federation but not in federation file
-                        continue
-                    else:
-                        break
+                    break
 
             yield entity
 
@@ -480,6 +499,8 @@ class Entity(Base):
     @property
     def organization(self):
         organization = self._get_property('organization')
+        if not organization:
+            return []
 
         names = []
         urls = []
@@ -624,6 +645,25 @@ class Entity(Base):
         else:
             raise ValueError("Not metadata loaded")
 
+    def _get_or_create_etypes(self, cached_entity_types):
+        entity_types = []
+        cur_cached_types = [t.xmlname for t in self.types.all()]
+        for etype in self.xml_types:
+            if etype in cur_cached_types:
+               break
+
+            if cached_entity_types is None:
+                entity_type, created = EntityType.objects.get_or_create(xmlname=etype,
+                                                                        name=DESCRIPTOR_TYPES_DISPLAY[etype])
+            else:
+                if etype in cached_entity_types:
+                    entity_type = cached_entity_types[etype]
+                else:
+                    entity_type = EntityType.objects.create(xmlname=etype,
+                                                                name=DESCRIPTOR_TYPES_DISPLAY[etype])
+            entity_types.append(entity_type)
+        return entity_types
+
     def process_metadata(self, auto_save=True, entity_data=None, cached_entity_types=None):
         if not entity_data:
             self.load_metadata()
@@ -633,22 +673,7 @@ class Entity(Base):
 
         self._entity_cached = entity_data
         if self.xml_types:
-            cur_cached_types = [t.xmlname for t in self.types.all()]
-            entity_types = []
-            for etype in self.xml_types:
-                if etype in cur_cached_types:
-                   break
-
-                if cached_entity_types is None:
-                    entity_type, created = EntityType.objects.get_or_create(xmlname=etype,
-                                                                            name=DESCRIPTOR_TYPES_DISPLAY[etype])
-                else:
-                    if etype in cached_entity_types:
-                        entity_type = cached_entity_types[etype]
-                    else:
-                        entity_type = EntityType.objects.create(xmlname=etype,
-                                                                name=DESCRIPTOR_TYPES_DISPLAY[etype])
-                entity_types.append(entity_type)
+            entity_types = self._get_or_create_etypes(cached_entity_types)
 
             if len(entity_types) > 0:
                 self.types.add(*entity_types)
@@ -664,9 +689,9 @@ class Entity(Base):
         self.load_metadata()
 
         entity = self._entity_cached.copy()
-        entity["types"] = [(unicode(f)) for f in self.types.all()]
+        entity["types"] = [unicode(f) for f in self.types.all()]
         entity["federations"] = [{u"name": unicode(f), u"url": f.get_absolute_url()}
-                                    for f in self.federations.all()]
+                                  for f in self.federations.all()]
 
         if self.registration_authority:
             entity["registration_authority"] = self.registration_authority
@@ -716,13 +741,9 @@ class Entity(Base):
         return reverse('entity_view', args=[quote_plus(self.entityid)])
 
     def can_edit(self, user, delete):
-        if user.is_superuser:
-            return True
-
         permission = 'delete_entity' if delete else 'change_entity'
-        if user.has_perm('metadataparser.%s' % permission):
-            if user in self.editor_users.all():
-                return True
+        if user.is_superuser or (user.has_perm('metadataparser.%s' % permission) and user in self.editor_users.all()):
+            return True
 
         for federation in self.federations.all():
             if federation.can_edit(user, False):
@@ -734,10 +755,10 @@ class EntityStat(models.Model):
     time = models.DateTimeField(blank=False, null=False, 
                            verbose_name=_(u'Metadata time stamp'))
     feature = models.CharField(max_length=100, blank=False, null=False, db_index=True,
-                           verbose_name=(u'Feature name'))
+                           verbose_name=_(u'Feature name'))
 
     value = models.PositiveIntegerField(max_length=100, blank=False, null=False,
-                           verbose_name=(u'Feature value'))
+                           verbose_name=_(u'Feature value'))
 
     federation = models.ForeignKey(Federation, blank = False,
                                          verbose_name=_(u'Federations'))

@@ -29,7 +29,7 @@ def export_summary_csv(qs, relation, filename, counters):
     # Write data to CSV file
     for obj in qs:
         row = [unicode(obj)]
-        for (counter_label, counter_filter) in counters:
+        for counter_label, counter_filter in counters:
             row.append(getattr(obj, relation).filter(**counter_filter).count())
         writer.writerow(row)
     # Return CSV file to browser as download
@@ -40,7 +40,7 @@ def export_summary_json(qs, relation, filename, counters=None):
     objs = {}
     for obj in qs:
         item = {}
-        for (counter_label, counter_filter) in counters:
+        for counter_label, counter_filter in counters:
             item[counter_label] = getattr(obj, relation).filter(**counter_filter).count()
         objs[unicode(obj)] = item
     # Return JS file to browser as download
@@ -61,7 +61,7 @@ def export_summary_xml(qs, relation, filename, counters):
     for obj in qs:
         item = xml.createElement(model._meta.object_name)
         item.setAttribute("id", unicode(obj))
-        for (counter_label, counter_filter) in counters:
+        for counter_label, counter_filter in counters:
             val = getattr(obj, relation).filter(**counter_filter).count()
             element = xml.createElement(counter_label)
             xmlval = xml.createTextNode(unicode(val))

@@ -39,7 +39,7 @@ def export_entity_csv(entity):
     writer.writerow(edict.keys())
     # Write data to CSV file
     row = []
-    for (key, value) in edict.items():
+    for key, value in edict.items():
         row.append(_serialize_value_to_csv(value))
     row_ascii = [v.encode("ascii", "ignore") for v in row]
 
@@ -57,17 +57,17 @@ def export_entity_json(entity):
     return response
 
 
-class dict2xml(object):
+class Dict2XML(object):
     """ http://stackoverflow.com/questions/1019895/serialize-python-dictionary-to-xml """
     doc = Document()
 
     def __init__(self, structure):
         if len(structure) == 1:
-            rootName = str(structure.keys()[0])
-            self.root = self.doc.createElement(rootName)
+            root_name = str(structure.keys()[0])
+            self.root = self.doc.createElement(root_name)
 
             self.doc.appendChild(self.root)
-            self.build(self.root, structure[rootName])
+            self.build(self.root, structure[root_name])
 
     def build(self, father, structure):
         if type(structure) == dict:
@@ -77,13 +77,13 @@ class dict2xml(object):
                 self.build(tag, structure[k])
 
         elif type(structure) == list:
-            grandFather = father.parentNode
-            tagName = father.tagName
-            grandFather.removeChild(father)
+            grand_father = father.parentNode
+            tag_name = father.tag_name
+            grand_father.removeChild(father)
             for l in structure:
-                tag = self.doc.createElement(tagName)
+                tag = self.doc.createElement(tag_name)
                 self.build(tag, l)
-                grandFather.appendChild(tag)
+                grand_father.appendChild(tag)
         else:
             if type(structure) == unicode:
                 data = structure.encode("ascii", errors="xmlcharrefreplace")
@@ -97,7 +97,7 @@ class dict2xml(object):
 
 
 def export_entity_xml(entity):
-    entity_xml = dict2xml({"Entity": entity.to_dict()})
+    entity_xml = Dict2XML({"Entity": entity.to_dict()})
 
     # Return XML file to browser as download
     response = HttpResponse(str(entity_xml), content_type='application/xml')

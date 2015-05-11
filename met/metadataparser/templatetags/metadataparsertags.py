@@ -95,7 +95,7 @@ def entity_filters(context, entities):
     request = context.get('request')
     entity_type = request.GET.get('entity_type', '')
     rquery = request.GET.copy()
-    for filter in ('entity_type', 'page'):
+    for filter in 'entity_type', 'page':
         if filter in rquery:
             rquery.pop(filter)
     if not entity_type:
@@ -165,6 +165,15 @@ def entities_count(entity_qs, entity_type=None):
 
 
 @register.simple_tag()
+def get_fed_total(totals, entity_type='All'):
+    tot_count = 0
+    for curtotal in totals:
+        if entity_type == 'All' or curtotal['types__xmlname'] == entity_type:
+            tot_count += curtotal['types__xmlname__count']
+    return tot_count
+
+
+@register.simple_tag()
 def get_fed_count(counts, federation='All', entity_type='All'):
     count = counts[entity_type]
 
@@ -177,7 +186,7 @@ def get_fed_count(counts, federation='All', entity_type='All'):
 
 @register.simple_tag(takes_context=True)
 def l10n_property(context, prop, lang):
-    if isinstance(prop, dict):
+    if isinstance(prop, dict) and len(prop) > 0:
         if not lang:
             lang = context.get('LANGUAGE_CODE', None)
         if lang and lang in prop:
@@ -190,17 +199,17 @@ def l10n_property(context, prop, lang):
 
 @register.simple_tag(takes_context=True)
 def organization_property(context, organizations, prop, lang):
-    if isinstance(organizations, list):
-        if not lang:
-           lang = context.get('LANGUAGE_CODE', None)
-        if len(organizations) > 0:
-            for organization in organizations:
-                if organization['lang'] == lang:
-                    if prop in organization:
-                        return organization[prop]
-            if prop in organizations[0]:
-                return organizations[0][prop]
-    return prop
+    if not isinstance(organizations, list):
+        return prop
+
+    lang = lang or context.get('LANGUAGE_CODE', None)
+    for organization in organizations:
+        if prop in organization:
+            val = organization[prop]
+            if organization['lang'] == lang:
+                val = organization[prop]
+
+    return val
 
 
 @register.simple_tag()
@@ -251,13 +260,14 @@ def wrap(value, length):
 
 
 class CanEdit(Node):
-    child_nodelists = ('nodelist')
+    child_nodelists = 'nodelist'
 
     def __init__(self, obj, nodelist):
         self.obj = obj
         self.nodelist = nodelist
 
-    def __repr__(self):
+    @classmethod
+    def __repr__(cls):
         return "<CanEdit>"
 
     def render(self, context):

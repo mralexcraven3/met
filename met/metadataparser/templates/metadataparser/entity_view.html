@@ -6,13 +6,13 @@
 
 {% export_menu entities %}
 
-<div class="btn-group pull-right">
-  <a class="btn" href="{% url 'entity_comment' entity.id %}">{% trans "Comment" %}</a>
+<!--div class="btn-group pull-right">
+  <a class="btn" href="{ % url 'entity_comment' entity.id %}">{ % trans "Comment" %}</a>
 </div>
 
 <div class="btn-group pull-right">
-  <a class="btn" href="{% url 'entity_proposal' entity.id %}">{% trans "Proposal" %}</a>
-</div>
+  <a class="btn" href="{ % url 'entity_proposal' entity.id %}">{ % trans "Proposal" %}</a>
+</div-->
 
 {% canedit entity %}
 <div class="btn-group pull-right">

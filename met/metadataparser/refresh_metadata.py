@@ -21,13 +21,22 @@ from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.conf import settings
 
-from met.metadataparser.utils import compare_filecontents, sendMail
+from met.metadataparser.utils import compare_filecontents, send_mail
 from met.metadataparser.models import Federation
 
 if settings.PROFILE:
     from silk.profiling.profiler import silk_profile as profile
 else:
     from met.metadataparser.templatetags.decorators import noop_decorator as profile
+
+def _send_message_via_email(error_msg, federation, logger=None):
+    mailConfigDict = getattr(settings, "MAIL_CONFIG")
+    try:
+        subject = mailConfigDict['refresh_subject'] % federation
+        from_address = mailConfigDict['from_email_address']
+        send_mail(from_address, subject, '%s' % error_msg)
+    except Exception, errorMessage:
+        log('Message could not be posted successfully: %s' % errorMessage, logger, logging.ERROR)
 
 def refresh(fed_name=None, force_refresh=False, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
@@ -60,53 +69,59 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 log('Updating federation file ...', logger, logging.DEBUG)
                 federation.save(update_fields=['file'])
 
-        except Exception, errorMessage:
-            error_msg = errorMessage
+            log('Updating federation statistics ...', logger, logging.DEBUG)
+            federation.compute_new_stats(timestamp=timestamp)
 
+        #except Exception, errorMessage:
+        #    error_msg = errorMessage
+            
         finally:
             if error_msg:
                 log('Sending following error via email: %s' % error_msg, logger, logging.INFO)
-                
-                mailConfigDict = getattr(settings, "MAIL_CONFIG")
-                try:
-                    subject = mailConfigDict['refresh_subject'] %federation
-                    from_address = mailConfigDict['from_email_address']
-                    sendMail(from_address, subject, '%s' % error_msg)
-                except Exception, errorMessage:
-                    log('Message could not be posted successfully: %s' % errorMessage, logger, logging.ERROR)
+                _send_message_via_email(error_msg, federation, logger)
     
     log('Refreshing metadata terminated.', logger, logging.INFO)
+
+def _get_url(file_url, timeout=(10, 120), verify=False):
+    req = requests.get(file_url, timeout=(10, 120), verify=False)
+
+    if not req.ok:
+        raise Exception('Getting metadata from %s failed.' % file_url)
+
+    if 400 <= req.status_code < 500:
+        raise Exception('%s Client Error: %s' % (req.status_code, req.reason))
+    elif 500 <= req.status_code < 600:
+        raise Exception('%s Server Error: %s' % (req.status_code, req.reason))
+
+    return req.content
+
+def _get_original_file_content(federation):
+    original_file_content = None
+    if federation.file and federation.file.storage.exists(federation.file):
+        federation.file.seek(0)
+        original_file_content = federation.file.read()
+    return original_file_content
 
 def fetch_metadata_file(federation, logger=None):
     file_url = federation.file_url
     if not file_url or file_url == '':
         log('Federation has no URL configured.', logger, logging.INFO)
-        return ('', False)
+        return '', False
 
-    # Timeouts: 10 seconds for connect call, 120 seconds for total download
-    req = requests.get(file_url, timeout=(10, 120), verify=False)
-    if req.ok:
-        if 400 <= req.status_code < 500:
-            return ('%s Client Error: %s' % (req.status_code, req.reason), False)
-        elif 500 <= req.status_code < 600:
-            return ('%s Server Error: %s' % (req.status_code, req.reason), False)
-    else:
-        return ('Getting metadata from %s failed.' % federation.file_url, False)
+    try:
+        req = _get_url(file_url)
+        parsed_url = urlsplit(federation.file_url)
+
+        original_file_content = _get_original_file_content(federation)
+        if original_file_content is None or not compare_filecontents(original_file_content, req):
+            filename = path.basename("%s-metadata.xml" % federation.slug)
+            federation.file.save(filename, ContentFile(req), save=True)
+            purge(federation.file, logger)
+            return '', True
     
-    parsed_url = urlsplit(federation.file_url)
-
-    original_file_content = None
-    if federation.file and federation.file.storage.exists(federation.file):
-        federation.file.seek(0)
-        original_file_content = federation.file.read()
-
-    if not federation.file.storage.exists(federation.file) or not compare_filecontents(original_file_content, req.content):
-        filename = path.basename("%s-metadata.xml" % federation.slug)
-        federation.file.save(filename, ContentFile(req.content), save=True)
-        purge(federation.file, logger)
-        return ('', True)
-    
-    return ('', False)
+        return '', False
+    except Exception, errorMessage:
+        return errorMessage, False
 
 def purge(the_file, logger=None):
     """
@@ -123,11 +138,10 @@ def purge(the_file, logger=None):
                 the_file.storage.delete(os.path.join(dir_name, fname))
             except:
                 log('Error while deleting file %s"' % file_name, logger, logging.ERROR)
-                pass
 
 def log(message, logger=None, severity=logging.INFO):
     if logger:
         logger.log(severity, message)
     else:
-        print message
+        print(message)
 

@@ -38,7 +38,7 @@ class SingleRun():
         self.lock_file =  "/tmp/%s.pid" % lock_file
 
     def __call__(self, func):
-        def f(*args, **kwargs):
+        def fnc(*args, **kwargs):
             if os.path.exists(self.lock_file):
                 #get process id, if lock file exists
                 pid = open(self.lock_file, "rt").read()
@@ -57,10 +57,11 @@ class SingleRun():
             finally:
                 if os.path.exists(self.lock_file):
                     os.unlink(self.lock_file)
-        return f
+        return fnc
 
 class RefreshMetaData:
-    def process(self, options):
+    @classmethod
+    def process(cls, options):
         fed_name = options.fed_name
         force_refresh = options.force_refresh
         
@@ -72,11 +73,11 @@ class RefreshMetaData:
         refresh(fed_name, force_refresh, logger)
 
 @SingleRun(lock_file="met-metadatarefresh")
-def commandlineCall(argv, ConvertClass=RefreshMetaData):
-    optParser = OptionParser()
-    optParser.set_usage("refresh [--federation <fed_name>] [--log  <file>] [--force-refresh]")
+def commandline_call(argv, convert_class=RefreshMetaData):
+    opt_parser = OptionParser()
+    opt_parser.set_usage("refresh [--federation <fed_name>] [--log  <file>] [--force-refresh]")
     
-    optParser.add_option(
+    opt_parser.add_option(
         "-l",
         "--log",
         type="string",
@@ -85,7 +86,7 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
         default=None,
         metavar="LOG")
 
-    optParser.add_option(
+    opt_parser.add_option(
         "-f",
         "--federation",
         type="string",
@@ -94,7 +95,7 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
         default=None,
         metavar="FED")
 
-    optParser.add_option(
+    opt_parser.add_option(
         "-r",
         "--force-refresh",
         action="store_true",
@@ -102,21 +103,19 @@ def commandlineCall(argv, ConvertClass=RefreshMetaData):
         help="Force refresh of metadata information (even if file has not changed)",
         metavar="REF")
 
-    (options, args) = optParser.parse_args()
+    (options, args) = opt_parser.parse_args()
     
-    errorMessage = ""
-    
+    error_message = ""
     if options.log and not os.path.exists(options.log):
-        errorMessage = "File '%s' does not exist." % options.log
+        error_message = "File '%s' does not exist." % options.log
     
-    if errorMessage:
-        print errorMessage
-        print optParser.get_usage()
+    if error_message:
+        print(error_message)
+        print(opt_parser.get_usage())
         exit (1)
     
-    objConvert = ConvertClass()
-    objConvert.process(options)
-
+    obj_convert = convert_class()
+    obj_convert.process(options)
 
 if __name__ == '__main__':
-    commandlineCall(sys.argv)
+    commandline_call(sys.argv)

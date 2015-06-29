@@ -126,7 +126,6 @@ class EntityProposalForm(forms.Form):
                 i += i
                 federation_choices.append(('%s' %federation, federation))
             
-        #self.fields['federations'].widget = CheckboxSelectMultiple(attrs={'size': '1'}, choices=federation_choices)
         self.fields['federations'].widget.choices = federation_choices
                              
  

@@ -179,11 +179,11 @@ LOGGING = {
             'propagate': True,
             'level': 'ERROR',
         },
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
+        #'django.request': {
+        #    'handlers': ['mail_admins'],
+        #    'level': 'ERROR',
+        #    'propagate': True,
+        #},
         'djangosaml2': {
              'handlers': ['saml2file'],
              'level': 'ERROR',

@@ -1,4 +1,4 @@
-#################################################################
+################################################################
 # MET v2 Metadate Explorer Tool
 #
 # This Software is Open Source. See License: https://github.com/TERENA/met/blob/master/LICENSE.md

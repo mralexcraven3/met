@@ -115,6 +115,7 @@ def index(request):
     most_federated_entities = Entity.get_most_federated_entities(maxlength=current_top_length, cache_expire=24*60*60)
 
     params = {
+       'settings': settings,
        'interfederations': interfederations,
        'federations': federations,
        'entity_types': DESCRIPTOR_TYPES,
@@ -192,7 +193,8 @@ def federation_view(request, federation_slug=None):
     pie_chart = fed_pie_chart(request, federation.id)
 
     return render_to_response('metadataparser/federation_view.html',
-            {'federation': federation,
+            {'settings': settings,
+             'federation': federation,
              'entity_types': DESCRIPTOR_TYPES,
              'entity_type': entity_type or 'All',
              'fed_types': dict(FEDERATION_TYPES),
@@ -231,7 +233,7 @@ def federation_edit(request, federation_slug=None):
     user = context.get('user', None)
     delete_federation = user and user.has_perm('metadataparser.delete_federation')
     return render_to_response('metadataparser/federation_edit.html',
-                              {'form': form, 'delete_federation': delete_federation},
+                              {'settings': settings, 'form': form, 'delete_federation': delete_federation},
                               context_instance=RequestContext(request))
 
 
@@ -327,8 +329,7 @@ def federation_charts(request, federation_slug=None):
         form = ChartForm(instance=federation)
 
     return render_to_response('metadataparser/federation_chart.html',
-                              {'form': form,
-                              },
+                              {'settings': settings, 'form': form},
                               context_instance=RequestContext(request))
 
 def _create_statdata(chart_type, stats, terms=None, term_names=None):
@@ -385,8 +386,8 @@ def _get_chart_options(chart_type, title=None, x_title=None, y_title=None):
 def fed_pie_chart(request, federation_id):
     statsConfigDict = getattr(settings, "STATS")
     terms = statsConfigDict['statistics']['entity_by_type']['terms']
-    stats = model = EntityStat.objects.filter(federation = federation_id, \
-                                            feature__in = terms).order_by('-time')[0:len(terms)]
+    stats = EntityStat.objects.filter(federation = federation_id, \
+                                      feature__in = terms).order_by('-time')[0:len(terms)]
     term_names = statsConfigDict['feature_names']
 
     statdata = _create_statdata('pie', stats)
@@ -445,7 +446,8 @@ def entity_view(request, entityid):
         return response
 
     return render_to_response('metadataparser/entity_view.html',
-            {'entity': entity,
+            {'settings': settings,
+             'entity': entity,
              'lang': request.GET.get('lang', 'en') 
             }, context_instance=RequestContext(request))
 
@@ -483,7 +485,8 @@ def entity_edit(request, federation_slug=None, entity_id=None):
         form = EntityForm(instance=entity)
 
     return render_to_response('metadataparser/entity_edit.html',
-                              {'form': form,
+                              {'settings': settings,
+                               'form': form,
                                'federation': federation},
                               context_instance=RequestContext(request))
 
@@ -529,7 +532,8 @@ def entity_comment(request, federation_slug=None, entity_id=None):
         form = EntityCommentForm(instance=entity)
 
     return render_to_response('metadataparser/entity_comment.html',
-                              {'form': form,
+                              {'settings': settings,
+                               'form': form,
                               },
                               context_instance=RequestContext(request))
 
@@ -568,7 +572,8 @@ def entity_proposal(request, federation_slug=None, entity_id=None):
         form = EntityProposalForm(instance=entity)
 
     return render_to_response('metadataparser/entity_proposal.html',
-                              {'form': form,
+                              {'settings': settings,
+                               'form': form,
                               },
                               context_instance=RequestContext(request))
 
@@ -606,7 +611,8 @@ def search_service(request):
         })
 
     return render_to_response('metadataparser/service_search.html',
-        {'searchform': form,
+        {'settings': settings,
+         'searchform': form,
          'object_list': entities,
          'show_filters': False,
         }, context_instance=RequestContext(request))

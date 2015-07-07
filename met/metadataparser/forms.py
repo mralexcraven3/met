@@ -12,14 +12,109 @@
 
 from django import forms
 from django.utils.translation import ugettext_lazy as _
-from django.forms.widgets import CheckboxSelectMultiple
+from django.forms.widgets import CheckboxSelectMultiple, Widget
 from django.forms.extras.widgets import SelectDateWidget
-from django.forms.util import ErrorDict
+from django.forms.util import ErrorDict, flatatt
 
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from met.metadataparser.models import Federation, Entity
+
+class MultiURLforMetadata(Widget):
+    def render(self, name, value, attrs=None, choices=()):
+        if value is None:
+            value = []
+	 
+        final_attrs = self.build_attrs(attrs, name=name)
+	output = []
+        output.append(format_html('<table id="metadata_type" class="display" cellspacing="0" width="100%"><thead><tr><th>Metadata</th><th>Type</th></tr></thead><tbody>', flatatt(final_attrs)))
+	for curpair in value.split("|"):
+	    val = ''.join(curpair)
+            val = curpair.split(";")
+
+            if len(val) == 1:
+                val.append("All")
+
+	    output.append('<tr><td>%s</th><td>%s</td></tr>' % (val[0], val[1]))
+
+	output.append('''
+            </tbody></table>
+            <br/>
+
+            <button id="delete" type="button">Delete selected URL</button>
+            <br/><br/><br/>
+
+            <fieldset class="control-group" id="new_URL_set">
+            Meta URL: <input type="url" name="meta_URL" id="meta_URL" />
+            <select name="type_URL" id="type_URL"><option value="All">All</option><option value="IDP">IDP</option><option value="SP">SP</option></select>
+            <input id="add" type="button" value="Add URL" />
+            </fieldset>
+        ''')
+
+        output.append('<input type="hidden" id="id_%s" name="%s" value=""><br/><br/>' % (name, name))
+
+        output.append('''<script>
+            $(document).ready(function() {
+                $.extend( $.fn.dataTable.defaults, {
+                    "searching": false,
+                    "ordering":  false,
+                    "paging":    false,
+                    "info":      false
+                }); 
+   
+                var table = $('#metadata_type').DataTable();
+                $('#metadata_type tbody').on( 'click', 'tr', function () {
+                    $(this).toggleClass('selected');
+                });
+                var text = "";
+                table.rows().every( function () {
+                    var data = this.data();
+                    text += data[0] +  ";" + data[1] + "|";
+                } );
+		text = text.substring(0, text.length - 1);
+		$('#id_%s').val(text);
+
+                $('#add').click( function () {
+                    if ($('#meta_URL').val() == undefined) return;
+		    texturl = $('#meta_URL').val();
+                    var urlpattern = new RegExp("(http|ftp|https)://[\w-]+(\.[\w-]+)+([\w.,@?^=%%&amp;:/~+#-]*[\w@?^=%%&amp;/~+#-])?");
+                    if (!urlpattern.test($('#meta_URL').val())) {
+                        $('#new_URL_set').addClass("error");
+			return; 
+		    }
+
+                    $('#new_URL_set').removeClass("error");
+                    table.row.add([$('#meta_URL').val(), $('#type_URL').val()]).draw();
+                    $('#meta_URL').val("");
+                    $('#type_URL').val("All");
+
+                    var text = "";
+                    table.rows().every( function () {
+                        var data = this.data();
+                        text +=data[0] +  ";" + data[1] + "|";
+                    } );
+		    text = text.substring(0, text.length - 1);
+		    $('#id_%s').val(text);
+                });
+
+                $('#delete').click( function () {
+                    table.row('.selected').remove().draw(false);
+		   
+		    var text = "";
+                    table.rows().every( function () {
+                        var data = this.data();
+                        text +=data[0] +  ";" + data[1] + "|";
+                    } );
+		    text = text.substring(0, text.length - 1);
+                    $('#id_%s').val(text); 
+                });
+            });
+            </script>''' % (name, name, name))
+
+        return mark_safe('\n'.join(output))
 
 
 class FederationForm(forms.ModelForm):
@@ -31,6 +126,8 @@ class FederationForm(forms.ModelForm):
                                                 choices=editor_users_choices)
         self.fields['editor_users'].help_text = _("This/these user(s) can edit this "
                                                  "federation and its entities")
+
+        self.fields['file_url'].widget = MultiURLforMetadata()
 
     class Meta:
         model = Federation

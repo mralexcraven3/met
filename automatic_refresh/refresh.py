@@ -11,6 +11,7 @@
 #########################################################################################
 
 import sys, os
+import logging
 import logging.config
 from optparse import OptionParser
 
@@ -70,7 +71,10 @@ class RefreshMetaData:
             logging.config.fileConfig(options.log)
             logger = logging.getLogger("Refresh")
     
-        refresh(fed_name, force_refresh, logger)
+        try:
+            refresh(fed_name, force_refresh, logger)
+        except Exception as e:
+            if logger: logger.error("%s" % e)
 
 @SingleRun(lock_file="met-metadatarefresh")
 def commandline_call(argv, convert_class=RefreshMetaData):
@@ -118,4 +122,7 @@ def commandline_call(argv, convert_class=RefreshMetaData):
     obj_convert.process(options)
 
 if __name__ == '__main__':
+    log_args = {'level': logging.ERROR}
+    logging.basicConfig(**log_args)
+
     commandline_call(sys.argv)

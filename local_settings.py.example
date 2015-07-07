@@ -236,3 +236,7 @@ MAIL_CONFIG = {
   # Body for I'd like ...
   'proposal_body': 'I\'d like the entity %s to be gathered in the following federation(s):%s\n\nComment:\n%s',
 }
+
+OWA_BASEURL = 'https://localhost/owa'
+OWA_SITEID = ''
+

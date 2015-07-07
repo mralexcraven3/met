@@ -18,8 +18,13 @@ import itertools
 from urlparse import urlsplit
 from django.utils import timezone
 
+from lxml import etree
+
 from django.core.files.base import ContentFile
 from django.conf import settings
+
+from pyff.mdrepo import MDRepository
+from pyff.pipes import Plumbing
 
 from met.metadataparser.utils import compare_filecontents, send_mail
 from met.metadataparser.models import Federation
@@ -38,6 +43,13 @@ def _send_message_via_email(error_msg, federation, logger=None):
     except Exception, errorMessage:
         log('Message could not be posted successfully: %s' % errorMessage, logger, logging.ERROR)
 
+def _fetch_new_metadata_file(federation):
+    try:
+        changed = federation.fetch_metadata_file(federation.slug)
+        return None, changed
+    except Exception, errorMessage:
+        return "%s" % errorMessage, False
+
 def refresh(fed_name=None, force_refresh=False, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 
@@ -54,7 +66,7 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
         error_msg = None
         try:
             log('Refreshing metadata for federation %s ...'  % federation, logger, logging.INFO)
-            error_msg, data_changed = fetch_metadata_file(federation, logger)
+            error_msg, data_changed = _fetch_new_metadata_file(federation)
     
             if not error_msg and (force_refresh or data_changed):
                 log('Updating database ...', logger, logging.INFO)
@@ -72,56 +84,12 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
             log('Updating federation statistics ...', logger, logging.DEBUG)
             federation.compute_new_stats(timestamp=timestamp)
 
-        #except Exception, errorMessage:
-        #    error_msg = errorMessage
-            
         finally:
             if error_msg:
                 log('Sending following error via email: %s' % error_msg, logger, logging.INFO)
                 _send_message_via_email(error_msg, federation, logger)
     
     log('Refreshing metadata terminated.', logger, logging.INFO)
-
-def _get_url(file_url, timeout=(10, 120), verify=False):
-    req = requests.get(file_url, timeout=(10, 120), verify=False)
-
-    if not req.ok:
-        raise Exception('Getting metadata from %s failed.' % file_url)
-
-    if 400 <= req.status_code < 500:
-        raise Exception('%s Client Error: %s' % (req.status_code, req.reason))
-    elif 500 <= req.status_code < 600:
-        raise Exception('%s Server Error: %s' % (req.status_code, req.reason))
-
-    return req.content
-
-def _get_original_file_content(federation):
-    original_file_content = None
-    if federation.file and federation.file.storage.exists(federation.file):
-        federation.file.seek(0)
-        original_file_content = federation.file.read()
-    return original_file_content
-
-def fetch_metadata_file(federation, logger=None):
-    file_url = federation.file_url
-    if not file_url or file_url == '':
-        log('Federation has no URL configured.', logger, logging.INFO)
-        return '', False
-
-    try:
-        req = _get_url(file_url)
-        parsed_url = urlsplit(federation.file_url)
-
-        original_file_content = _get_original_file_content(federation)
-        if original_file_content is None or not compare_filecontents(original_file_content, req):
-            filename = path.basename("%s-metadata.xml" % federation.slug)
-            federation.file.save(filename, ContentFile(req), save=True)
-            purge(federation.file, logger)
-            return '', True
-    
-        return '', False
-    except Exception, errorMessage:
-        return errorMessage, False
 
 def purge(the_file, logger=None):
     """

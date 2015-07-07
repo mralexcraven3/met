@@ -38,15 +38,15 @@ def user_can_edit(objtype, login_url=None,
                   redirect_field=REDIRECT_FIELD_NAME, delete=False):
     """ based on user_passtest from django.contrib.auth.decorators"""
     def decorator(view_func):
-        def _get_objid(keys):
-            for key in keys:
+        def _get_objid(kwargs):
+            for key in kwargs.keys():
                 if key.endswith('_id'):
                     return kwargs.get(key)
             return None
 
         @wraps(view_func, assigned=available_attrs(view_func))
         def _wrapped_view(request, *args, **kwargs):
-            objid = _get_objid(kwargs.keys())
+            objid = _get_objid(kwargs)
             if objtype and objid:
                 obj = objtype.objects.get(id=objid)
                 if obj.can_edit(request.user, delete):

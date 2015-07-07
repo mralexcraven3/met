@@ -35,6 +35,11 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext_lazy as _
 from django.utils import timezone
 
+from lxml import etree
+
+from pyff.mdrepo import MDRepository
+from pyff.pipes import Plumbing
+
 from met.metadataparser.utils import compare_filecontents
 from met.metadataparser.xmlparser import MetadataParser, DESCRIPTOR_TYPES_DISPLAY
 from met.metadataparser.templatetags import attributemap
@@ -118,9 +123,10 @@ class JSONField(models.CharField):
 
 
 class Base(models.Model):
-    file_url = models.URLField(verbose_name='Metadata url',
-                               blank=True, null=True,
-                               help_text=_(u'Url to fetch metadata file'))
+    file_url = models.CharField(verbose_name='Metadata url',
+                                max_length=1000,
+                                blank=True, null=True,
+                                help_text=_(u'Url to fetch metadata file'))
     file = models.FileField(upload_to='metadata', blank=True, null=True,
                             verbose_name=_(u'metadata xml file'),
                             help_text=_("if url is set, metadata url will be "
@@ -151,19 +157,56 @@ class Base(models.Model):
             self._loaded_file = MetadataParser(filename=self.file.path)
         return self._loaded_file
 
+    def _get_metadata_stream(self, load_streams):
+        try:
+            load = []
+            select = []
+
+            count = 1
+            for stream in load_streams:
+                curid = "%s%d" % (self.slug, count)
+                load.append("%s as %s" % (stream[0], curid))
+                if stream[1] == 'SP' or stream[1] == 'IDP':
+                    select.append("%s!//md:EntityDescriptor[md:%sSSODescriptor]" % (curid, stream[1]))
+                else:
+                    select.append("%s" % curid)
+                count = count + 1
+
+            if len(select) > 0:
+                pipeline = [{'load': load}, {'select': select}]
+            else:
+                pipeline = [{'load': load}, 'select']
+
+            md = MDRepository()
+            entities = Plumbing(pipeline=pipeline, id=self.slug).process(md, state={'batch': True, 'stats': {}})
+            return etree.tostring(entities)
+        except:
+            raise Exception('Getting metadata from %s failed.' % load_streams)
+
     def fetch_metadata_file(self, file_name):
-        req = requests.get(self.file_url, verify=False)
-        if req.ok:
-            req.raise_for_status()
-        parsed_url = urlsplit(self.file_url)
+        file_url = self.file_url
+        if not file_url or file_url == '':
+            return
+
+        metadata_files = []
+        files = file_url.split("|")
+        for curfile in files:
+            cursource = curfile.split(";")
+            if len(cursource) == 1:
+                cursource.append("All")
+            metadata_files.append(cursource)
+
+        req = self._get_metadata_stream(metadata_files)
+
         if self.file:
             self.file.seek(0)
             original_file_content = self.file.read()
-            if compare_filecontents(original_file_content, req.content):
-                return
+            if compare_filecontents(original_file_content, req):
+                return False
 
         filename = path.basename("%s-metadata.xml" % file_name)
-        self.file.save(filename, ContentFile(req.content), save=False)
+        self.file.save(filename, ContentFile(req), save=False)
+        return True
 
     @classmethod
     def process_metadata(cls):
@@ -173,6 +216,24 @@ class Base(models.Model):
 class XmlDescriptionError(Exception):
     pass
 
+
+#####Codice in test#####
+class Urltext (models.Model):
+   url_line = models.CharField()
+
+class Review(models.Model):
+   urltext = models.ForeignKey(Urltext, related_name='lista url')
+   url = models.TextField()
+
+#class UrlInline(admin.StackedInline):
+#    model = Url
+#
+#class UrlAdmin(admin.ModelAdmin):
+#    inlines = [
+#        UrlInline,
+#    ]
+
+####Fine codice####
 
 class Federation(Base):
 
@@ -184,7 +245,7 @@ class Federation(Base):
 
     url = models.URLField(verbose_name='Federation url',
                           blank=True, null=True)
-
+    
     fee_schedule_url = models.URLField(verbose_name='Fee schedule url',
                                        max_length=150, blank=True, null=True)
 

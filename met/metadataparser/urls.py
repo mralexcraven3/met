@@ -35,8 +35,8 @@ urlpatterns = patterns('met.metadataparser.views',
     url(r'^entity/(?P<entity_id>.+)/edit/$', 'entity_edit', name='entity_edit'),
     url(r'^entity/(?P<entity_id>.+)/delete/$', 'entity_delete', name='entity_delete'),
 
-    url(r'^entity/(?P<entity_id>.+)/comment/$', 'entity_comment', name='entity_comment'),
-    url(r'^entity/(?P<entity_id>.+)/proposal/$', 'entity_proposal', name='entity_proposal'),
+    #url(r'^entity/(?P<entity_id>.+)/comment/$', 'entity_comment', name='entity_comment'),
+    #url(r'^entity/(?P<entity_id>.+)/proposal/$', 'entity_proposal', name='entity_proposal'),
 
     url(r'^entity/(?P<entityid>.+)/$', 'entity_view', name='entity_view'),
 

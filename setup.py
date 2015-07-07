@@ -48,6 +48,7 @@ setup(name='met',
           'simplejson',
           'django-mysqlpool',
           'django-silk',
+          'pyff'
       ],
       entry_points="""
       # -*- Entry points: -*-

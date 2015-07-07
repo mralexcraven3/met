@@ -15,3 +15,5 @@ met-venv
 /.settings
 /.project
 /.pydevproject
+/.cache
+/static

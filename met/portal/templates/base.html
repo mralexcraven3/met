@@ -14,6 +14,7 @@
     <script src="{{ STATIC_URL }}js/sort_startup.js"></script>
     <script src="{{ STATIC_URL }}js/highcharts.js"></script>
     <script src="{{ STATIC_URL }}js/discojuice-3.0.en.min.js"></script>
+    <script src="{{ STATIC_URL }}js/jquery.dataTables.min.js"></script>
     <script type="text/javascript">
       var djc = DiscoJuice.Hosted.getConfig(
         {
@@ -32,11 +33,11 @@
         $("a.signin").DiscoJuice(djc);      
       });
     </script>
-
     <!-- Bootstrap -->
     <link href="{{ STATIC_URL }}css/bootstrap.css" rel="stylesheet">
     <link href="{{ STATIC_URL }}css/styles.css" rel="stylesheet">
     <link href="{{ STATIC_URL }}css/discojuice.css" rel="stylesheet" />
+    <link href="{{ STATIC_URL }}css/jquery.dataTables.css" rel="stylesheet" />
   </head>
   <body>
     <div class="container">
@@ -92,5 +93,25 @@
     </footer>
     {% block extrajs %}
     {% endblock %}
+
+<!-- Start Open Web Analytics Tracker -->
+<script type="text/javascript">
+//<![CDATA[
+var owa_baseUrl = '{{ settings.OWA_BASEURL }}';
+var owa_cmds = owa_cmds || [];
+owa_cmds.push(['setSiteId', '{{ settings.OWA_SITEID }}']);
+owa_cmds.push(['trackPageView']);
+owa_cmds.push(['trackClicks']);
+owa_cmds.push(['trackDomStream']);
+
+(function() {
+	var _owa = document.createElement('script'); _owa.type = 'text/javascript'; _owa.async = true;
+	owa_baseUrl = ('https:' == document.location.protocol ? window.owa_baseSecUrl || owa_baseUrl.replace(/http:/, 'https:') : owa_baseUrl );
+	_owa.src = owa_baseUrl + 'modules/base/js/owa.tracker-combined-min.js';
+	var _owa_s = document.getElementsByTagName('script')[0]; _owa_s.parentNode.insertBefore(_owa, _owa_s);
+}());
+//]]>
+</script>
+<!-- End Open Web Analytics Code -->
   </body>
 </html>

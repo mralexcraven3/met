@@ -529,7 +529,9 @@ class Entity(Base):
 
     @property
     def registration_instant(self):
-        return datetime.strptime(self._get_property('registration_instant'), '%Y-%m-%dT%H:%M:%SZ')
+        reginstant = self._get_property('registration_instant')
+        if reginstant is None: return None
+        return datetime.strptime(reginstant, '%Y-%m-%dT%H:%M:%SZ')
 
     @property
     def protocols(self):

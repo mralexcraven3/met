@@ -167,6 +167,16 @@ Initialize media directory with proper permissions:
     chmod g+srw ~/media
 
 
+Create directory for pyFF cache
+*******************************
+
+Create a cache directory for pyFF with proper permissions:
+
+.. code-block:: bash
+
+    mkdir /home/met/met/.cache
+    chown www-data.www-data /home/met/met/.cache
+
 Automatic refresh of federations' metadata
 ******************************************
 
@@ -175,7 +185,7 @@ you just need to configure a cronjob on your server such as:
 
 .. code-block:: bash
 
-   0 * * * * python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
+   0 * * * * cd /home/met/met && /home/met/met-venv/bin/python /home/met/met/automatic_refresh/refresh.py --log /home/met/met/automatic_refresh/pylog.conf
 
 With the option --log the script will log as configured in the logging configuration file.
 

@@ -217,24 +217,6 @@ class XmlDescriptionError(Exception):
     pass
 
 
-#####Codice in test#####
-class Urltext (models.Model):
-   url_line = models.CharField()
-
-class Review(models.Model):
-   urltext = models.ForeignKey(Urltext, related_name='lista url')
-   url = models.TextField()
-
-#class UrlInline(admin.StackedInline):
-#    model = Url
-#
-#class UrlAdmin(admin.ModelAdmin):
-#    inlines = [
-#        UrlInline,
-#    ]
-
-####Fine codice####
-
 class Federation(Base):
 
     name = models.CharField(blank=False, null=False, max_length=200,

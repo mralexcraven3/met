@@ -80,7 +80,7 @@ class MultiURLforMetadata(Widget):
                 $('#add').click( function () {
                     if ($('#meta_URL').val() == undefined) return;
 		    texturl = $('#meta_URL').val();
-                    var urlpattern = new RegExp("(http|ftp|https)://[\w-]+(\.[\w-]+)+([\w.,@?^=%%&amp;:/~+#-]*[\w@?^=%%&amp;/~+#-])?");
+                    var urlpattern = new RegExp("(http|ftp|https)://[\\w-]+(\\.[\\w-]+)+([\\w.,@?^=%%&amp;:/~+#-]*[\\w@?^=%%&amp;/~+#-])?");
                     if (!urlpattern.test($('#meta_URL').val())) {
                         $('#new_URL_set').addClass("error");
 			return; 

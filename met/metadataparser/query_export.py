@@ -60,15 +60,15 @@ def _parse_xml_element(xml, father, structure):
             father.appendChild(tag)
             _parse_xml_element(xml, tag, structure[k])
     elif type(structure) == tuple:
-        tagName = father.tagName
+        tag_ame = father.tagName
         for l in list(structure):
-            tag = xml.createElement(tagName)
+            tag = xml.createElement(tag_name)
             _parse_xml_element(xml, tag, l)
             father.appendChild(tag)
     elif type(structure) == list:
-        tagName = father.tagName
+        tag_name = father.tagName
         for l in structure:
-            tag = xml.createElement(tagName)
+            tag = xml.createElement(tag_name)
             _parse_xml_element(xml, tag, l)
             father.appendChild(tag)
     else:

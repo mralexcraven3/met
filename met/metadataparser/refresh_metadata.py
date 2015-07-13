@@ -35,15 +35,15 @@ else:
     from met.metadataparser.templatetags.decorators import noop_decorator as profile
 
 def _send_message_via_email(error_msg, federation, logger=None):
-    mailConfigDict = getattr(settings, "MAIL_CONFIG")
+    mail_config_dict = getattr(settings, "MAIL_CONFIG")
     try:
-        subject = mailConfigDict['refresh_subject'] % federation
-        from_address = mailConfigDict['from_email_address']
+        subject = mail_config_dict['refresh_subject'] % federation
+        from_address = mail_config_dict['from_email_address']
         send_mail(from_address, subject, '%s' % error_msg)
     except Exception, errorMessage:
         log('Message could not be posted successfully: %s' % errorMessage, logger, logging.ERROR)
 
-def _fetch_new_metadata_file(federation):
+def _fetch_new_metadata_file(federation, logger):
     try:
         changed = federation.fetch_metadata_file(federation.slug)
         return None, changed
@@ -66,7 +66,7 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
         error_msg = None
         try:
             log('Refreshing metadata for federation %s ...'  % federation, logger, logging.INFO)
-            error_msg, data_changed = _fetch_new_metadata_file(federation)
+            error_msg, data_changed = _fetch_new_metadata_file(federation, logger)
     
             if not error_msg and (force_refresh or data_changed):
                 log('Updating database ...', logger, logging.INFO)
@@ -84,28 +84,15 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
             log('Updating federation statistics ...', logger, logging.DEBUG)
             federation.compute_new_stats(timestamp=timestamp)
 
+        except:
+            pass
+
         finally:
             if error_msg:
                 log('Sending following error via email: %s' % error_msg, logger, logging.INFO)
                 _send_message_via_email(error_msg, federation, logger)
     
     log('Refreshing metadata terminated.', logger, logging.INFO)
-
-def purge(the_file, logger=None):
-    """
-    Deletes all old versions of the federation metadata file.
-    """
-    dir_name, file_name = os.path.split(the_file.name)
-    file_root, file_ext = os.path.splitext(file_name)
-    file_root = file_root.split('_', 1)[0]
-
-    for fname in the_file.storage.listdir(dir_name)[1]:
-        if fname.startswith(file_root) and fname != file_name:
-            try:
-                log('Deleting old federation file: %s' % fname, logger, logging.DEBUG)
-                the_file.storage.delete(os.path.join(dir_name, fname))
-            except:
-                log('Error while deleting file %s"' % file_name, logger, logging.ERROR)
 
 def log(message, logger=None, severity=logging.INFO):
     if logger:

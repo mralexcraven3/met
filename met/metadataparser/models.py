@@ -198,13 +198,16 @@ class Base(models.Model):
 
         req = self._get_metadata_stream(metadata_files)
 
-        if self.file:
+        try:
             self.file.seek(0)
             original_file_content = self.file.read()
             if compare_filecontents(original_file_content, req):
                 return False
+        except IOError:
+            pass
 
         filename = path.basename("%s-metadata.xml" % file_name)
+        self.file.delete(save=False)
         self.file.save(filename, ContentFile(req), save=False)
         return True
 
@@ -501,6 +504,10 @@ class Entity(Base):
     objects = models.Manager()
     longlist = EntityManager()
 
+    #@property
+    #def name(self):
+    #    return self._get_property('displayName')
+
     @property
     def registration_authority_xml(self):
         return self._get_property('registration_authority')
@@ -512,7 +519,8 @@ class Entity(Base):
     @property
     def registration_instant(self):
         reginstant = self._get_property('registration_instant')
-        if reginstant is None: return None
+        if reginstant is None:
+            return None
         return datetime.strptime(reginstant, '%Y-%m-%dT%H:%M:%SZ')
 
     @property
@@ -547,10 +555,6 @@ class Entity(Base):
         if not organization:
             return []
 
-        names = []
-        urls = []
-        displayNames = []
-
         vals = []
         for lang, data in organization.items():
             data['lang'] = lang
@@ -563,7 +567,7 @@ class Entity(Base):
         return self._get_property('displayName')
 
     @property
-    def federationsCount(self):
+    def federations_count(self):
         return str(self.federations.all().count())
         
     @property
@@ -571,11 +575,11 @@ class Entity(Base):
         return self._get_property('description')
 
     @property
-    def infoUrl(self):
+    def info_url(self):
         return self._get_property('infoUrl')
 
     @property
-    def privacyUrl(self):
+    def privacy_url(self):
         return self._get_property('privacyUrl')
 
     @property
@@ -723,7 +727,10 @@ class Entity(Base):
             if len(entity_types) > 0:
                 self.types.add(*entity_types)
 
-            self.name = self._get_property('displayName')
+            newname = self._get_property('displayName')
+            if newname and newname != '':
+                self.name = newname
+
             if str(self._get_property('registration_authority')) != '':
                 self.registration_authority = self._get_property('registration_authority')
 

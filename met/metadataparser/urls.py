@@ -12,6 +12,7 @@
 
 from django.conf.urls import patterns, url
 
+comments_and_proposals = False
 
 urlpatterns = patterns('met.metadataparser.views',
     url(r'^federation/add/$', 'federation_edit', name='federation_add'),
@@ -35,9 +36,6 @@ urlpatterns = patterns('met.metadataparser.views',
     url(r'^entity/(?P<entity_id>.+)/edit/$', 'entity_edit', name='entity_edit'),
     url(r'^entity/(?P<entity_id>.+)/delete/$', 'entity_delete', name='entity_delete'),
 
-    #url(r'^entity/(?P<entity_id>.+)/comment/$', 'entity_comment', name='entity_comment'),
-    #url(r'^entity/(?P<entity_id>.+)/proposal/$', 'entity_proposal', name='entity_proposal'),
-
     url(r'^entity/(?P<entityid>.+)/$', 'entity_view', name='entity_view'),
 
     url(r'^search_service/$', 'search_service', name='search_service'),
@@ -45,4 +43,10 @@ urlpatterns = patterns('met.metadataparser.views',
     url(r'^show_less_entries/$', 'decrement_current_toplength', name='show_less_entries'),
     url(r'^show_more_entries/$', 'increment_current_toplength', name='show_more_entries'),
 
+    )
+
+if comments_and_proposals:
+    urlpatters += patterns('met.metadataparser.views',
+        url(r'^entity/(?P<entity_id>.+)/comment/$', 'entity_comment', name='entity_comment'),
+        url(r'^entity/(?P<entity_id>.+)/proposal/$', 'entity_proposal', name='entity_proposal'),
     )

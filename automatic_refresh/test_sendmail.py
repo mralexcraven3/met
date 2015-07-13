@@ -29,9 +29,9 @@ django.setup()
 from django.conf import settings
 from met.metadataparser.utils import send_mail
 
-mailConfigDict = getattr(settings, "MAIL_CONFIG")
+mail_config_dict = getattr(settings, "MAIL_CONFIG")
 
 m_subj = 'Email test'
 m_message = 'Body of the test email'
 
-send_mail(mailConfigDict['from_email_address'], m_subj, m_message)
+send_mail(mail_config_dict['from_email_address'], m_subj, m_message)

@@ -74,7 +74,8 @@ class RefreshMetaData:
         try:
             refresh(fed_name, force_refresh, logger)
         except Exception as e:
-            if logger: logger.error("%s" % e)
+            if logger:
+	        logger.error("%s" % e)
 
 @SingleRun(lock_file="met-metadatarefresh")
 def commandline_call(argv, convert_class=RefreshMetaData):

@@ -78,7 +78,7 @@ class MetadataParser(object):
         entity['xml'] = etree.tostring(element, pretty_print=True)
 
         entity['description'] = MetadataParser.entity_description(element)
-        entity['info_url'] = MetadataParser.entity_information_url(element)
+        entity['infoUrl'] = MetadataParser.entity_information_url(element)
         entity['privacyUrl'] = MetadataParser.entity_privacy_url(element)
         entity['organization'] = MetadataParser.entity_organization(element)
         entity['logos'] = MetadataParser.entity_logos(element)
@@ -92,7 +92,7 @@ class MetadataParser(object):
     @staticmethod
     def _entity_lang_seen(entity):
         languages = set()
-        for key in ['description', 'info_url', 'privacyUrl', 'organization', 'displayName']:
+        for key in ['description', 'infoUrl', 'privacyUrl', 'organization', 'displayName']:
             if key in entity.keys() and entity[key]:
                 languages |= set(entity[key].keys())
 
@@ -346,13 +346,19 @@ class MetadataParser(object):
         for cont_node in contacts:
             c_type = cont_node.attrib.get('contactType', '')
             name = cont_node.xpath(".//md:GivenName", namespaces=NAMESPACES)
-            if name: name = name[0].text
-            else: name = None
+            if name:
+                name = name[0].text
+            else:
+                name = None
             surname = cont_node.xpath(".//md:SurName", namespaces=NAMESPACES)
-            if surname: surname = surname[0].text
-            else: surname = None
+            if surname:
+                surname = surname[0].text
+            else:
+                surname = None
             email = cont_node.xpath(".//md:EmailAddress", namespaces=NAMESPACES)
-            if email: email = email[0].text
-            else: email = None
+            if email:
+                email = email[0].text
+            else:
+                email = None
             cont.append({ 'type': c_type, 'name': name, 'surname': surname, 'email': email })
         return cont

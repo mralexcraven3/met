@@ -30,6 +30,10 @@
   <h2>{{ entity }}</h2>
 {% endif %}
 
+{% endblock %}
+
+{% block content %}
+
 <table class="table table-striped">
   <tbody>
     <tr>
@@ -63,10 +67,6 @@
     </tr>
   </tbody>
 </table>
-
-{% endblock %}
-
-{% block content %}
 
 {% for logo in entity.logos %}
   {% if logo.external %}
@@ -113,16 +113,16 @@
     </tr>
     <tr>
       <td class="first-col"><strong>{% trans "Information URL" %}:</strong></td>
-      {% if entity.infoUrl %}
-      <td><a href="{% l10n_property entity.infoUrl lang %}">{% l10n_property entity.infoUrl lang %}</a></td>
+      {% if entity.info_url %}
+      <td><a href="{% l10n_property entity.info_url lang %}">{% l10n_property entity.info_url lang %}</a></td>
       {% else %}
       <td>{% trans "No information provided." %}</td>
       {% endif %}
     </tr>
     <tr>
       <td class="first-col"><strong>{% trans "Privacy statement URL" %}:</strong></td>
-      {% if entity.privacyUrl %}
-      <td><a href="{% l10n_property entity.privacyUrl lang %}">{% l10n_property entity.privacyUrl lang %}</a></td>
+      {% if entity.privacy_url %}
+      <td><a href="{% l10n_property entity.privacy_url lang %}">{% l10n_property entity.privacy_url lang %}</a></td>
       {% else %}
       <td>{% trans "No information provided." %}</td>
       {% endif %}

@@ -225,23 +225,30 @@ def federation_view(request, federation_slug=None):
 
 
 @user_can_edit(Federation)
+def federation_edit_post(request, federation, form):
+    modify = True if federation else False
+    form.save()
+
+    if not modify:
+        form.instance.editor_users.add(request.user)
+    if 'file' in form.changed_data or 'file_url' in form.changed_data:
+        form.instance.process_metadata()
+        #form.instance.process_metadata_entities(request=request)
+
+    messages.success(request, _('Federation %s successfully' % 'modified' if modify else 'created'))
+    return HttpResponseRedirect(form.instance.get_absolute_url() + '?update=true')
+
+
+@user_can_edit(Federation)
 def federation_edit(request, federation_slug=None):
     federation = get_object_or_404(Federation, slug=federation_slug) if federation_slug else None
-    modify = True if federation else False
 
     if request.method == 'POST':
         form = FederationForm(request.POST, request.FILES, instance=federation)
         if not form.is_valid():
             messages.error(request, _('Please correct the errors indicated below'))
         else:
-            form.save()
-            if not modify:
-                form.instance.editor_users.add(request.user)
-            if 'file' in form.changed_data or 'file_url' in form.changed_data:
-                form.instance.process_metadata()
-                #form.instance.process_metadata_entities(request=request)
-            messages.success(request, _('Federation %s successfully' % 'modified' if modify else 'created'))
-            return HttpResponseRedirect(form.instance.get_absolute_url() + '?update=true')
+            return federation_edit_post(request, federation, form)
     else:
         form = FederationForm(instance=federation)
 
@@ -298,25 +305,18 @@ def federation_charts(request, federation_slug=None):
         form = ChartForm(request.POST, request.FILES, instance=federation)
 
         if form.is_valid():
-            statsConfigDict = getattr(settings, "STATS")
-            service_terms = statsConfigDict['statistics']['entity_by_type']['terms']
-            service_title = statsConfigDict['statistics']['entity_by_type']['title']
-            service_x_title = statsConfigDict['statistics']['entity_by_type']['x_title']
-            service_y_title = statsConfigDict['statistics']['entity_by_type']['y_title']
+            stats_config_dict = getattr(settings, "STATS")
+            service_terms = stats_config_dict['statistics']['entity_by_type']['terms']
+            protocol_terms = stats_config_dict['statistics']['entity_by_protocol']['terms']
             
-            protocol_terms = statsConfigDict['statistics']['entity_by_protocol']['terms']
-            protocol_title = statsConfigDict['statistics']['entity_by_protocol']['title']
-            protocol_x_title = statsConfigDict['statistics']['entity_by_protocol']['x_title']
-            protocol_y_title = statsConfigDict['statistics']['entity_by_protocol']['y_title']
-            
-            term_names = statsConfigDict['feature_names']
-            time_format = statsConfigDict['time_format']
-            protocols = statsConfigDict['protocols']
+            protocols = stats_config_dict['protocols']
 
             from_time = datetime.fromordinal(form.cleaned_data['fromDate'].toordinal())
-            if timezone.is_naive(from_time): from_time = pytz.utc.localize(from_time)
+            if timezone.is_naive(from_time):
+                from_time = pytz.utc.localize(from_time)
             to_time = datetime.fromordinal(form.cleaned_data['toDate'].toordinal() + 1)
-            if timezone.is_naive(to_time): to_time = pytz.utc.localize(to_time)
+            if timezone.is_naive(to_time):
+                to_time = pytz.utc.localize(to_time)
 
             service_stats = EntityStat.objects.filter(  federation=federation \
                                               , feature__in = service_terms \
@@ -328,9 +328,9 @@ def federation_charts(request, federation_slug=None):
                                               , time__gte = from_time \
                                               , time__lte = to_time).order_by("time")
 
-            s_chart = stats_chart(request, service_stats, service_terms, service_title, service_x_title, service_y_title, 'column', True, term_names, time_format)
+            s_chart = stats_chart(stats_config_dict, request, service_stats, 'entity_by_type')
 
-            p_chart = stats_chart(request, protocol_stats, protocol_terms, protocol_title, protocol_x_title, protocol_y_title, 'column', True, term_names, time_format, protocols)
+            p_chart = stats_chart(stats_config_dict, request, protocol_stats, 'entity_by_protocol', protocols)
 
             return render_to_response('metadataparser/federation_chart.html',
                                       {'form': form,
@@ -347,6 +347,46 @@ def federation_charts(request, federation_slug=None):
     return render_to_response('metadataparser/federation_chart.html',
                               {'settings': settings, 'form': form},
                               context_instance=RequestContext(request))
+
+
+def stats_chart(stats_config_dict, request, stats, entity, protocols=None):
+    
+    terms = stats_config_dict['statistics'][entity]['terms']
+    title = stats_config_dict['statistics'][entity]['title']
+    x_title = stats_config_dict['statistics'][entity]['x_title']
+    y_title = stats_config_dict['statistics'][entity]['y_title']
+    chart_type = 'column'
+    stacking = True
+    term_names = stats_config_dict['feature_names']
+    time_format = stats_config_dict['time_format']
+
+    statdata = _create_statdata('bar', stats, terms, term_names)
+    graph = 'protocols' if protocols else 'entities'
+
+    series_options = []
+    for stack in range(len(protocols) if protocols else 1):
+        for term in terms:
+            if not protocols or term.endswith(protocols[stack]):
+                series_options += \
+                  [{'options':{
+                      'type': chart_type,
+                      'stacking': stacking,
+                      'stack': stack,
+                    },
+                    'terms':{
+                      'time_%s' %term: [{term_names[term]: {'stack': stack, }}],
+                    }}]
+
+    chart_options = _get_chart_options('bar', title, x_title, y_title)
+
+    return Chart(
+        datasource = statdata,
+        series_options = series_options,
+        chart_options = chart_options, 
+        x_sortf_mapf_mts=(None, lambda i: datetime.fromtimestamp(time.mktime(i.replace(tzinfo=tz.gettz('UTC')).astimezone(tz.tzlocal()).timetuple())).strftime(time_format), False)
+    )
+
+
 
 def _create_statdata(chart_type, stats, terms=None, term_names=None):
     if chart_type == 'bar':
@@ -400,11 +440,11 @@ def _get_chart_options(chart_type, title=None, x_title=None, y_title=None):
     return chart_options
 
 def fed_pie_chart(request, federation_id):
-    statsConfigDict = getattr(settings, "STATS")
-    terms = statsConfigDict['statistics']['entity_by_type']['terms']
+    stats_config_dict = getattr(settings, "STATS")
+    terms = stats_config_dict['statistics']['entity_by_type']['terms']
     stats = EntityStat.objects.filter(federation = federation_id, \
                                       feature__in = terms).order_by('-time')[0:len(terms)]
-    term_names = statsConfigDict['feature_names']
+    term_names = stats_config_dict['feature_names']
 
     statdata = _create_statdata('pie', stats)
     series_options = \
@@ -418,32 +458,6 @@ def fed_pie_chart(request, federation_id):
         chart_options = chart_options,
     )
 
-def stats_chart(request, stats, terms, title, x_title, y_title, chart_type, stacking, term_names, time_format, protocols=None):
-    statdata = _create_statdata('bar', stats, terms, term_names)
-    graph = 'protocols' if protocols else 'entities'
-
-    series_options = []
-    for stack in range(len(protocols) if protocols else 1):
-        for term in terms:
-            if not protocols or term.endswith(protocols[stack]):
-                series_options += \
-                  [{'options':{
-                      'type': chart_type,
-                      'stacking': stacking,
-                      'stack': stack,
-                    },
-                    'terms':{
-                      'time_%s' %term: [{term_names[term]: {'stack': stack, }}],
-                    }}]
-
-    chart_options = _get_chart_options('bar', title, x_title, y_title)
-
-    return Chart(
-        datasource = statdata,
-        series_options = series_options,
-        chart_options = chart_options, 
-        x_sortf_mapf_mts=(None, lambda i: datetime.fromtimestamp(time.mktime(i.replace(tzinfo=tz.gettz('UTC')).astimezone(tz.tzlocal()).timetuple())).strftime(time_format), False)
-    )
 
 
 @profile(name='Entity view')
@@ -469,6 +483,22 @@ def entity_view(request, entityid):
 
 
 @user_can_edit(Entity)
+def entity_edit_post(request, form, federation, entity):
+    form.save()
+    if federation and not federation in form.instance.federations.all():
+        form.instance.federations.add(federation)
+        form.instance.save()
+
+    if entity:
+        messages.success(request, _('Entity modified successfully'))
+    else:
+        messages.success(request, _('Entity created successfully'))
+
+    return HttpResponseRedirect(form.instance.get_absolute_url())
+
+
+
+@user_can_edit(Entity)
 def entity_edit(request, federation_slug=None, entity_id=None):
     entity = None
     federation = None
@@ -483,20 +513,9 @@ def entity_edit(request, federation_slug=None, entity_id=None):
     if request.method == 'POST':
         form = EntityForm(request.POST, request.FILES, instance=entity)
         if form.is_valid():
-            form.save()
-            if (federation and
-               not federation in form.instance.federations.all()):
-                form.instance.federations.add(federation)
-                form.instance.save()
-            if entity:
-                messages.success(request, _('Entity modified successfully'))
-            else:
-                messages.success(request, _('Entity created successfully'))
-            return HttpResponseRedirect(form.instance.get_absolute_url())
-
+            return entity_edit_post(request, form, federation, entity)
         else:
-            messages.error(request, _('Please correct the errors indicated'
-                                      ' below'))
+            messages.error(request, _('Please correct the errors indicated below'))
     else:
         form = EntityForm(instance=entity)
 
@@ -596,21 +615,22 @@ def entity_proposal(request, federation_slug=None, entity_id=None):
 def search_service(request):
     filters = {}
     objects = []
-    if request.method == 'GET':
-        if 'entityid' in request.GET:
-            form = ServiceSearchForm(request.GET)
-            if form.is_valid():
-                entityid = form.cleaned_data['entityid']
-                entityid = entityid.strip()
-                filters['entityid__icontains'] = entityid
 
-        else:
-            form = ServiceSearchForm()
-        entity_type = request.GET.get('entity_type', None)
-        if entity_type:
-            filters['entity_type'] = entity_type
-        if filters:
-            objects = Entity.objects.filter(**filters)
+    if 'entityid' in request.GET:
+        form = ServiceSearchForm(request.GET)
+        if form.is_valid():
+            entityid = form.cleaned_data['entityid']
+            entityid = entityid.strip()
+            filters['entityid__icontains'] = entityid
+    else:
+        form = ServiceSearchForm()
+    entity_type = request.GET.get('entity_type', None)
+
+    if entity_type:
+        filters['entity_type'] = entity_type
+
+    if filters:
+        objects = Entity.objects.filter(**filters)
 
     if objects and 'format' in request.GET.keys():
         return export_query_set(request.GET.get('format'), objects,

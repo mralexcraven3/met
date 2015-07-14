@@ -30,13 +30,27 @@
   <h2>{{ entity }}</h2>
 {% endif %}
 
-<form method="get" action="{{ entity.absolute_url }}"><i>{% trans "Information retrieved from federation: " %}</i>
+<p style="margin-top:5px; float:left"><i>{% trans "Information retrieved from federation: " %}</i>&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<div class="btn-group pull-left">
+  <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+      {% if entity.curfed %}{{ entity.curfed }}{% else %}{% trans "Unknown" %}{% endif %}
+      <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu">
+  {% for curfed in entity.federations.all %}
+  <li><a href="?federation={{ curfed.slug }}">{{ curfed }}</a></li>
+  {% endfor %}
+  </ul>
+</div>
+<!--form method="get" action="{{ entity.absolute_url }}"><i>{% trans "Information retrieved from federation: " %}</i>
   <select name="federation" onchange="this.form.submit()">
   {% for curfed in entity.federations.all %}
   <option value="{{ curfed.slug }}" {% if curfed.slug == entity.curfed.slug %}selected{% endif %}>{{ curfed }}</option>
   {% endfor %}
   </select>
-</form>
+</form-->
+
+<br/><br/><br/>
 
 {% endblock %}
 

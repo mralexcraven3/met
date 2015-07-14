@@ -467,6 +467,10 @@ def entity_view(request, entityid):
 
     entity = get_object_or_404(Entity, entityid=entityid)
 
+    if 'federation' in request.GET:
+        federation = get_object_or_404(Federation, slug=request.GET.get('federation'))
+        entity.curfed = federation
+
     if 'format' in request.GET:
         return export_entity(request.GET.get('format'), entity)
 

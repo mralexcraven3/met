@@ -504,9 +504,7 @@ class Entity(Base):
     objects = models.Manager()
     longlist = EntityManager()
 
-    #@property
-    #def name(self):
-    #    return self._get_property('displayName')
+    curfed = None
 
     @property
     def registration_authority_xml(self):
@@ -590,10 +588,11 @@ class Entity(Base):
     def xml_types(self):
          return self._get_property('entity_types')
 
-    def display_protocols(self, federation=None):
+    @property
+    def display_protocols(self):
         protocols = []
 
-        xml_protocols = self._get_property('protocols', federation)
+        xml_protocols = self._get_property('protocols')
         if xml_protocols:
             for proto in xml_protocols:
                 protocols.append(self.READABLE_PROTOCOLS.get(proto, proto))
@@ -685,7 +684,7 @@ class Entity(Base):
 
     def _get_property(self, prop, federation=None):
         try:
-            self.load_metadata(federation)
+            self.load_metadata(federation or self.curfed)
         except ValueError:
             return None
 

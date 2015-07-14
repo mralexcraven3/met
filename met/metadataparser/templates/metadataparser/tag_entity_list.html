@@ -55,7 +55,7 @@ of IDP and SP can be bigger than the number of entities
   <tr>
     <td>
       <a title="{{ entity.entityid }}"
-         href="{{ entity.absolute_url }}">{{ entity.entityid|wrap:50 }}</a>
+         href="{{ entity.absolute_url }}?federation={{ curfed.slug }}">{{ entity.entityid|wrap:50 }}</a>
     </td>
     <td>
       {{ entity.types|display_etype }}

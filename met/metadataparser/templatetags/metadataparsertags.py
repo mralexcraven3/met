@@ -73,7 +73,7 @@ def federations_summary(context, queryname, counts, federations=None):
 
 
 @register.inclusion_tag('metadataparser/tag_entity_list.html', takes_context=True)
-def entity_list(context, entities, pagination=None, show_total=True, append_query=None):
+def entity_list(context, entities, pagination=None, curfed=None, show_total=True, append_query=None):
     request = context.get('request', None)
     lang = 'en'
     if request:
@@ -81,6 +81,7 @@ def entity_list(context, entities, pagination=None, show_total=True, append_quer
 
     return {'request': request,
             'entities': entities,
+            'curfed' : curfed,
             'show_filters': context.get('show_filters'),
             'append_query': append_query,
             'show_total': show_total,

@@ -92,7 +92,7 @@
   </a>
   <ul class="dropdown-menu">
     {% for lang in entity.languages|split:" " %}
-    <li><a href="?lang={{ lang }}">{{ lang }}</a></li>
+    <li><a href="?lang={{ lang }}{% if entity.curfed %}&federation={{ entity.curfed.slug }}{% endif %}">{{ lang }}</a></li>
     {% endfor %}
   </ul>
 </div>

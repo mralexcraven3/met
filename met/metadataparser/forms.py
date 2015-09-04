@@ -131,7 +131,7 @@ class FederationForm(forms.ModelForm):
 
     class Meta:
         model = Federation
-        fields = ['name', 'url', 'registration_authority', 'logo', 'is_interfederation', 'type', 'fee_schedule_url', 'file_url', 'file', 'editor_users']
+        fields = ['name', 'url', 'registration_authority', 'country', 'logo', 'is_interfederation', 'type', 'fee_schedule_url', 'file_url', 'file', 'editor_users']
 
 
 class EntityForm(forms.ModelForm):

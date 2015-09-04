@@ -240,6 +240,9 @@ class Federation(Base):
                                          verbose_name=_(u'Is interfederation'))
     slug = models.SlugField(max_length=200, unique=True)
 
+    country = models.CharField(blank=True, null=True, max_length=100,
+                               unique=False, verbose_name=_(u'Country'))
+
     @property
     def _metadata(self):
         if not hasattr(self, '_metadata_cache'):

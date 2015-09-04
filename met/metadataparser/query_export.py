@@ -43,7 +43,11 @@ def export_json(model, filename, fields):
     for obj in model:
         item = {}
         for field in fields:
-            item[field] = obj[field]
+            if type(obj[field]) == set:
+                item[field] = list(obj[field])
+            else:
+                item[field] = obj[field]
+
         objs.append(item)
     # Return JS file to browser as download
     serialized = json.dumps(objs)
@@ -60,7 +64,7 @@ def _parse_xml_element(xml, father, structure):
             father.appendChild(tag)
             _parse_xml_element(xml, tag, structure[k])
     elif type(structure) == tuple:
-        tag_ame = father.tagName
+        tag_name = father.tagName
         for l in list(structure):
             tag = xml.createElement(tag_name)
             _parse_xml_element(xml, tag, l)
@@ -68,6 +72,12 @@ def _parse_xml_element(xml, father, structure):
     elif type(structure) == list:
         tag_name = father.tagName
         for l in structure:
+            tag = xml.createElement(tag_name)
+            _parse_xml_element(xml, tag, l)
+            father.appendChild(tag)
+    elif type(structure) == set:
+        tag_name = father.tagName
+        for l in list(structure):
             tag = xml.createElement(tag_name)
             _parse_xml_element(xml, tag, l)
             father.appendChild(tag)

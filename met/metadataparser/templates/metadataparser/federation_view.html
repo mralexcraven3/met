@@ -89,6 +89,10 @@
         <p><img alt="{{ federation }} logo" src="{{ MEDIA_URL }}{{ federation.logo }}"/></p>
     {% endif %}
 
+    {% if federation.country %}
+        <p>{% trans "Country" %}: {{ federation.country }}</p>
+    {% endif %}
+
     {% if federation.registration_authority %}
         <p>{% trans "Registration authority" %}: {{ federation.registration_authority }}</p>
     {% endif %}

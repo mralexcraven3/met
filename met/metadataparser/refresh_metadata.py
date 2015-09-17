@@ -70,14 +70,14 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
     
             if not error_msg and (force_refresh or data_changed):
                 log('Updating database ...', logger, logging.INFO)
-    
+             
                 log('Updating federation ...', logger, logging.DEBUG)
                 federation.process_metadata()
-    
+            
                 log('Updating federation entities ...', logger, logging.DEBUG)
                 removed, updated = federation.process_metadata_entities(timestamp=timestamp)
                 log('Removed %s old entities and updated %s entities.' % (removed, updated), logger, logging.INFO)
-    
+            
                 log('Updating federation file ...', logger, logging.DEBUG)
                 federation.save(update_fields=['file'])
 

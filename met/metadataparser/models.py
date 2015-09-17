@@ -428,9 +428,12 @@ class Federation(Base):
     def get_stat_protocol(self, entities, xml_name, service_type):
         count = 0
         for entity in entities:
-            cur_cached_types = [t.xmlname for t in entity.types.all()]
-            if service_type in cur_cached_types and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols(self):
-                count += 1
+            try:
+                cur_cached_types = [t.xmlname for t in entity.types.all()]
+                if service_type in cur_cached_types and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols():
+                    count += 1
+            except Exception, e:
+                pass
         return count
 
     def can_edit(self, user, delete):

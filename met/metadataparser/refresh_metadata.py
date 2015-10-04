@@ -17,7 +17,7 @@ import logging
 import itertools
 from urlparse import urlsplit
 from django.utils import timezone
-
+from datetime import date
 from lxml import etree
 
 from django.core.files.base import ContentFile
@@ -78,8 +78,9 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 removed, updated = federation.process_metadata_entities(timestamp=timestamp)
                 log('Removed %s old entities and updated %s entities.' % (removed, updated), logger, logging.INFO)
             
-                log('Updating federation file ...', logger, logging.DEBUG)
-                federation.save(update_fields=['file'])
+                log('Updating federation file and metadata_date...', logger, logging.DEBUG)
+                federation.metadata_update = date.today()
+                federation.save(update_fields=['file', 'metadata_update'])
 
             log('Updating federation statistics ...', logger, logging.DEBUG)
             federation.compute_new_stats(timestamp=timestamp)

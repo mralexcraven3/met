@@ -243,6 +243,9 @@ class Federation(Base):
     country = models.CharField(blank=True, null=True, max_length=100,
                                unique=False, verbose_name=_(u'Country'))
 
+    metadata_update = models.DateField(blank=True, null=True,
+                                       unique=False, verbose_name=_(u'Metadata update date'))
+
     @property
     def _metadata(self):
         if not hasattr(self, '_metadata_cache'):

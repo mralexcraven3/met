@@ -611,21 +611,19 @@ class Entity(Base):
     def display_attributes(self):
         attributes = {}
         for attr in self.attributes.split(' '):
-            oid = attr.replace('urn:oid:', '')
             if attr in attributemap.MAP['fro']:
-                attributes[oid] = attributemap.MAP['fro'][attr]
+                attributes[attr] = attributemap.MAP['fro'][attr]
             else:
-                attributes[oid] = attr
+                attributes[attr] = '?'
         return attributes
 
     def display_attributes_optional(self):
         attributes = {}
         for attr in self.attributes_optional.split(' '):
-            oid = attr.replace('urn:oid:', '')
             if attr in attributemap.MAP['fro']:
-                attributes[oid] = attributemap.MAP['fro'][attr]
+                attributes[attr] = attributemap.MAP['fro'][attr]
             else:
-                attributes[oid] = attr
+                attributes[attr] = '?'
         return attributes
 
     @property

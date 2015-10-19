@@ -227,8 +227,7 @@
       <td>
           <ul>
               {% for attr in entity.display_attributes.items %}
-                  <!--li>{{ attr.1 }} [<a href="http://oid-info.com/get/{{ attr.0 }}" target="_blank">{% trans "info" %}</a>]</li-->
-                  <li>{{ attr.1 }}</li>
+                  <li>{{ attr.0 }} ({{ attr.1 }})</li>
               {% endfor %}
           </ul>
       </td>
@@ -242,8 +241,7 @@
       <td>
           <ul>
               {% for attr in entity.display_attributes_optional.items %}
-                  <!--li>{{ attr.1 }} [<a href="http://oid-info.com/get/{{ attr.0 }}" target="_blank">{% trans "info" %}</a>]</li-->
-                  <li>{{ attr.1 }}</li>
+                  <li>{{ attr.0 }} ({{ attr.1 }})</li>
               {% endfor %}
           </ul>
       </td>

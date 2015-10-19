@@ -546,15 +546,15 @@ class Entity(Base):
     def attributes(self):
         attributes = self._get_property('attr_requested')
         if not attributes:
-            return ''
-        return ' '.join(attributes['required'])
+            return []
+        return attributes['required']
 
     @property
     def attributes_optional(self):
         attributes = self._get_property('attr_requested')
         if not attributes:
-            return ''
-        return ' '.join(attributes['optional'])
+            return []
+        return attributes['optional']
 
     @property
     def organization(self):
@@ -610,8 +610,10 @@ class Entity(Base):
 
     def display_attributes(self):
         attributes = {}
-        for attr in self.attributes.split(' '):
-            if attr in attributemap.MAP['fro']:
+        for [attr, friendly] in self.attributes:
+            if friendly:
+                attributes[attr] = friendly
+            elif attr in attributemap.MAP['fro']:
                 attributes[attr] = attributemap.MAP['fro'][attr]
             else:
                 attributes[attr] = '?'
@@ -619,8 +621,10 @@ class Entity(Base):
 
     def display_attributes_optional(self):
         attributes = {}
-        for attr in self.attributes_optional.split(' '):
-            if attr in attributemap.MAP['fro']:
+        for [attr, friendly] in self.attributes_optional:
+            if friendly:
+                attributes[attr] = friendly
+            elif attr in attributemap.MAP['fro']:
                 attributes[attr] = attributemap.MAP['fro'][attr]
             else:
                 attributes[attr] = '?'

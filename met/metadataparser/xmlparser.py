@@ -335,7 +335,7 @@ class MetadataParser(object):
         for attr_node in xmllogos:
             required = attr_node.attrib.get('isRequired', 'false')
             index = 'required' if required == 'true' else 'optional'
-            attrs[index].append(attr_node.attrib.get('Name', None))
+            attrs[index].append([attr_node.attrib.get('Name', None), attr_node.attrib.get('FriendlyName', None)])
         return attrs
 
     @staticmethod

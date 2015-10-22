@@ -528,6 +528,7 @@ class Entity(Base):
         reginstant = self._get_property('registration_instant')
         if reginstant is None:
             return None
+        reginstant = "%sZ" % reginstant[0:19]
         return datetime.strptime(reginstant, '%Y-%m-%dT%H:%M:%SZ')
 
     @property

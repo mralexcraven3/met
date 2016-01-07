@@ -44,7 +44,11 @@ setup(name='met',
           'djangosaml2>=0.9.0',
           'django-pagination>=1.0.7',
           'django-chartit',
+<<<<<<< HEAD
 	  'python-memcached',
+=======
+	  'python-memcached>=1.48',
+>>>>>>> 779111eb032834899c335eff1a99a262814c4b2e
           'simplejson',
           'django-mysqlpool',
           'django-silk',

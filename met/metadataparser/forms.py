@@ -14,7 +14,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 from django.forms.widgets import CheckboxSelectMultiple, Widget
 from django.forms.extras.widgets import SelectDateWidget
-from django.forms.util import ErrorDict, flatatt
+from django.forms.utils import ErrorDict, flatatt
 
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta

@@ -22,7 +22,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core import validators
-from django.core.cache import get_cache
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
 from django.db import models, transaction
@@ -775,7 +775,6 @@ class Entity(Base):
     def get_most_federated_entities(self, maxlength=TOP_LENGTH, cache_expire=None):
         entities = None
         if cache_expire:
-            cache = get_cache("default")
             entities = cache.get("most_federated_entities")
 
         if not entities or len(entities) < maxlength:
@@ -795,7 +794,6 @@ class Entity(Base):
                 })
 
         if cache_expire:
-            cache = get_cache("default")
             cache.set("most_federated_entities", entities, cache_expire)
 
         return entities[:maxlength]

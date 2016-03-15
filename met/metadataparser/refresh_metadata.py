@@ -10,23 +10,13 @@
 # Consortium GARR, http://www.garr.it
 #########################################################################################
 
-import os
-from os import path
-import requests
 import logging
-import itertools
-from urlparse import urlsplit
 from django.utils import timezone
 from datetime import date
-from lxml import etree
 
-from django.core.files.base import ContentFile
 from django.conf import settings
 
-from pyff.mdrepo import MDRepository
-from pyff.pipes import Plumbing
-
-from met.metadataparser.utils import compare_filecontents, send_mail
+from met.metadataparser.utils import send_mail
 from met.metadataparser.models import Federation
 
 if settings.PROFILE:
@@ -48,6 +38,7 @@ def _fetch_new_metadata_file(federation, logger):
         changed = federation.fetch_metadata_file(federation.slug)
         return None, changed
     except Exception, errorMessage:
+        log('%s' % errorMessage, logger, logging.ERROR)
         return "%s" % errorMessage, False
 
 def refresh(fed_name=None, force_refresh=False, logger=None):

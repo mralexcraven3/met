@@ -1,4 +1,4 @@
-met
+met [![Code Health](https://landscape.io/github/biancini/met/master/landscape.svg?style=flat)](https://landscape.io/github/biancini/met/master)
 ===
 
 Metadata Explorer Tool is a fast way to find federations, entities and his relations through entity/federation metadata file information.

@@ -213,7 +213,7 @@ class Base(models.Model):
 
     @classmethod
     def process_metadata(cls):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 class XmlDescriptionError(Exception):

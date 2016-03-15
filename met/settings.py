@@ -258,17 +258,17 @@ STATS = {
     # Statistics that can be shown (values are keys for 'features')
     'statistics': {
         'entity_by_type': {
-	    'terms': ['sp', 'idp'],
-	    'title': 'Services',
-	    'x_title': 'Time',
-	    'y_title': 'Count'
-	},
+            'terms': ['sp', 'idp'],
+            'title': 'Services',
+            'x_title': 'Time',
+            'y_title': 'Count'
+        },
         'entity_by_protocol': {
-	    'terms': ['sp_saml1', 'sp_saml2', 'sp_shib1', 'idp_saml1', 'idp_saml2', 'idp_shib1'],
-	    'title': 'Protocols',
-	    'x_title': 'Time',
-	    'y_title': 'Count'
-	},
+            'terms': ['sp_saml1', 'sp_saml2', 'sp_shib1', 'idp_saml1', 'idp_saml2', 'idp_shib1'],
+            'title': 'Protocols',
+            'x_title': 'Time',
+            'y_title': 'Count'
+        },
     },
 
     # Time format in the x axis

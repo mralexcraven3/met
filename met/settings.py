@@ -15,8 +15,9 @@
 import os
 
 try:
-    from local_settings import ADMINS, BASEDIR, BASEURL, PROFILE
+    from local_settings import ADMINS, BASEDIR, BASEURL, PROFILE, DATABASES, ALLOWED_HOSTS
 except:
+    print "Error in loading local_settings"
     pass
 
 MANAGERS = ADMINS
@@ -274,4 +275,3 @@ STATS = {
     # Time format in the x axis
     'time_format': '%m/%d/%Y %H:%M',
 }
-

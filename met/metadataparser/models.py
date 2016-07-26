@@ -10,6 +10,7 @@
 # Consortium GARR, http://www.garr.it
 #########################################################################################
 
+import sys
 import requests
 import simplejson as json
 
@@ -180,8 +181,8 @@ class Base(models.Model):
             md = MDRepository()
             entities = Plumbing(pipeline=pipeline, id=self.slug).process(md, state={'batch': True, 'stats': {}})
             return etree.tostring(entities)
-        except:
-            raise Exception('Getting metadata from %s failed.' % load_streams)
+        except Exception, e:
+            raise Exception('Getting metadata from %s failed.\nError: %s' % (load_streams, e))
 
     def fetch_metadata_file(self, file_name):
         file_url = self.file_url
@@ -728,8 +729,8 @@ class Entity(Base):
         if not entity_data:
             self.load_metadata()
 
-        if self.entityid != entity_data.get('entityid'):
-            raise ValueError("EntityID is not the same")
+        if self.entityid.lower() != entity_data.get('entityid').lower():
+            raise ValueError("EntityID is not the same: %s != %s" % (self.entityid.lower(), entity_data.get('entityid').lower()))
 
         self._entity_cached = entity_data
         if self.xml_types:

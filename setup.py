@@ -15,6 +15,9 @@ import sys, os
 
 version = '0.1'
 
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 setup(name='met',
       version=version,
       description="Metadata Explorer Tool",
@@ -35,21 +38,7 @@ setup(name='met',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
       zip_safe=False,
-      install_requires=[
-          'Django>=1.7',
-          'MySQL-python',
-          'lxml>=2.3.5',
-          'PIL',
-          'requests>=1.0.0',
-          'djangosaml2>=0.9.0',
-          'django-pagination==1.0.7',
-          'django-chartit',
-	  'python-memcached==1.48',
-          'simplejson',
-          'django-mysqlpool',
-          'django-silk',
-          'pyff'
-      ],
+      install_requires=required,
       entry_points="""
       # -*- Entry points: -*-
       """,

@@ -17,3 +17,7 @@ met-venv
 /.pydevproject
 /.cache
 /static
+bin
+obj
+env
+.vs

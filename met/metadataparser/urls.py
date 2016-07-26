@@ -46,7 +46,7 @@ urlpatterns = patterns('met.metadataparser.views',
     )
 
 if comments_and_proposals:
-    urlpatters += patterns('met.metadataparser.views',
+    urlpatterns += patterns('met.metadataparser.views',
         url(r'^entity/(?P<entity_id>.+)/comment/$', 'entity_comment', name='entity_comment'),
         url(r'^entity/(?P<entity_id>.+)/proposal/$', 'entity_proposal', name='entity_proposal'),
     )

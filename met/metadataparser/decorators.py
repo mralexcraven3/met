@@ -46,6 +46,7 @@ def user_can_edit(objtype, login_url=None,
 
         @wraps(view_func, assigned=available_attrs(view_func))
         def _wrapped_view(request, *args, **kwargs):
+            path = request.build_absolute_uri()
             objid = _get_objid(kwargs)
             if objtype and objid:
                 obj = objtype.objects.get(id=objid)

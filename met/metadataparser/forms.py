@@ -14,7 +14,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 from django.forms.widgets import CheckboxSelectMultiple, Widget
 from django.forms.extras.widgets import SelectDateWidget
-from django.forms.util import ErrorDict, flatatt
+from django.forms.utils import ErrorDict, flatatt
 
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
@@ -26,10 +26,10 @@ from met.metadataparser.models import Federation, Entity
 class MultiURLforMetadata(Widget):
     def render(self, name, value, attrs=None, choices=()):
         if value is None:
-            value = ""
-	 
+            value = []
+         
         final_attrs = self.build_attrs(attrs, name=name)
-	output = []
+        output = []
         output.append(format_html('<table id="metadata_type" class="display" cellspacing="0" width="100%"><thead><tr><th>Metadata</th><th>Type</th></tr></thead><tbody>', flatatt(final_attrs)))
         
 	for curpair in value.split("|"):
@@ -39,9 +39,9 @@ class MultiURLforMetadata(Widget):
             if len(val) == 1:
                 val.append("All")
 
-	    output.append('<tr><td>%s</th><td>%s</td></tr>' % (val[0], val[1]))
+            output.append('<tr><td>%s</th><td>%s</td></tr>' % (val[0], val[1]))
 
-	output.append('''
+        output.append('''
             </tbody></table>
             <br/>
 
@@ -75,8 +75,8 @@ class MultiURLforMetadata(Widget):
                     var data = this.data();
                     text += data[0] +  ";" + data[1] + "|";
                 } );
-		text = text.substring(0, text.length - 1);
-		$('#id_%s').val(text);
+                text = text.substring(0, text.length - 1);
+                $('#id_%s').val(text);
 
                 $('#add').click( function () {
                     if ($('#meta_URL').val() == undefined) return;
@@ -97,19 +97,19 @@ class MultiURLforMetadata(Widget):
                         var data = this.data();
                         text +=data[0] +  ";" + data[1] + "|";
                     } );
-		    text = text.substring(0, text.length - 1);
-		    $('#id_%s').val(text);
+                    text = text.substring(0, text.length - 1);
+                    $('#id_%s').val(text);
                 });
 
                 $('#delete').click( function () {
                     table.row('.selected').remove().draw(false);
-		   
-		    var text = "";
+                   
+                    var text = "";
                     table.rows().every( function () {
                         var data = this.data();
                         text +=data[0] +  ";" + data[1] + "|";
                     } );
-		    text = text.substring(0, text.length - 1);
+                    text = text.substring(0, text.length - 1);
                     $('#id_%s').val(text); 
                 });
             });

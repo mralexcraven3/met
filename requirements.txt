@@ -1,0 +1,13 @@
+Django>=1.7
+MySQL-python
+lxml>=2.3.5
+Pillow
+requests>=1.0.0
+djangosaml2>=0.9.0
+django-pagination>=1.0.7
+django-chartit
+python-memcached>=1.48
+simplejson
+django-mysqlpool
+django-silk
+pyff

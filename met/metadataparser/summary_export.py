@@ -52,7 +52,7 @@ def export_summary_json(qs, relation, filename, counters=None):
 
 
 def export_summary_xml(qs, relation, filename, counters):
-    model = qs.model
+    #model = qs.model
 
     xml = Document()
     root = xml.createElement(filename)

@@ -203,7 +203,7 @@ class Base(models.Model):
             original_file_content = self.file.read()
             if compare_filecontents(original_file_content, req):
                 return False
-        except IOError:
+        except:
             pass
 
         filename = path.basename("%s-metadata.xml" % file_name)
@@ -841,7 +841,7 @@ def federation_pre_save(sender, instance, **kwargs):
         return
 
     slug = slugify(unicode(instance.name))[:200]
-    if instance.file_url:
+    if instance.file_url and instance.file_url != '':
         instance.fetch_metadata_file(slug)
     if instance.name:
         instance.slug = slugify(unicode(instance))[:200]

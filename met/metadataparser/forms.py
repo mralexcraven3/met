@@ -26,11 +26,12 @@ from met.metadataparser.models import Federation, Entity
 class MultiURLforMetadata(Widget):
     def render(self, name, value, attrs=None, choices=()):
         if value is None:
-            value = []
+            value = ""
 	 
         final_attrs = self.build_attrs(attrs, name=name)
 	output = []
         output.append(format_html('<table id="metadata_type" class="display" cellspacing="0" width="100%"><thead><tr><th>Metadata</th><th>Type</th></tr></thead><tbody>', flatatt(final_attrs)))
+        
 	for curpair in value.split("|"):
 	    val = ''.join(curpair)
             val = curpair.split(";")
@@ -80,11 +81,11 @@ class MultiURLforMetadata(Widget):
                 $('#add').click( function () {
                     if ($('#meta_URL').val() == undefined) return;
 		    texturl = $('#meta_URL').val();
-                    var urlpattern = new RegExp("(http|ftp|https)://[\\w-]+(\\.[\\w-]+)+([\\w.,@?^=%%&amp;:/~+#-]*[\\w@?^=%%&amp;/~+#-])?");
-                    if (!urlpattern.test($('#meta_URL').val())) {
-                        $('#new_URL_set').addClass("error");
-			return; 
-		    }
+                    //var urlpattern = new RegExp("(http|ftp|https)://[\\w-]+(\\.[\\w-]+)+([\\w.,@?^=%%&amp;:/~+#-]*[\\w@?^=%%&amp;/~+#-])?");
+                    //if (!urlpattern.test($('#meta_URL').val())) {
+                    //    $('#new_URL_set').addClass("error");
+		    //	return; 
+		    //}
 
                     $('#new_URL_set').removeClass("error");
                     table.row.add([$('#meta_URL').val(), $('#type_URL').val()]).draw();

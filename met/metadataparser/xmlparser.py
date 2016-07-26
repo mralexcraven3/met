@@ -64,7 +64,7 @@ class MetadataParser(object):
             raise ValueError('filename is required')
 
         self.filename = filename
-        context = etree.iterparse(self.filename, events=('start',))
+        context = etree.iterparse(self.filename, events=('start',), huge_tree=True, remove_blank_text=True)
         context = iter(context)
         event, self.rootelem = context.next()
         self.file_id = self.rootelem.get('ID', None)
@@ -138,7 +138,7 @@ class MetadataParser(object):
         return federation
 
     def get_entity(self, entityid, details=True):
-        context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',))
+        context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',), huge_tree=True, remove_blank_text=True)
         element = None
         for element in MetadataParser._get_entity_by_id(context, entityid, details):
             return element
@@ -161,7 +161,7 @@ class MetadataParser(object):
 
     def get_entities(self):
         # Return entityid list
-        context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',))
+        context = etree.iterparse(self.filename, tag=addns('EntityDescriptor'), events=('end',), huge_tree=True, remove_blank_text=True)
         return list(self._get_entities_id(context))
 
     @staticmethod

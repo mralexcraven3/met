@@ -21,3 +21,5 @@ bin
 obj
 env
 .vs
+automatic_refresh/.cache
+saml2/edugain_metadata.xml

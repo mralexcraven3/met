@@ -26,7 +26,7 @@ from met.metadataparser.models import Federation, Entity
 class MultiURLforMetadata(Widget):
     def render(self, name, value, attrs=None, choices=()):
         if value is None:
-            value = []
+            value = ""
          
         final_attrs = self.build_attrs(attrs, name=name)
         output = []
@@ -39,7 +39,8 @@ class MultiURLforMetadata(Widget):
             if len(val) == 1:
                 val.append("All")
 
-            output.append('<tr><td>%s</th><td>%s</td></tr>' % (val[0], val[1]))
+            if val[0]:
+                output.append('<tr><td>%s</th><td>%s</td></tr>' % (val[0], val[1] or 'All'))
 
         output.append('''
             </tbody></table>
@@ -81,11 +82,11 @@ class MultiURLforMetadata(Widget):
                 $('#add').click( function () {
                     if ($('#meta_URL').val() == undefined) return;
 		    texturl = $('#meta_URL').val();
-                    //var urlpattern = new RegExp("(http|ftp|https)://[\\w-]+(\\.[\\w-]+)+([\\w.,@?^=%%&amp;:/~+#-]*[\\w@?^=%%&amp;/~+#-])?");
-                    //if (!urlpattern.test($('#meta_URL').val())) {
-                    //    $('#new_URL_set').addClass("error");
-		    //	return; 
-		    //}
+                    var urlpattern = new RegExp('([a-zA-Z\d]+:\\/\\/)?((\\w+:\\w+@)?([a-zA-Z\\d.-]+\\.[A-Za-z]{2,4})(:\\d+)?(\\/.*)?)','i'); // fragment locater
+                    if (!urlpattern.test($('#meta_URL').val())) {
+                        $('#new_URL_set').addClass("error");
+		    	return; 
+		    }
 
                     $('#new_URL_set').removeClass("error");
                     table.row.add([$('#meta_URL').val(), $('#type_URL').val()]).draw();

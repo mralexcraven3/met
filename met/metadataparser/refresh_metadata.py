@@ -72,7 +72,7 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 log('Updating federation file and metadata_date...', logger, logging.DEBUG)
                 federation.metadata_update = date.today()
                 federation.save(update_fields=['file', 'metadata_update'])
-                log('Federation update time modified with %s' % federation.metadata_update)
+                log('Federation update time modified with %s' % federation.metadata_update, logger, logging.INFO)
 
             log('Updating federation statistics ...', logger, logging.DEBUG)
             federation.compute_new_stats(timestamp=timestamp)

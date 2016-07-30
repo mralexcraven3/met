@@ -56,26 +56,28 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
 
         error_msg = None
         try:
-            log('Refreshing metadata for federation %s ...'  % federation, logger, logging.INFO)
+            log('[%s] Refreshing metadata ...'  % federation, logger, logging.INFO)
             error_msg, data_changed = _fetch_new_metadata_file(federation, logger)
     
             if not error_msg and (force_refresh or data_changed):
-                log('Updating database ...', logger, logging.INFO)
+                log('[%s] Updating database ...' % federation, logger, logging.INFO)
              
-                log('Updating federation ...', logger, logging.DEBUG)
+                log('[%s] Updating federation ...' % federation, logger, logging.DEBUG)
                 federation.process_metadata()
             
-                log('Updating federation entities ...', logger, logging.DEBUG)
+                log('[%s] Updating federation entities ...' % federation, logger, logging.DEBUG)
                 removed, updated = federation.process_metadata_entities(timestamp=timestamp)
-                log('Removed %s old entities and updated %s entities.' % (removed, updated), logger, logging.INFO)
+                log('[%s] Removed %s old entities and updated %s entities.' % (federation, removed, updated), logger, logging.INFO)
             
-                log('Updating federation file and metadata_date...', logger, logging.DEBUG)
+                log('[%s] Updating federation file and metadata_date...' % federation, logger, logging.DEBUG)
                 federation.metadata_update = date.today()
                 federation.save(update_fields=['file', 'metadata_update'])
-                log('Federation update time modified with %s' % federation.metadata_update)
+                log('[%s] Federation update time modified with %s' % (federation, federation.metadata_update))
 
-            log('Updating federation statistics ...', logger, logging.DEBUG)
-            federation.compute_new_stats(timestamp=timestamp)
+            log('[%s] Updating federation statistics ...' % federation, logger, logging.DEBUG)
+            (computed, not_computed) = federation.compute_new_stats(timestamp=timestamp)
+            log('[%s] Computed statistics: %s' % (federation, computed), logger, logging.DEBUG)
+            log('[%s] NOT Computed statistics: %s' % (federation, not_computed), logger, logging.DEBUG)
 
         except Exception, e:
             error_msg = '%s %s' % (error_msg, e)

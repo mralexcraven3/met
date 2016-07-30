@@ -15,7 +15,7 @@
 import os
 
 try:
-    from local_settings import ADMINS, BASEDIR, BASEURL, PROFILE, DATABASES, ALLOWED_HOSTS
+    from local_settings import ADMINS, BASEDIR, BASEURL, PROFILE, DATABASES, ALLOWED_HOSTS, MAIL_CONFIG
 except:
     print "Error in loading local_settings"
     pass

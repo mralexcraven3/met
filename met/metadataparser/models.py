@@ -351,6 +351,8 @@ class Federation(Base):
         entities = Entity.objects.filter(entityid__in=entities_from_xml)
         entities = entities.prefetch_related('types')
 
+        computed = {}
+        not_computed = []
         entity_stats = []
         for feature in stats['features'].keys():
             fun = getattr(self, 'get_%s' % feature, None)
@@ -362,8 +364,12 @@ class Federation(Base):
                 stat.federation = self
                 stat.value = fun(entities, stats['features'][feature])
                 entity_stats.append(stat)
+                computed[feature] = stat.value
+            else:
+                not_computed.append(feature)
 
         EntityStat.objects.bulk_create(entity_stats)
+        return (computed, not_computed)
 
     def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
         entities_from_xml = self._metadata.get_entities()
@@ -434,7 +440,7 @@ class Federation(Base):
         for entity in entities:
             try:
                 cur_cached_types = [t.xmlname for t in entity.types.all()]
-                if service_type in cur_cached_types and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols():
+                if service_type in cur_cached_types and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols:
                     count += 1
             except Exception, e:
                 pass

@@ -334,7 +334,6 @@ def federation_charts(request, federation_slug=None):
 
 
 def stats_chart(stats_config_dict, request, stats, entity, protocols=None):
-    
     terms = stats_config_dict['statistics'][entity]['terms']
     title = stats_config_dict['statistics'][entity]['title']
     x_title = stats_config_dict['statistics'][entity]['x_title']

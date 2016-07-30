@@ -273,5 +273,5 @@ STATS = {
     },
 
     # Time format in the x axis
-    'time_format': '%m/%d/%Y %H:%M',
+    'time_format': '%d/%m/%Y',
 }

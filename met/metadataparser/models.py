@@ -13,11 +13,12 @@
 import sys
 import requests
 import simplejson as json
+import pytz
 
 from os import path
 from urlparse import urlsplit, urlparse
 from urllib import quote_plus
-from datetime import datetime
+from datetime import datetime, time
 
 from django.conf import settings
 from django.contrib import messages
@@ -368,6 +369,14 @@ class Federation(Base):
             else:
                 not_computed.append(feature)
 
+        from_time = datetime.combine(timestamp, time.min) 
+        if timezone.is_naive(from_time):
+            from_time = pytz.utc.localize(from_time)
+        to_time = datetime.combine(timestamp, time.max)
+        if timezone.is_naive(to_time):
+            to_time = pytz.utc.localize(to_time)
+
+        EntityStat.objects.filter(federation=self, time__gte = from_time, time__lte = to_time).delete()
         EntityStat.objects.bulk_create(entity_stats)
         return (computed, not_computed)
 

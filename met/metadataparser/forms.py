@@ -168,6 +168,12 @@ class ChartForm(forms.Form):
                 errors = ErrorDict()
                 errors['toDate'] = 'End date must not be before Start date'
                 self._errors = errors
+            else:
+                result = (self.cleaned_data['toDate'] - self.cleaned_data['fromDate']).days < 11
+                if not result:
+                    errors = ErrorDict()
+                    errors['fromDate'] = 'The maximum number of days shown in the chart is 11 days'
+                    self._errors = errors
 
         return result
             

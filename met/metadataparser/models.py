@@ -364,7 +364,6 @@ class Federation(Base):
             first_date = pytz.utc.localize(first_date)
       
         for curtimestamp in self._daterange(first_date, timezone.now()):
-            print "computing stas for day %s" % curtimestamp
             computed = {}
             not_computed = []
             entity_stats = []

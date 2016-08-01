@@ -12,7 +12,6 @@
 
 import csv
 from xml.dom.minidom import Document
-import hashlib
 
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
@@ -90,12 +89,15 @@ def _parse_xml_element(xml, father, structure):
         father.appendChild(tag)
 
 
-def export_xml(model, filename, fields):
+def export_xml(model, filename, fields=None):
     xml = Document()
     root = xml.createElement(filename)
-    xml.appendChild(root)
     for obj in model:
-        _parse_xml_element(xml, root, obj)
+        elem = xml.createElement("entity")
+        _parse_xml_element(xml, elem, obj)
+        root.appendChild(elem)
+    xml.appendChild(root)
+
     # Return xml file to browser as download
     response = HttpResponse(xml.toxml(), content_type='application/xml')
     response['Content-Disposition'] = ('attachment; filename=%s.xml'

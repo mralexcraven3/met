@@ -10,15 +10,13 @@
 # Consortium GARR, http://www.garr.it
 #########################################################################################
 
-import sys
-import requests
 import simplejson as json
 import pytz
 
 from os import path
-from urlparse import urlsplit, urlparse
+from urlparse import urlparse
 from urllib import quote_plus
-from datetime import datetime, time, timedelta, date
+from datetime import datetime, time, timedelta
 
 from django.conf import settings
 from django.contrib import messages
@@ -27,7 +25,7 @@ from django.core import validators
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Count, Max
 from django.db.models.signals import pre_save
 from django.db.models.query import QuerySet
@@ -142,7 +140,7 @@ class Base(models.Model):
     editor_users = models.ManyToManyField(User, null=True, blank=True,
                                           verbose_name=_('editor users'))
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
     class XmlError(Exception):
@@ -153,7 +151,7 @@ class Base(models.Model):
 
     def load_file(self):
         if not hasattr(self, '_loaded_file'):
-            """Only load file and parse it, don't create/update any objects"""
+            #Only load file and parse it, don't create/update any objects
             if not self.file:
                 return None
             self._loaded_file = MetadataParser(filename=self.file.path)
@@ -205,7 +203,7 @@ class Base(models.Model):
             original_file_content = self.file.read()
             if compare_filecontents(original_file_content, req):
                 return False
-        except:
+        except Exception:
             pass
 
         filename = path.basename("%s-metadata.xml" % file_name)
@@ -280,18 +278,19 @@ class Federation(Base):
     def _remove_deleted_entities(self, entities_from_xml, request):
         entities_to_remove = []
         for entity in self.entity_set.all():
-            """Remove entity relation if does not exist in metadata"""
+            #Remove entity relation if does not exist in metadata
             if not entity.entityid in entities_from_xml:
                 entities_to_remove.append(entity)
 
         if len(entities_to_remove) > 0:
             self.entity_set.remove(*entities_to_remove)
 
-            if request and not entity.federations.exists():
+            if request:
                 for entity in entities_to_remove:
-                    messages.warning(request,
-                                     mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
-                                     (entity.get_absolute_url(), entity.entityid))))
+                    if not entity.federations.exists():
+                        messages.warning(request,
+                                         mark_safe(_("Orphan entity: <a href='%s'>%s</a>" %
+                                         (entity.get_absolute_url(), entity.entityid))))
 
         return len(entities_to_remove)
 
@@ -350,7 +349,7 @@ class Federation(Base):
         for n in range(int ((end_date - start_date).days)):
             yield start_date + timedelta(n)
 
-    def compute_new_stats(self, timestamp=timezone.now()):
+    def compute_new_stats(self):
         entities_from_xml = self._metadata.get_entities()
 
         entities = Entity.objects.filter(entityid__in=entities_from_xml)
@@ -360,11 +359,11 @@ class Federation(Base):
             first_date = EntityStat.objects.all().aggregate(Max('time'))['time__max']
             if not first_date:
                 raise Exception('Not able to find statistical data in the DB.')
-        except:
+        except Exception:
             first_date = datetime(2010, 1, 1)
             first_date = pytz.utc.localize(first_date)
       
-        for curtimestamp in self._daterange(first_date, timestamp):
+        for curtimestamp in self._daterange(first_date, timezone.now()):
             print "computing stas for day %s" % curtimestamp
             computed = {}
             not_computed = []
@@ -395,7 +394,7 @@ class Federation(Base):
 
         return (computed, not_computed)
 
-    def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
+    def process_metadata_entities(self, request=None, federation_slug=None):
         entities_from_xml = self._metadata.get_entities()
         removed = self._remove_deleted_entities(entities_from_xml, request)
 
@@ -476,7 +475,7 @@ class Federation(Base):
                 cur_cached_types = [t.xmlname for t in entity.types.all()]
                 if service_type in cur_cached_types and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols:
                     count += 1
-            except Exception, e:
+            except Exception:
                 pass
         return count
 
@@ -699,7 +698,7 @@ class Entity(Base):
 
         return logos
 
-    class Meta:
+    class Meta(object):
         verbose_name = _(u'Entity')
         verbose_name_plural = _(u'Entities')
 
@@ -754,8 +753,8 @@ class Entity(Base):
                break
 
             if cached_entity_types is None:
-                entity_type, created = EntityType.objects.get_or_create(xmlname=etype,
-                                                                        name=DESCRIPTOR_TYPES_DISPLAY[etype])
+                entity_type, _created = EntityType.objects.get_or_create(xmlname=etype,
+                                                                         name=DESCRIPTOR_TYPES_DISPLAY[etype])
             else:
                 if etype in cached_entity_types:
                     entity_type = cached_entity_types[etype]

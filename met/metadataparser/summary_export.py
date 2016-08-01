@@ -18,17 +18,17 @@ from django.template.defaultfilters import slugify
 import simplejson as json
 
 
-def export_summary_csv(qs, relation, filename, counters):
+def export_summary_csv(qs, relation, filename, counters=[]):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = ('attachment; filename=%s.csv'
                                        % slugify(filename))
-    writer = csv.writer(response)
+    writer = csv.writer(response, quoting=csv.QUOTE_NONNUMERIC)
     labels = ['name']
-    labels.extend([label for (label, ff) in counters])
+    labels.extend([label for (label, _ff) in counters])
     writer.writerow(labels)
     # Write data to CSV file
     for obj in qs:
-        row = [unicode(obj)]
+        row = [unicode(obj).encode('utf-8')]
         for counter_label, counter_filter in counters:
             row.append(getattr(obj, relation).filter(**counter_filter).count())
         writer.writerow(row)
@@ -36,7 +36,7 @@ def export_summary_csv(qs, relation, filename, counters):
     return response
 
 
-def export_summary_json(qs, relation, filename, counters=None):
+def export_summary_json(qs, relation, filename, counters=[]):
     objs = {}
     for obj in qs:
         item = {}
@@ -51,24 +51,21 @@ def export_summary_json(qs, relation, filename, counters=None):
     return response
 
 
-def export_summary_xml(qs, relation, filename, counters):
-    #model = qs.model
-
+def export_summary_xml(qs, relation, filename, counters=[]):
     xml = Document()
     root = xml.createElement(filename)
-    xml.appendChild(root)
     # Write data to CSV file
     for obj in qs:
-        item = xml.createElement(model._meta.object_name)
-        item.setAttribute("id", unicode(obj))
+        item = xml.createElement("federation")
+        item.setAttribute("name", unicode(obj))
         for counter_label, counter_filter in counters:
             val = getattr(obj, relation).filter(**counter_filter).count()
             element = xml.createElement(counter_label)
             xmlval = xml.createTextNode(unicode(val))
             element.appendChild(xmlval)
             item.appendChild(element)
-
         root.appendChild(item)
+    xml.appendChild(root)
 
     # Return XML file to browser as download
     response = HttpResponse(xml.toxml(), content_type='application/xml')

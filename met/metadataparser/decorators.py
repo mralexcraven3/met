@@ -34,8 +34,7 @@ def login_request(request, login_url=None):
     from django.contrib.auth.views import redirect_to_login
     return redirect_to_login(path, login_url)
 
-def user_can_edit(objtype, login_url=None,
-                  redirect_field=REDIRECT_FIELD_NAME, delete=False):
+def user_can_edit(objtype, login_url=None, delete=False):
     """ based on user_passtest from django.contrib.auth.decorators"""
     def decorator(view_func):
         def _get_objid(kwargs):

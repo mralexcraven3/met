@@ -18,10 +18,9 @@ from datetime import datetime
 from dateutil import tz
 
 from django.conf import settings
-from django.db.models import Max, Count
+from django.db.models import Count
 from django.contrib import messages
-from django.contrib.auth import login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth import logout
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
@@ -342,9 +341,7 @@ def stats_chart(stats_config_dict, request, stats, entity, protocols=None):
     stacking = True
     term_names = stats_config_dict['feature_names']
     time_format = stats_config_dict['time_format']
-
     statdata = _create_statdata('bar', stats, terms, term_names)
-    graph = 'protocols' if protocols else 'entities'
 
     series_options = []
     for stack in range(len(protocols) if protocols else 1):
@@ -427,8 +424,6 @@ def fed_pie_chart(request, federation_id):
     terms = stats_config_dict['statistics']['entity_by_type']['terms']
     stats = EntityStat.objects.filter(federation = federation_id, \
                                       feature__in = terms).order_by('-time')[0:len(terms)]
-    term_names = stats_config_dict['feature_names']
-
     statdata = _create_statdata('pie', stats)
     series_options = \
         [{'options': { 'type': 'pie', 'stacking': False, 'size': '70%' },

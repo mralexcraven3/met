@@ -108,7 +108,7 @@ def commandline_call(convert_class=RefreshMetaData):
         help="Force refresh of metadata information (even if file has not changed)",
         metavar="REF")
 
-    (options, _args) = opt_parser.parse_args()
+    (options, _) = opt_parser.parse_args()
     
     error_message = ""
     if options.log and not os.path.exists(options.log):

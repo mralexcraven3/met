@@ -96,8 +96,8 @@ def entity_filters(context, entities):
     request = context.get('request')
     entity_type = request.GET.get('entity_type', '')
     rquery = request.GET.copy()
-    for filter in 'entity_type', 'page':
-        if filter in rquery:
+    for filt in 'entity_type', 'page':
+        if filt in rquery:
             rquery.pop(filter)
     if not entity_type:
         entity_type = 'All'
@@ -111,9 +111,9 @@ def entity_filters(context, entities):
 
 
 @register.simple_tag()
-def entity_filter_url(base_path, filter, otherparams=None):
+def entity_filter_url(base_path, filt, otherparams=None):
     url = base_path
-    if filter != 'All':
+    if filt != 'All':
         url += '?entity_type=%s' % filter
         if otherparams:
             url += '&%s' % otherparams

@@ -17,11 +17,10 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
 import simplejson as json
 
-class SetEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, set):
-            return list(obj)
-        return json.JSONEncoder.default(self, obj)
+def encode_set(obj):
+    if isinstance(obj, set):
+        return list(obj)
+    return json.JSONEncoder.default(obj)
 
 def _serialize_value_to_csv(value):
     if type(value) is list:
@@ -45,7 +44,7 @@ def export_entity_csv(entity):
     writer.writerow(edict.keys())
     # Write data to CSV file
     row = []
-    for _key, value in edict.items():
+    for _, value in edict.items():
         row.append(_serialize_value_to_csv(value))
     row_ascii = [v.encode("ascii", "ignore") for v in row]
 
@@ -56,7 +55,7 @@ def export_entity_csv(entity):
 
 def export_entity_json(entity):
     # Return JS file to browser as download
-    serialized = json.dumps(entity.to_dict(), cls=SetEncoder)
+    serialized = json.dumps(entity.to_dict(), default=encode_set)
     response = HttpResponse(serialized, content_type='application/json')
     response['Content-Disposition'] = ('attachment; filename=%s.json'
                                        % slugify(entity))

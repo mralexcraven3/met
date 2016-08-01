@@ -11,7 +11,6 @@
 #########################################################################################
 
 import logging
-from django.utils import timezone
 from datetime import date
 
 from django.conf import settings

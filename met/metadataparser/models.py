@@ -753,7 +753,7 @@ class Entity(Base):
                break
 
             if cached_entity_types is None:
-                entity_type, _created = EntityType.objects.get_or_create(xmlname=etype,
+                entity_type, _ = EntityType.objects.get_or_create(xmlname=etype,
                                                                          name=DESCRIPTOR_TYPES_DISPLAY[etype])
             else:
                 if etype in cached_entity_types:

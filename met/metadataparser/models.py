@@ -223,7 +223,6 @@ class XmlDescriptionError(Exception):
 
 
 class Federation(Base):
-
     name = models.CharField(blank=False, null=False, max_length=200,
                             unique=True, verbose_name=_(u'Name'))
 

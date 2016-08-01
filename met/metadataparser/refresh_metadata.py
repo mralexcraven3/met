@@ -69,7 +69,7 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 removed, updated = federation.process_metadata_entities(timestamp=timestamp)
                 log('[%s] Removed %s old entities and updated %s entities.' % (federation, removed, updated), logger, logging.INFO)
             
-                log('[%s] Updating federation file and metadata_date...' % federation, logger, logging.DEBUG)
+                log('[%s] Updating federation file and metadata_data...' % federation, logger, logging.DEBUG)
                 federation.metadata_update = date.today()
                 federation.save(update_fields=['file', 'metadata_update'])
                 log('[%s] Federation update time modified with %s' % (federation, federation.metadata_update), logger, logging.INFO)

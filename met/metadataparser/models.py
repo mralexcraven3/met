@@ -18,7 +18,7 @@ import pytz
 from os import path
 from urlparse import urlsplit, urlparse
 from urllib import quote_plus
-from datetime import datetime, time
+from datetime import datetime, time, timedelta, date
 
 from django.conf import settings
 from django.contrib import messages
@@ -28,7 +28,7 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
 from django.db import models, transaction
-from django.db.models import Count
+from django.db.models import Count, Max
 from django.db.models.signals import pre_save
 from django.db.models.query import QuerySet
 from django.dispatch import receiver
@@ -346,38 +346,54 @@ class Federation(Base):
         self._update_entities(entities_to_update, entities_to_add)
         return len(entities_to_update) 
 
+    @staticmethod
+    def _daterange(start_date, end_date):
+        for n in range(int ((end_date - start_date).days)):
+            yield start_date + timedelta(n)
+
     def compute_new_stats(self, timestamp=timezone.now()):
         entities_from_xml = self._metadata.get_entities()
 
         entities = Entity.objects.filter(entityid__in=entities_from_xml)
         entities = entities.prefetch_related('types')
 
-        computed = {}
-        not_computed = []
-        entity_stats = []
-        for feature in stats['features'].keys():
-            fun = getattr(self, 'get_%s' % feature, None)
+        try:
+            first_date = EntityStat.objects.all().aggregate(Max('time'))['time__max']
+            if not first_date:
+                raise Exception('Not able to find statistical data in the DB.')
+        except:
+            first_date = datetime(2010, 1, 1)
+            first_date = pytz.utc.localize(first_date)
+      
+        for curtimestamp in self._daterange(first_date, timestamp):
+            print "computing stas for day %s" % curtimestamp
+            computed = {}
+            not_computed = []
+            entity_stats = []
+            for feature in stats['features'].keys():
+                fun = getattr(self, 'get_%s' % feature, None)
+    
+                if callable(fun):
+                    stat = EntityStat()
+                    stat.feature = feature
+                    stat.time = curtimestamp
+                    stat.federation = self
+                    stat.value = fun(entities, stats['features'][feature], curtimestamp)
+                    entity_stats.append(stat)
+                    computed[feature] = stat.value
+                else:
+                    not_computed.append(feature)
 
-            if callable(fun):
-                stat = EntityStat()
-                stat.feature = feature
-                stat.time = timestamp
-                stat.federation = self
-                stat.value = fun(entities, stats['features'][feature])
-                entity_stats.append(stat)
-                computed[feature] = stat.value
-            else:
-                not_computed.append(feature)
+            from_time = datetime.combine(curtimestamp, time.min) 
+            if timezone.is_naive(from_time):
+                from_time = pytz.utc.localize(from_time)
+            to_time = datetime.combine(curtimestamp, time.max)
+            if timezone.is_naive(to_time):
+                to_time = pytz.utc.localize(to_time)
 
-        from_time = datetime.combine(timestamp, time.min) 
-        if timezone.is_naive(from_time):
-            from_time = pytz.utc.localize(from_time)
-        to_time = datetime.combine(timestamp, time.max)
-        if timezone.is_naive(to_time):
-            to_time = pytz.utc.localize(to_time)
+            EntityStat.objects.filter(federation=self, time__gte = from_time, time__lte = to_time).delete()
+            EntityStat.objects.bulk_create(entity_stats)
 
-        EntityStat.objects.filter(federation=self, time__gte = from_time, time__lte = to_time).delete()
-        EntityStat.objects.bulk_create(entity_stats)
         return (computed, not_computed)
 
     def process_metadata_entities(self, request=None, federation_slug=None, timestamp=timezone.now()):
@@ -409,44 +425,54 @@ class Federation(Base):
         return reverse('federation_view', args=[self.slug])
 
     @classmethod
-    def get_sp(cls, entities, xml_name):
+    def get_sp(cls, entities, xml_name, ref_date = None):
         count = 0
         for entity in entities:
+            reginst = pytz.utc.localize(entity.registration_instant)
+            if not ref_date or (reginst and reginst > ref_date):
+                continue
             cur_cached_types = [t.xmlname for t in entity.types.all()]
             if xml_name in cur_cached_types:
                 count += 1
         return count
 
     @classmethod
-    def get_idp(cls, entities, xml_name):
+    def get_idp(cls, entities, xml_name, ref_date = None):
         count = 0
         for entity in entities:
+            reginst = pytz.utc.localize(entity.registration_instant)
+            if not ref_date or (reginst and reginst > ref_date):
+                continue
             cur_cached_types = [t.xmlname for t in entity.types.all()]
             if xml_name in cur_cached_types:
                 count += 1
         return count
 
-    def get_sp_saml1(self, entities, xml_name):
-        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor')
+    def get_sp_saml1(self, entities, xml_name, ref_date = None):
+        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor', ref_date)
 
-    def get_sp_saml2(self, entities, xml_name):
-        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor')
+    def get_sp_saml2(self, entities, xml_name, ref_date = None):
+        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor', ref_date)
 
-    def get_sp_shib1(self, entities, xml_name):
-        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor')
+    def get_sp_shib1(self, entities, xml_name, ref_date = None):
+        return self.get_stat_protocol(entities, xml_name, 'SPSSODescriptor', ref_date)
 
-    def get_idp_saml1(self, entities, xml_name):
-        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor')
+    def get_idp_saml1(self, entities, xml_name, ref_date = None):
+        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor', ref_date)
 
-    def get_idp_saml2(self, entities, xml_name):
-        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor')
+    def get_idp_saml2(self, entities, xml_name, ref_date = None):
+        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor', ref_date)
 
-    def get_idp_shib1(self, entities, xml_name):
-        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor')
+    def get_idp_shib1(self, entities, xml_name, ref_date = None):
+        return self.get_stat_protocol(entities, xml_name, 'IDPSSODescriptor', ref_date)
 
-    def get_stat_protocol(self, entities, xml_name, service_type):
+    def get_stat_protocol(self, entities, xml_name, service_type, ref_date):
         count = 0
         for entity in entities:
+            reginst = pytz.utc.localize(entity.registration_instant)
+            if not ref_date or (reginst and reginst > ref_date):
+                continue
+
             try:
                 cur_cached_types = [t.xmlname for t in entity.types.all()]
                 if service_type in cur_cached_types and Entity.READABLE_PROTOCOLS[xml_name] in entity.display_protocols:

@@ -356,7 +356,7 @@ class Federation(Base):
         entities = entities.prefetch_related('types')
 
         try:
-            first_date = EntityStat.objects.all().aggregate(Max('time'))['time__max']
+            first_date = EntityStat.objects.filter(federation=self).aggregate(Max('time'))['time__max']
             if not first_date:
                 raise Exception('Not able to find statistical data in the DB.')
         except Exception:
@@ -388,7 +388,7 @@ class Federation(Base):
             if timezone.is_naive(to_time):
                 to_time = pytz.utc.localize(to_time)
 
-            EntityStat.objects.filter(federation=self, time__gte = from_time, time__lte = to_time).delete()
+            EntityStat.objects.filter(federation=self, time__gte=from_time, time__lte=to_time).delete()
             EntityStat.objects.bulk_create(entity_stats)
 
         return (computed, not_computed)
@@ -425,7 +425,9 @@ class Federation(Base):
     def get_sp(cls, entities, xml_name, ref_date = None):
         count = 0
         for entity in entities:
-            reginst = pytz.utc.localize(entity.registration_instant)
+            reginst = None
+            if entity.registration_instant:
+                reginst = pytz.utc.localize(entity.registration_instant)
             if not ref_date or (reginst and reginst > ref_date):
                 continue
             cur_cached_types = [t.xmlname for t in entity.types.all()]
@@ -437,7 +439,9 @@ class Federation(Base):
     def get_idp(cls, entities, xml_name, ref_date = None):
         count = 0
         for entity in entities:
-            reginst = pytz.utc.localize(entity.registration_instant)
+            reginst = None
+            if entity.registration_instant:
+                reginst = pytz.utc.localize(entity.registration_instant)
             if not ref_date or (reginst and reginst > ref_date):
                 continue
             cur_cached_types = [t.xmlname for t in entity.types.all()]
@@ -466,7 +470,9 @@ class Federation(Base):
     def get_stat_protocol(self, entities, xml_name, service_type, ref_date):
         count = 0
         for entity in entities:
-            reginst = pytz.utc.localize(entity.registration_instant)
+            reginst = None
+            if entity.registration_instant:
+                reginst = pytz.utc.localize(entity.registration_instant)
             if not ref_date or (reginst and reginst > ref_date):
                 continue
 

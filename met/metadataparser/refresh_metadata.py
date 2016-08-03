@@ -44,7 +44,7 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
     log('Starting refreshing metadata ...', logger, logging.INFO)
 
     federations = Federation.objects.all()
-    federations.prefetch_related('etypes', 'federations')
+    federations.prefetch_related('etypes', 'federations', 'entity_categories')
 
     for federation in federations:
         if fed_name and federation.slug != fed_name:

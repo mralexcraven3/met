@@ -1,4 +1,23 @@
-{% load metadataparsertags %}
+{% load metadataparsertags i18n %}
+
+<div class="btn-group pull-right">
+  <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+      {% if entity_category and entity_category != 'All' %}{{ entity_category }}{% else %}{% trans "Entity Categories" %}{% endif %}
+      <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu">
+    <li>
+    <a href="{% entitycategory_filter_url filter_base_path 'All' otherparams %}">{% trans "All Categories" %}</a>
+    </li>
+
+    {% for category in categories %}
+    <li {% if category.category_id == entity_category %}class="active"{% endif %}>
+    <a href="{% entitycategory_filter_url filter_base_path category.category_id otherparams %}">{{ category }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
 <ul class="nav nav-pills">
 {% for etype in entity_types %}
   <li {% if etype == entity_type %}class="active"{% endif %}>

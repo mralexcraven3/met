@@ -399,7 +399,7 @@ class Federation(Base):
 
         entities = {}
         db_entities = Entity.objects.filter(entityid__in=entities_from_xml)
-        db_entities = db_entities.prefetch_related('types')
+        db_entities = db_entities.prefetch_related('types', 'entity_categories')
 
         for entity in db_entities.all():
             entities[entity.entityid] = entity
@@ -538,6 +538,20 @@ class EntityType(models.Model):
         return self.name
 
 
+class EntityCategory(models.Model):
+    category_id = models.CharField(verbose_name='Entity category ID',
+                                max_length=1000,
+                                blank=False, null=False,
+                                help_text=_(u'The ID of the entity category'))
+    name = models.CharField(verbose_name='Entity category name',
+                                max_length=1000,
+                                blank=True, null=True,
+                                help_text=_(u'The name of the entity category'))
+
+    def __unicode__(self):
+        return self.name or self.category_id
+
+
 class Entity(Base):
     READABLE_PROTOCOLS = {
         'urn:oasis:names:tc:SAML:1.1:protocol': 'SAML 1.1',
@@ -547,6 +561,7 @@ class Entity(Base):
 
     entityid = models.CharField(blank=False, max_length=200, unique=True,
                                 verbose_name=_(u'EntityID'), db_index=True)
+
     federations = models.ManyToManyField(Federation,
                                          verbose_name=_(u'Federations'))
 
@@ -555,7 +570,11 @@ class Entity(Base):
     name = JSONField(blank=True, null=True, max_length=2000,
                      verbose_name=_(u'Display Name'))
 
+    entity_categories = models.ManyToManyField(EntityCategory,
+                                               verbose_name=_(u'Entity categories'))
+
     objects = models.Manager()
+
     longlist = EntityManager()
 
     curfed = None
@@ -642,6 +661,10 @@ class Entity(Base):
     @property
     def xml_types(self):
          return self._get_property('entity_types')
+
+    @property
+    def xml_categories(self):
+         return self._get_property('entity_categories')
 
     @property
     def display_protocols(self):
@@ -759,15 +782,32 @@ class Entity(Base):
 
             if cached_entity_types is None:
                 entity_type, _ = EntityType.objects.get_or_create(xmlname=etype,
-                                                                         name=DESCRIPTOR_TYPES_DISPLAY[etype])
+                                                                  name=DESCRIPTOR_TYPES_DISPLAY[etype])
             else:
                 if etype in cached_entity_types:
                     entity_type = cached_entity_types[etype]
                 else:
                     entity_type = EntityType.objects.create(xmlname=etype,
-                                                                name=DESCRIPTOR_TYPES_DISPLAY[etype])
+                                                            name=DESCRIPTOR_TYPES_DISPLAY[etype])
             entity_types.append(entity_type)
         return entity_types
+
+    def _get_or_create_ecategories(self, cached_entity_categories):
+        entity_categories = []
+        cur_cached_categories = [t.category_id for t in self.entity_categories.all()]
+        for ecategory in self.xml_categories:
+            if ecategory in cur_cached_categories:
+               break
+
+            if cached_entity_categories is None:
+                entity_category, _ = EntityCategory.objects.get_or_create(category_id=ecategory)
+            else:
+                if ecategory in cached_entity_categories:
+                    entity_category = cached_entity_categories[ecategory]
+                else:
+                    entity_category = EntityCategory.objects.create(category_id=ecategory)
+            entity_categories.append(entity_category)
+        return entity_categories
 
     def process_metadata(self, auto_save=True, entity_data=None, cached_entity_types=None):
         if not entity_data:
@@ -777,21 +817,29 @@ class Entity(Base):
             raise ValueError("EntityID is not the same: %s != %s" % (self.entityid.lower(), entity_data.get('entityid').lower()))
 
         self._entity_cached = entity_data
+
         if self.xml_types:
             entity_types = self._get_or_create_etypes(cached_entity_types)
-
             if len(entity_types) > 0:
                 self.types.add(*entity_types)
 
-            newname = self._get_property('displayName')
-            if newname and newname != '':
-                self.name = newname
+        if self.xml_categories:
+            db_entity_categories = EntityCategory.objects.all()
+            cached_entity_categories = { entity_category.category_id: entity_category for entity_category in db_entity_categories }
 
-            if str(self._get_property('registration_authority')) != '':
-                self.registration_authority = self._get_property('registration_authority')
+            entity_categories = self._get_or_create_ecategories(cached_entity_categories)
+            if len(entity_categories) > 0:
+                self.entity_categories.add(*entity_categories)
 
-            if auto_save:
-                self.save()
+        newname = self._get_property('displayName')
+        if newname and newname != '':
+            self.name = newname
+
+        if str(self._get_property('registration_authority')) != '':
+            self.registration_authority = self._get_property('registration_authority')
+
+        if auto_save:
+            self.save()
 
     def to_dict(self):
         self.load_metadata()
@@ -856,6 +904,7 @@ class Entity(Base):
                 return True
 
         return False
+
 
 class EntityStat(models.Model):
     time = models.DateTimeField(blank=False, null=False, 

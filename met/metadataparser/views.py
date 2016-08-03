@@ -32,7 +32,7 @@ from django.utils import timezone
 from chartit import DataPool, Chart
 
 from met.metadataparser.decorators import user_can_edit
-from met.metadataparser.models import Federation, Entity, EntityStat, TOP_LENGTH, FEDERATION_TYPES
+from met.metadataparser.models import Federation, Entity, EntityStat, EntityCategory, TOP_LENGTH, FEDERATION_TYPES
 from met.metadataparser.forms import (FederationForm, EntityForm, EntityCommentForm,
                                       EntityProposalForm, ServiceSearchForm, ChartForm)
 
@@ -89,7 +89,7 @@ def _index_export(export, export_format, objects):
 
 @profile(name='Index page')
 def index(request):
-    ff = Federation.objects.all()
+    ff = Federation.objects.all().order_by('name')
     federations = []
     interfederations = []
     for f in ff:
@@ -161,14 +161,19 @@ def federation_view(request, federation_slug=None):
         request.session.save()
 
     federation = get_object_or_404(Federation, slug=federation_slug)
+    categories = EntityCategory.objects.all()
 
+    ob_entities = Entity.objects.filter(federations__id=federation.id)
     entity_type = None
     if request.GET and 'entity_type' in request.GET:
         entity_type = request.GET['entity_type']
-        ob_entities = Entity.objects.filter(federations__id=federation.id).filter(types__xmlname=entity_type)
-    else:
-        ob_entities = Entity.objects.filter(federations__id=federation.id)
+        ob_entities = ob_entities.filter(types__xmlname=entity_type)
     
+    entity_category = None
+    if request.GET and 'entity_category' in request.GET:
+        entitycategory_type = request.GET['entity_category']
+        ob_entities = ob_entities.filter(entity_categories__category_id=entity_category)
+
     ob_entities = ob_entities.prefetch_related('types', 'federations')
     pagination = _paginate_fed(ob_entities, request.GET.get('page'))
 
@@ -198,6 +203,7 @@ def federation_view(request, federation_slug=None):
              'entity_type': entity_type or 'All',
              'fed_types': dict(FEDERATION_TYPES),
              'entities': entities,
+             'categories': categories,
              'show_filters': True,
              'add_entity': add_entity,
              'lang': request.GET.get('lang', 'en'),
@@ -216,7 +222,6 @@ def federation_edit_post(request, federation, form):
         form.instance.editor_users.add(request.user)
     if 'file' in form.changed_data or 'file_url' in form.changed_data:
         form.instance.process_metadata()
-        #form.instance.process_metadata_entities(request=request)
 
     messages.success(request, _('Federation %s successfully' % 'modified' if modify else 'created'))
     return HttpResponseRedirect(form.instance.get_absolute_url() + '?update=true')

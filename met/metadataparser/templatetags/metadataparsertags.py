@@ -73,7 +73,7 @@ def federations_summary(context, queryname, counts, federations=None):
 
 
 @register.inclusion_tag('metadataparser/tag_entity_list.html', takes_context=True)
-def entity_list(context, entities, pagination=None, curfed=None, show_total=True, append_query=None):
+def entity_list(context, entities, categories, pagination=None, curfed=None, show_total=True, append_query=None):
     request = context.get('request', None)
     lang = 'en'
     if request:
@@ -81,6 +81,7 @@ def entity_list(context, entities, pagination=None, curfed=None, show_total=True
 
     return {'request': request,
             'entities': entities,
+            'categories': categories,
             'curfed' : curfed,
             'show_filters': context.get('show_filters'),
             'append_query': append_query,
@@ -91,30 +92,48 @@ def entity_list(context, entities, pagination=None, curfed=None, show_total=True
 
 
 @register.inclusion_tag('metadataparser/tag_entity_filters.html', takes_context=True)
-def entity_filters(context, entities):
+def entity_filters(context, entities, categories):
     entity_types = ('All', ) + DESCRIPTOR_TYPES
     request = context.get('request')
     entity_type = request.GET.get('entity_type', '')
+    entity_category = request.GET.get('entity_category', '')
     rquery = request.GET.copy()
-    for filt in 'entity_type', 'page':
+    for filt in 'entity_type', 'entity_category', 'page':
         if filt in rquery:
-            rquery.pop(filter)
+            rquery.pop(filt)
     if not entity_type:
         entity_type = 'All'
+    if not entity_category:
+        entity_category = 'All'
     query = urlencode(rquery)
     filter_base_path = request.path
     return {'filter_base_path': filter_base_path,
             'otherparams': query,
             'entity_types': entity_types,
             'entity_type': entity_type,
-            'entities': entities}
+            'entity_category': entity_category,
+            'entities': entities,
+            'categories': categories }
 
 
 @register.simple_tag()
 def entity_filter_url(base_path, filt, otherparams=None):
     url = base_path
     if filt != 'All':
-        url += '?entity_type=%s' % filter
+        url += '?entity_type=%s' % filt
+        if otherparams:
+            url += '&%s' % otherparams
+    elif otherparams:
+        url += '?%s' % otherparams
+
+    return url
+
+
+@register.simple_tag()
+def entitycategory_filter_url(base_path, filt, otherparams=None):
+    url = base_path
+    if filt != 'All':
+        url += '?entity_category=%s' % filt
         if otherparams:
             url += '&%s' % otherparams
     elif otherparams:

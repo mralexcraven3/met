@@ -23,6 +23,7 @@ NAMESPACES = {
     'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
     'mdrpi': 'urn:oasis:names:tc:SAML:metadata:rpi',
     'shibmd': 'urn:mace:shibboleth:metadata:1.0',
+    'mdattr': 'urn:oasis:names:tc:SAML:metadata:attribute',
     }
 
 SAML_METADATA_NAMESPACE = NAMESPACES['md']
@@ -112,6 +113,7 @@ class MetadataParser(object):
                    entity['registration_authority'] = reg_info['authority']
                 if reg_info and 'instant' in reg_info:
                    entity['registration_instant'] = reg_info['instant']
+                entity['entity_categories'] = MetadataParser.entity_categories(element)
                 entity['entity_types'] = MetadataParser.entity_types(element)
                 entity['protocols'] = MetadataParser.entity_protocols(element, entity['entity_types'])
 
@@ -172,6 +174,15 @@ class MetadataParser(object):
         return types
 
     @staticmethod
+    def entity_categories(entity):
+        elements = entity.xpath(".//mdattr:EntityAttributes"
+                                "/saml:Attribute[@Name='http://macedir.org/entity-category-support']"
+                                "/saml:AttributeValue",
+                                namespaces=NAMESPACES)
+        categories = [dnnode.text for dnnode in elements]
+        return categories
+
+    @staticmethod
     def entity_protocols(entity, entity_types):
         if isinstance(entity_types, list) and len(entity_types) > 0:
             e_type = entity_types[0]
@@ -192,7 +203,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "//mdui:DisplayName",
+                             "/mdui:DisplayName",
                              namespaces=NAMESPACES)
 
         for dn_node in names:
@@ -208,7 +219,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "//mdui:Description",
+                             "/mdui:Description",
                              namespaces=NAMESPACES)
 
         for dn_node in names:
@@ -224,7 +235,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "//mdui:InformationURL",
+                             "/mdui:InformationURL",
                              namespaces=NAMESPACES)
 
         for dn_node in names:
@@ -240,7 +251,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "//mdui:PrivacyStatementURL",
+                             "/mdui:PrivacyStatementURL",
                              namespaces=NAMESPACES)
 
         for dn_node in names:

@@ -1,7 +1,7 @@
 {% load i18n metadataparsertags %}
 
 {% if show_filters %}
-{% entity_filters entities %}
+{% entity_filters entities categories %}
 {% endif %}
 
 {% export_menu entities append_query=append_query %}

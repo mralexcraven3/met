@@ -152,7 +152,7 @@ class EntityForm(forms.ModelForm):
 
 class ChartForm(forms.Form):
     fromDate = forms.DateField(label=_(u'Start date'),
-                             help_text=_(u"Statistics start date."), initial=timezone.now()-relativedelta(days=11),
+                             help_text=_(u"Statistics start date."), initial=timezone.now()-relativedelta(days=10),
                              widget=SelectDateWidget(years=range(timezone.datetime.today().year, 2012, -1)))
 
     toDate = forms.DateField(label=_(u'End date'),

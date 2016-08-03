@@ -30,7 +30,7 @@ from met.metadataparser.refresh_metadata import refresh
 
 django.setup()
 
-class SingleRun():
+class SingleRun(object):
     class InstanceRunningException(Exception):
         pass
 
@@ -60,7 +60,7 @@ class SingleRun():
                     os.unlink(self.lock_file)
         return fnc
 
-class RefreshMetaData:
+class RefreshMetaData(object):
     @classmethod
     def process(cls, options):
         fed_name = options.fed_name
@@ -78,7 +78,7 @@ class RefreshMetaData:
 	        logger.error("%s" % e)
 
 @SingleRun(lock_file="met-metadatarefresh")
-def commandline_call(argv, convert_class=RefreshMetaData):
+def commandline_call(convert_class=RefreshMetaData):
     opt_parser = OptionParser()
     opt_parser.set_usage("refresh [--federation <fed_name>] [--log  <file>] [--force-refresh]")
     
@@ -108,7 +108,7 @@ def commandline_call(argv, convert_class=RefreshMetaData):
         help="Force refresh of metadata information (even if file has not changed)",
         metavar="REF")
 
-    (options, args) = opt_parser.parse_args()
+    (options, _) = opt_parser.parse_args()
     
     error_message = ""
     if options.log and not os.path.exists(options.log):
@@ -126,4 +126,4 @@ if __name__ == '__main__':
     log_args = {'level': logging.ERROR}
     logging.basicConfig(**log_args)
 
-    commandline_call(sys.argv)
+    commandline_call()

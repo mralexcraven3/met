@@ -11,7 +11,6 @@
 #########################################################################################
 
 import logging
-from django.utils import timezone
 from datetime import date
 
 from django.conf import settings
@@ -47,9 +46,6 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
     federations = Federation.objects.all()
     federations.prefetch_related('etypes', 'federations')
 
-    # All entries must have the same time stamp 
-    timestamp = timezone.now()
-    
     for federation in federations:
         if fed_name and federation.slug != fed_name:
             continue
@@ -66,7 +62,7 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 federation.process_metadata()
             
                 log('[%s] Updating federation entities ...' % federation, logger, logging.DEBUG)
-                removed, updated = federation.process_metadata_entities(timestamp=timestamp)
+                removed, updated = federation.process_metadata_entities()
                 log('[%s] Removed %s old entities and updated %s entities.' % (federation, removed, updated), logger, logging.INFO)
             
                 log('[%s] Updating federation file and metadata_data...' % federation, logger, logging.DEBUG)
@@ -75,13 +71,12 @@ def refresh(fed_name=None, force_refresh=False, logger=None):
                 log('[%s] Federation update time modified with %s' % (federation, federation.metadata_update), logger, logging.INFO)
 
             log('[%s] Updating federation statistics ...' % federation, logger, logging.DEBUG)
-            (computed, not_computed) = federation.compute_new_stats(timestamp=timestamp)
+            (computed, not_computed) = federation.compute_new_stats()
             log('[%s] Computed statistics: %s' % (federation, computed), logger, logging.DEBUG)
             log('[%s] NOT Computed statistics: %s' % (federation, not_computed), logger, logging.DEBUG)
 
         except Exception, e:
             error_msg = '%s %s' % (error_msg, e)
-            pass
 
         finally:
             if error_msg:

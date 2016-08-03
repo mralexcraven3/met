@@ -17,6 +17,12 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.defaultfilters import slugify
 import simplejson as json
 
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
+
 def _serialize_value_to_csv(value):
     if type(value) is list:
         vallist = [_serialize_value_to_csv(v) for v in value]
@@ -39,7 +45,7 @@ def export_entity_csv(entity):
     writer.writerow(edict.keys())
     # Write data to CSV file
     row = []
-    for key, value in edict.items():
+    for _, value in edict.items():
         row.append(_serialize_value_to_csv(value))
     row_ascii = [v.encode("ascii", "ignore") for v in row]
 
@@ -50,7 +56,7 @@ def export_entity_csv(entity):
 
 def export_entity_json(entity):
     # Return JS file to browser as download
-    serialized = json.dumps(entity.to_dict())
+    serialized = json.dumps(entity.to_dict(), cls=SetEncoder)
     response = HttpResponse(serialized, content_type='application/json')
     response['Content-Disposition'] = ('attachment; filename=%s.json'
                                        % slugify(entity))
@@ -78,7 +84,7 @@ class Dict2XML(object):
 
         elif type(structure) == list:
             grand_father = father.parentNode
-            tag_name = father.tag_name
+            tag_name = father.tagName
             grand_father.removeChild(father)
             for l in structure:
                 tag = self.doc.createElement(tag_name)

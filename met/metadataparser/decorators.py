@@ -18,7 +18,6 @@ except ImportError:
     from django.utils.functional import wraps # Python 2.4 fallback
 
 from django.conf import settings
-from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils.decorators import available_attrs
 
 def login_request(request, login_url=None):
@@ -34,8 +33,7 @@ def login_request(request, login_url=None):
     from django.contrib.auth.views import redirect_to_login
     return redirect_to_login(path, login_url)
 
-def user_can_edit(objtype, login_url=None,
-                  redirect_field=REDIRECT_FIELD_NAME, delete=False):
+def user_can_edit(objtype, login_url=None, delete=False):
     """ based on user_passtest from django.contrib.auth.decorators"""
     def decorator(view_func):
         def _get_objid(kwargs):

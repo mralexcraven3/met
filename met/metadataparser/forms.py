@@ -24,7 +24,7 @@ from django.utils.safestring import mark_safe
 from met.metadataparser.models import Federation, Entity
 
 class MultiURLforMetadata(Widget):
-    def render(self, name, value, attrs=None, choices=()):
+    def render(self, name, value, attrs=None):
         if value is None:
             value = ""
          
@@ -32,8 +32,8 @@ class MultiURLforMetadata(Widget):
         output = []
         output.append(format_html('<table id="metadata_type" class="display" cellspacing="0" width="100%"><thead><tr><th>Metadata</th><th>Type</th></tr></thead><tbody>', flatatt(final_attrs)))
         
-	for curpair in value.split("|"):
-	    val = ''.join(curpair)
+        for curpair in value.split("|"):
+            val = ''.join(curpair)
             val = curpair.split(";")
 
             if len(val) == 1:
@@ -81,12 +81,12 @@ class MultiURLforMetadata(Widget):
 
                 $('#add').click( function () {
                     if ($('#meta_URL').val() == undefined) return;
-		    texturl = $('#meta_URL').val();
+                    texturl = $('#meta_URL').val();
                     var urlpattern = new RegExp('([a-zA-Z\d]+:\\/\\/)?((\\w+:\\w+@)?([a-zA-Z\\d.-]+\\.[A-Za-z]{2,4})(:\\d+)?(\\/.*)?)','i'); // fragment locater
                     if (!urlpattern.test($('#meta_URL').val())) {
                         $('#new_URL_set').addClass("error");
-		    	return; 
-		    }
+                        return; 
+                    }
 
                     $('#new_URL_set').removeClass("error");
                     table.row.add([$('#meta_URL').val(), $('#type_URL').val()]).draw();
@@ -131,7 +131,7 @@ class FederationForm(forms.ModelForm):
 
         self.fields['file_url'].widget = MultiURLforMetadata()
 
-    class Meta:
+    class Meta(object):
         model = Federation
         fields = ['name', 'url', 'registration_authority', 'country', 'logo', 'is_interfederation', 'type', 'fee_schedule_url', 'file_url', 'file', 'editor_users']
 
@@ -146,13 +146,13 @@ class EntityForm(forms.ModelForm):
         self.fields['editor_users'].help_text = _("These users can edit only "
                                                   "this entity")
 
-    class Meta:
+    class Meta(object):
         model = Entity
         fields = ['registration_authority', 'file_url', 'file', 'editor_users']
 
 class ChartForm(forms.Form):
     fromDate = forms.DateField(label=_(u'Start date'),
-                             help_text=_(u"Statistics start date."), initial=timezone.now()-relativedelta(months=1),
+                             help_text=_(u"Statistics start date."), initial=timezone.now()-relativedelta(days=11),
                              widget=SelectDateWidget(years=range(timezone.datetime.today().year, 2012, -1)))
 
     toDate = forms.DateField(label=_(u'End date'),
@@ -169,7 +169,7 @@ class ChartForm(forms.Form):
                 errors['toDate'] = 'End date must not be before Start date'
                 self._errors = errors
             else:
-                result = (self.cleaned_data['toDate'] - self.cleaned_data['fromDate']).days < 11
+                result = (self.cleaned_data['toDate'] - self.cleaned_data['fromDate']).days < 12
                 if not result:
                     errors = ErrorDict()
                     errors['fromDate'] = 'The maximum number of days shown in the chart is 11 days'
@@ -181,7 +181,7 @@ class ChartForm(forms.Form):
         self.instance = kwargs.pop('instance')
         super(ChartForm, self).__init__(*args, **kwargs)
 
-    class Meta:
+    class Meta(object):
         exclude = []
 
 
@@ -197,7 +197,7 @@ class EntityCommentForm(forms.Form):
         self.instance = kwargs.pop('instance')
         super(EntityCommentForm, self).__init__(*args, **kwargs)
 
-    class Meta:
+    class Meta(object):
         exclude = []
 
 
@@ -233,8 +233,7 @@ class EntityProposalForm(forms.Form):
             
         self.fields['federations'].widget.choices = federation_choices
                              
- 
-    class Meta:
+    class Meta(object):
         exclude = []
 
 
@@ -243,5 +242,5 @@ class ServiceSearchForm(forms.Form):
                              help_text=_(u"Enter a full or partial entityid"),
                              widget=forms.TextInput(attrs={'size': '200'}))
 
-    class Meta:
+    class Meta(object):
         exclude = []

@@ -66,7 +66,7 @@ class MetadataParser(object):
         self.filename = filename
         context = etree.iterparse(self.filename, events=('start',), huge_tree=True, remove_blank_text=True)
         context = iter(context)
-        event, self.rootelem = context.next()
+        _, self.rootelem = context.next()
         self.file_id = self.rootelem.get('ID', None)
         self.is_federation = self.rootelem.tag == FEDERATION_ROOT_TAG
         self.is_entity = not self.is_federation
@@ -100,7 +100,7 @@ class MetadataParser(object):
 
     @staticmethod
     def _get_entity_by_id(context, entityid, details):
-        for event, element in context:
+        for _, element in context:
             if element.attrib['entityID'] == entityid:
                 entity = {}
 
@@ -128,7 +128,7 @@ class MetadataParser(object):
                 del element.getparent()[0]
         del context
 
-    def get_federation(self, attrs=None):
+    def get_federation(self):
         assert self.is_federation
 
         federation = {}
@@ -152,7 +152,7 @@ class MetadataParser(object):
 
     @staticmethod
     def _get_entities_id(context):
-        for event, element in context:
+        for _, element in context:
             yield element.attrib['entityID']
             element.clear()
             while element.getprevious() is not None:

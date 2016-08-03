@@ -656,15 +656,15 @@ class Entity(Base):
 
     @property
     def xml(self):
-         return self._get_property('xml')
+        return self._get_property('xml')
 
     @property
     def xml_types(self):
-         return self._get_property('entity_types')
+        return self._get_property('entity_types')
 
     @property
     def xml_categories(self):
-         return self._get_property('entity_categories')
+        return self._get_property('entity_categories')
 
     @property
     def display_protocols(self):
@@ -797,7 +797,7 @@ class Entity(Base):
         cur_cached_categories = [t.category_id for t in self.entity_categories.all()]
         for ecategory in self.xml_categories:
             if ecategory in cur_cached_categories:
-               break
+                break
 
             if cached_entity_categories is None:
                 entity_category, _ = EntityCategory.objects.get_or_create(category_id=ecategory)

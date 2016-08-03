@@ -171,7 +171,7 @@ def federation_view(request, federation_slug=None):
     
     entity_category = None
     if request.GET and 'entity_category' in request.GET:
-        entitycategory_type = request.GET['entity_category']
+        entity_category = request.GET['entity_category']
         ob_entities = ob_entities.filter(entity_categories__category_id=entity_category)
 
     ob_entities = ob_entities.prefetch_related('types', 'federations')

@@ -176,8 +176,8 @@ class MetadataParser(object):
     @staticmethod
     def entity_categories(entity):
         elements = entity.xpath(".//mdattr:EntityAttributes"
-                                "/saml:Attribute[@Name='http://macedir.org/entity-category-support']"
-                                "/saml:AttributeValue",
+                                "//saml:Attribute[@Name='http://macedir.org/entity-category-support' or @Name='http://macedir.org/entity-category']"
+                                "//saml:AttributeValue",
                                 namespaces=NAMESPACES)
         categories = [dnnode.text for dnnode in elements]
         return categories
@@ -203,7 +203,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "/mdui:DisplayName",
+                             "//mdui:DisplayName",
                              namespaces=NAMESPACES)
 
         for dn_node in names:
@@ -219,7 +219,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "/mdui:Description",
+                             "//mdui:Description",
                              namespaces=NAMESPACES)
 
         for dn_node in names:
@@ -235,7 +235,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "/mdui:InformationURL",
+                             "//mdui:InformationURL",
                              namespaces=NAMESPACES)
 
         for dn_node in names:
@@ -251,7 +251,7 @@ class MetadataParser(object):
         languages = {}
 
         names = entity.xpath(".//mdui:UIInfo"
-                             "/mdui:PrivacyStatementURL",
+                             "//mdui:PrivacyStatementURL",
                              namespaces=NAMESPACES)
 
         for dn_node in names:
@@ -282,7 +282,7 @@ class MetadataParser(object):
     @staticmethod
     def entity_logos(entity):
         xmllogos = entity.xpath(".//mdui:UIInfo"
-                                "/mdui:Logo",
+                                "//mdui:Logo",
                                 namespaces=NAMESPACES)
         logos = []
         for logo_node in xmllogos:
@@ -299,7 +299,7 @@ class MetadataParser(object):
     @staticmethod
     def registration_information(entity):
         reg_info = entity.xpath(".//md:Extensions"
-                                "/mdrpi:RegistrationInfo",
+                                "//mdrpi:RegistrationInfo",
                                 namespaces=NAMESPACES)
         info = {}
         if reg_info:
@@ -310,8 +310,8 @@ class MetadataParser(object):
     @staticmethod
     def registration_policy(entity):
         reg_policy = entity.xpath(".//md:Extensions"
-                                "/mdrpi:RegistrationInfo"
-                                "/mdrpi:RegistrationPolicy",
+                                "//mdrpi:RegistrationInfo"
+                                "//mdrpi:RegistrationPolicy",
                                 namespaces=NAMESPACES)
         languages = {}
         for dn_node in reg_policy:
@@ -326,7 +326,7 @@ class MetadataParser(object):
     @staticmethod
     def entity_attribute_scope(entity):
         scope_node = entity.xpath(".//md:Extensions"
-                                  "/shibmd:Scope",
+                                  "//shibmd:Scope",
                                   namespaces=NAMESPACES)
 
         scope = []
@@ -338,7 +338,7 @@ class MetadataParser(object):
     @staticmethod
     def entity_requested_attributes(entity):
         xmllogos = entity.xpath(".//md:AttributeConsumingService"
-                                "/md:RequestedAttribute",
+                                "//md:RequestedAttribute",
                                 namespaces=NAMESPACES)
         attrs = {}
         attrs['required'] = []

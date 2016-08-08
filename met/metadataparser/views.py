@@ -420,7 +420,7 @@ def _get_chart_options(chart_type, title=None, x_title=None, y_title=None):
     elif chart_type == 'pie':
         chart_options = {
             'title': { 'text': ' ' },
-            'credits': { 'enabled': False}
+            'credits': { 'enabled': False }
         }
     else:
         chart_options = None
@@ -430,12 +430,12 @@ def _get_chart_options(chart_type, title=None, x_title=None, y_title=None):
 def fed_pie_chart(request, federation_id):
     stats_config_dict = getattr(settings, "STATS")
     terms = stats_config_dict['statistics']['entity_by_type']['terms']
-    stats = EntityStat.objects.filter(federation = federation_id, \
-                                      feature__in = terms).order_by('-time')[0:len(terms)]
+    stats = EntityStat.objects.filter(federation=federation_id, \
+                                      feature__in=terms).order_by('-time')[0:len(terms)]
     statdata = _create_statdata('pie', stats)
     series_options = \
         [{'options': { 'type': 'pie', 'stacking': False, 'size': '70%' },
-         'terms':{ 'feature': [ 'value' ] }}]
+          'terms':{ 'feature': [ 'value' ] }}]
     chart_options = _get_chart_options('pie')
 
     return Chart(

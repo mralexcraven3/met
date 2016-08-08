@@ -32,7 +32,7 @@ XML_NAMESPACE = NAMESPACES['xml']
 XMLDSIG_NAMESPACE = NAMESPACES['ds']
 MDUI_NAMESPACE = NAMESPACES['mdui']
 
-DESCRIPTOR_TYPES = ('IDPSSODescriptor', 'SPSSODescriptor',)
+DESCRIPTOR_TYPES = ('IDPSSODescriptor', 'SPSSODescriptor', 'AASSODescriptor')
 DESCRIPTOR_TYPES_DISPLAY = {}
 for item in DESCRIPTOR_TYPES:
     DESCRIPTOR_TYPES_DISPLAY[item] = item.replace('SSODescriptor', '')
@@ -171,6 +171,8 @@ class MetadataParser(object):
         expression = "|".join([desc for desc in DESCRIPTOR_TYPES_UTIL])
         elements = entity.xpath(expression, namespaces=NAMESPACES)
         types = [element.tag.split("}")[1] for element in elements]
+        if len(types) == 0:
+            types = ['AASSODescriptor']
         return types
 
     @staticmethod
@@ -179,7 +181,7 @@ class MetadataParser(object):
                                 "//saml:Attribute[@Name='http://macedir.org/entity-category-support' or @Name='http://macedir.org/entity-category']"
                                 "//saml:AttributeValue",
                                 namespaces=NAMESPACES)
-        categories = [dnnode.text for dnnode in elements]
+        categories = [dnnode.text.strip() for dnnode in elements]
         return categories
 
     @staticmethod

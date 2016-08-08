@@ -232,6 +232,7 @@ STATS = {
     'features': {
         'sp': 'SPSSODescriptor',
         'idp': 'IDPSSODescriptor',
+        'aa': 'AASSODescriptor',
         'sp_saml1': 'urn:oasis:names:tc:SAML:1.1:protocol',
         'sp_saml2': 'urn:oasis:names:tc:SAML:2.0:protocol',
         'sp_shib1': 'urn:mace:shibboleth:1.0',
@@ -247,6 +248,7 @@ STATS = {
     'feature_names': {
         'sp': 'SP',
         'idp': 'IDP',
+        'aa': 'AA',
         'sp_saml1': 'SP SAML 1.1',
         'sp_saml2': 'SP SAML 2.0',
         'sp_shib1': 'SP Shibboleth 1.0',
@@ -258,7 +260,7 @@ STATS = {
     # Statistics that can be shown (values are keys for 'features')
     'statistics': {
         'entity_by_type': {
-            'terms': ['sp', 'idp'],
+            'terms': ['aa', 'sp', 'idp'],
             'title': 'Services',
             'x_title': 'Time',
             'y_title': 'Count'

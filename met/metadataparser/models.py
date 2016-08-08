@@ -422,7 +422,7 @@ class Federation(Base):
         return reverse('federation_view', args=[self.slug])
 
     @classmethod
-    def get_sp(cls, entities, xml_name, ref_date = None):
+    def get_sp(cls, entities, xml_name, ref_date=None):
         count = 0
         for entity in entities:
             reginst = None
@@ -436,7 +436,21 @@ class Federation(Base):
         return count
 
     @classmethod
-    def get_idp(cls, entities, xml_name, ref_date = None):
+    def get_idp(cls, entities, xml_name, ref_date=None):
+        count = 0
+        for entity in entities:
+            reginst = None
+            if entity.registration_instant:
+                reginst = pytz.utc.localize(entity.registration_instant)
+            if not ref_date or (reginst and reginst > ref_date):
+                continue
+            cur_cached_types = [t.xmlname for t in entity.types.all()]
+            if xml_name in cur_cached_types:
+                count += 1
+        return count
+
+    @classmethod
+    def get_aa(cls, entities, xml_name, ref_date=None):
         count = 0
         for entity in entities:
             reginst = None

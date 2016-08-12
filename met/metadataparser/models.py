@@ -906,7 +906,7 @@ class Entity(Base):
         return entities[:maxlength]
 
     def get_absolute_url(self):
-        return reverse('entity_view', args=[quote_plus(self.entityid)])
+        return reverse('entity_view', args=[quote_plus(self.entityid.encode('utf-8'))])
 
     def can_edit(self, user, delete):
         permission = 'delete_entity' if delete else 'change_entity'

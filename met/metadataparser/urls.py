@@ -39,6 +39,7 @@ urlpatterns = patterns('met.metadataparser.views',
     url(r'^entity/(?P<entityid>.+)/$', 'entity_view', name='entity_view'),
 
     url(r'^search_service/$', 'search_service', name='search_service'),
+    url(r'^search_entities/$', 'search_entities', name='search_entities'),
     
     url(r'^show_less_entries/$', 'decrement_current_toplength', name='show_less_entries'),
     url(r'^show_more_entries/$', 'increment_current_toplength', name='show_more_entries'),

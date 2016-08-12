@@ -12,6 +12,7 @@
 
 import re, time
 import pytz
+import operator
 import simplejson as json
 from urllib import unquote
 from datetime import datetime
@@ -34,7 +35,7 @@ from chartit import DataPool, Chart
 from met.metadataparser.decorators import user_can_edit
 from met.metadataparser.models import Federation, Entity, EntityStat, EntityCategory, TOP_LENGTH, FEDERATION_TYPES
 from met.metadataparser.forms import (FederationForm, EntityForm, EntityCommentForm,
-                                      EntityProposalForm, ServiceSearchForm, ChartForm)
+                                      EntityProposalForm, ServiceSearchForm, ChartForm, SearchEntitiesForm)
 
 from met.metadataparser.summary_export import export_summary
 from met.metadataparser.query_export import export_query_set
@@ -646,3 +647,68 @@ def search_service(request):
 def met_logout(request):
     logout(request)
     return HttpResponseRedirect(request.GET.get("next", "/"))
+
+
+@profile(name='Search entities')
+def search_entities(request):
+    if request.method == 'POST':
+        form = SearchEntitiesForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            filters = {}
+            args=()
+
+            entity_type = form.cleaned_data['entity_type']
+            if entity_type and entity_type != 'All':
+                filters['types__name'] = entity_type
+
+            entity_category = form.cleaned_data['entity_category']
+            if entity_category and entity_category != 'All':
+                filters['entity_categories__category_id'] = entity_category
+
+            federations = form.cleaned_data['federations']
+            if federations and not 'All' in federations:
+                q_list = [Q(federations__id = f) for f in federations]
+                args = (reduce(operator.or_, q_list),)
+                #args = (Q(federations__id = federations ) | Q( title__icontains = 'Bar' ))
+
+            entity_id = form.cleaned_data['entityid']
+            if entity_id and entity_id != '':
+                filters['entityid__icontains'] = entity_id
+
+            ob_entities = Entity.objects.all()
+            if filters:
+                ob_entities = ob_entities.filter(*args, **filters)
+
+            ob_entities = ob_entities.prefetch_related('types', 'federations')
+            pagination = _paginate_fed(ob_entities, request.GET.get('page'))
+
+            entities = []
+            for entity in ob_entities:
+                entities.append({
+                    'entityid': entity.entityid,
+                    'name': entity.name,
+                    'absolute_url': entity.get_absolute_url(),
+                    'types': [unicode(item) for item in entity.types.all()],
+                    'federations': [(unicode(item.name), item.get_absolute_url()) for item in entity.federations.all()],
+                })
+
+            return render_to_response('metadataparser/search_entities.html',
+                                      {'settings': settings,
+                                       'form': form,
+                                       'object_list': entities,
+                                       'show_filters': False,
+                                       'pagination': pagination,
+                                      }, context_instance=RequestContext(request))
+
+        else:
+            messages.error(request, _('Please correct the errors indicated'
+                                      ' below'))
+    else:
+        form = SearchEntitiesForm()
+
+    return render_to_response('metadataparser/search_entities.html',
+                              {'form': form},
+                              context_instance=RequestContext(request))
+
+

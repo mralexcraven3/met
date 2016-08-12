@@ -21,7 +21,7 @@ from dateutil.relativedelta import relativedelta
 
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from met.metadataparser.models import Federation, Entity
+from met.metadataparser.models import Federation, Entity, EntityType, EntityCategory
 
 class MultiURLforMetadata(Widget):
     def render(self, name, value, attrs=None):
@@ -239,8 +239,48 @@ class EntityProposalForm(forms.Form):
 
 class ServiceSearchForm(forms.Form):
     entityid = forms.CharField(max_length=200, label=_(u"Search service ID"),
-                             help_text=_(u"Enter a full or partial entityid"),
-                             widget=forms.TextInput(attrs={'size': '200'}))
+                               help_text=_(u"Enter a full or partial entityid"),
+                               widget=forms.TextInput(attrs={'size': '200'}))
 
     class Meta(object):
         exclude = []
+
+
+class SearchEntitiesForm(forms.Form):
+    federation_choices = [('All', 'All federations')]
+    for federation in Federation.objects.all():
+        federation_choices.append(('%s' % federation, federation))
+
+    type_choices = [('All', 'All types')]
+    for entity_type in EntityType.objects.all():
+        type_choices.append(('%s' % entity_type, entity_type))
+
+    category_choices = [('All', 'All types')]
+    for entity_category in EntityCategory.objects.all():
+        category_choices.append(('%s' % entity_category, entity_category))
+
+    entity_type = forms.ChoiceField(label=_(u"Entity Type"),
+                                    help_text=_(u"Select the entity type you're interest in"),
+                                    choices=type_choices,
+                                    initial=['All'])
+
+    entity_category = forms.ChoiceField(label=_(u'Entity Category'),
+                                        help_text=_(u"Select the entity category you're interest in"),
+                                        choices=category_choices,
+                                        initial=['All'])
+
+    federations = forms.MultipleChoiceField(label=_(u"Federation filter"),
+                                            help_text=_(u"Select the federations you're interest in (you may select multiple)"),
+                                            widget=forms.CheckboxSelectMultiple,
+                                            choices=federation_choices,
+                                            initial=['All'])
+
+    entityid = forms.CharField(max_length=200, label=_(u"Search entity ID"),
+                               help_text=_(u"Enter a full or partial entityid"),
+                               widget=forms.TextInput(attrs={'size': '200'}),
+                               required=False)
+
+    class Meta(object):
+        fields = []
+
+

@@ -682,7 +682,7 @@ def search_entities(request):
                 ob_entities = ob_entities.filter(**filters)
 
             ob_entities = ob_entities.prefetch_related('types', 'federations')
-            pagination = _paginate_fed(ob_entities, request.GET.get('page'))
+            pagination = _paginate_fed(ob_entities, form.cleaned_data['page'])
 
             entities = []
             for entity in ob_entities:

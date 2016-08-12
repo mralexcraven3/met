@@ -280,6 +280,8 @@ class SearchEntitiesForm(forms.Form):
                                widget=forms.TextInput(attrs={'size': '200'}),
                                required=False)
 
+    page = forms.IntegerField(min_value=0, initial=1, required=False, widget=forms.HiddenInput(attrs={'id': 'pagination_page'}))
+
     class Meta(object):
         fields = []
 

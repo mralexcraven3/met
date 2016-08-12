@@ -1,6 +1,17 @@
 {% extends "metadataparser/base_metadataparser.html" %}
 {% load i18n metadataparsertags %}
 
+{% block extrajs %}
+<script language="javascript">
+    function change_page(pagenum) {
+        $('#pagination_page').val(pagenum);
+        var form = $('#pagination_page').parents('form:first');
+        form.submit();
+        return false;
+    }
+</script>
+{% endblock %}
+
 {% block appendheader %}
 <h2>{% trans "Entity search" %}</h2>
 {% endblock %}
@@ -9,6 +20,6 @@
   {% bootstrap_form form %}
 
   {% if object_list %}
-    {% entity_list object_list pagination=pagination %}
+    {% entity_list object_list pagination=pagination onclick="change_page" %}
   {% endif %}
 {% endblock %}

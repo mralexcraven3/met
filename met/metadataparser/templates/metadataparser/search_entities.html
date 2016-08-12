@@ -1,0 +1,14 @@
+{% extends "metadataparser/base_metadataparser.html" %}
+{% load i18n metadataparsertags %}
+
+{% block appendheader %}
+<h2>{% trans "Entity search" %}</h2>
+{% endblock %}
+
+{% block content %}
+  {% bootstrap_form form %}
+
+  {% if object_list %}
+    {% entity_list object_list pagination=pagination %}
+  {% endif %}
+{% endblock %}

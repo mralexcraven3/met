@@ -652,11 +652,11 @@ def met_logout(request):
 @profile(name='Search entities')
 def search_entities(request):
     if request.method == 'POST':
-        form = SearchEntitiesForm(request.POST, request.FILES)
+        form = SearchEntitiesForm(request.POST)
 
         if form.is_valid():
             filters = {}
-            args=()
+            args = ()
 
             entity_type = form.cleaned_data['entity_type']
             if entity_type and entity_type != 'All':
@@ -668,17 +668,18 @@ def search_entities(request):
 
             federations = form.cleaned_data['federations']
             if federations and not 'All' in federations:
-                q_list = [Q(federations__id = f) for f in federations]
+                q_list = [Q(federations__id=f) for f in federations]
                 args = (reduce(operator.or_, q_list),)
-                #args = (Q(federations__id = federations ) | Q( title__icontains = 'Bar' ))
 
             entity_id = form.cleaned_data['entityid']
             if entity_id and entity_id != '':
                 filters['entityid__icontains'] = entity_id
 
             ob_entities = Entity.objects.all()
+            if args:
+                ob_entities = ob_entities.filter(*args)
             if filters:
-                ob_entities = ob_entities.filter(*args, **filters)
+                ob_entities = ob_entities.filter(**filters)
 
             ob_entities = ob_entities.prefetch_related('types', 'federations')
             pagination = _paginate_fed(ob_entities, request.GET.get('page'))

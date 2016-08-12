@@ -249,7 +249,7 @@ class ServiceSearchForm(forms.Form):
 class SearchEntitiesForm(forms.Form):
     federation_choices = [('All', 'All federations')]
     for federation in Federation.objects.all():
-        federation_choices.append(('%s' % federation, federation))
+        federation_choices.append(('%s' % federation.id, federation))
 
     type_choices = [('All', 'All types')]
     for entity_type in EntityType.objects.all():

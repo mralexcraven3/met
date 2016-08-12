@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block content %}
-  {% bootstrap_form form %}
+  {% bootstrap_form form delete_link=False %}
 
   {% if object_list %}
     {% entity_list object_list pagination=pagination onclick="change_page" %}

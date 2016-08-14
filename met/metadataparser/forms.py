@@ -281,6 +281,7 @@ class SearchEntitiesForm(forms.Form):
                                required=False)
 
     page = forms.IntegerField(min_value=0, initial=1, required=False, widget=forms.HiddenInput(attrs={'id': 'pagination_page'}))
+    export_format = forms.CharField(required=False, widget=forms.HiddenInput(attrs={'id': 'export_format'}))
 
     class Meta(object):
         fields = []

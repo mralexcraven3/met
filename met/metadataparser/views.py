@@ -694,6 +694,11 @@ def search_entities(request):
                     'federations': [(unicode(item.name), item.get_absolute_url()) for item in entity.federations.all()],
                 })
 
+            export_format = form.cleaned_data['export_format']
+            if export_format:
+                return export_query_set(export_format, entities,
+                                        'entities_search_result', ('entityid', 'types', 'federations'))
+
             return render_to_response('metadataparser/search_entities.html',
                                       {'settings': settings,
                                        'form': form,

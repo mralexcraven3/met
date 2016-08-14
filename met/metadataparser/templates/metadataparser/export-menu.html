@@ -6,7 +6,7 @@
   </a>
   <ul class="dropdown-menu">
     {% for format in formats %}
-    <li><a href="{{ format.url }}">{{ format.label }}</a></li>
+    <li><a {% if format.onclick %}onclick="return {{ format.onclick }}('{{ format.label }}')"{% endif %}href="{{ format.url }}">{{ format.label }}</a></li>
     {% endfor %}
   </ul>
 </div>

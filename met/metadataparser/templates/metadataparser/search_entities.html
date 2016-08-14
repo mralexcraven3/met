@@ -9,6 +9,18 @@
         form.submit();
         return false;
     }
+
+    function change_export(newtype) {
+        $('#export_format').val(newtype);
+        var form = $('#export_format').parents('form:first');
+        form.submit();
+        $('#export_format').val(null);
+        return false;
+    }
+
+    $(document).ready(function(){
+        $('#export_format').val(null);
+    });
 </script>
 {% endblock %}
 
@@ -20,6 +32,6 @@
   {% bootstrap_form form delete_link=False %}
 
   {% if object_list %}
-    {% entity_list object_list pagination=pagination onclick="change_page" %}
+    {% entity_list object_list pagination=pagination onclick_page="change_page" onclick_export="change_export" %}
   {% endif %}
 {% endblock %}

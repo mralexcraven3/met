@@ -73,7 +73,7 @@ def federations_summary(context, queryname, counts, federations=None):
 
 
 @register.inclusion_tag('metadataparser/tag_entity_list.html', takes_context=True)
-def entity_list(context, entities, categories=None, pagination=None, curfed=None, show_total=True, append_query=None, onclick=None):
+def entity_list(context, entities, categories=None, pagination=None, curfed=None, show_total=True, append_query=None, onclick_page=None, onclick_export=None):
     request = context.get('request', None)
     lang = 'en'
     if request:
@@ -88,7 +88,8 @@ def entity_list(context, entities, categories=None, pagination=None, curfed=None
             'show_total': show_total,
             'lang': lang,
             'pagination': pagination,
-            'onclick': onclick,
+            'onclick_page': onclick_page,
+            'onclick_export': onclick_export,
             'entity_types': DESCRIPTOR_TYPES}
 
 
@@ -144,7 +145,7 @@ def entitycategory_filter_url(base_path, filt, otherparams=None):
 
 
 @register.inclusion_tag('metadataparser/export-menu.html', takes_context=True)
-def export_menu(context, entities, append_query=None):
+def export_menu(context, entities, append_query=None, onclick=None):
     request = context.get('request')
     copy_query = request.GET.copy()
     if 'page' in copy_query:
@@ -160,19 +161,19 @@ def export_menu(context, entities, append_query=None):
             url += '?format=%s' % (mode)
         if append_query:
             url += "&%s" % (append_query)
-        formats.append({'url': url, 'label': mode})
+        formats.append({'url': url, 'label': mode, 'onclick': onclick})
 
     return {'formats': formats}
 
 
 @register.inclusion_tag('metadataparser/export-menu.html')
-def export_summary_menu(query):
+def export_summary_menu(query, onclick=None):
     formats = []
     for mode in export_summary_modes.keys():
         urlquery = {'format': mode,
                     'export': query}
         url = "./?%(query)s" % {'query': urlencode(urlquery)}
-        formats.append({'url': url, 'label': mode})
+        formats.append({'url': url, 'label': mode, 'onclick': onclick})
 
     return {'formats': formats}
 

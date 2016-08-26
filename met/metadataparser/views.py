@@ -151,6 +151,7 @@ def _paginate_fed(ob_entities, page):
         'page_range': page_range,
         'cur_page_number': ob_entities.number,
         'num_pages': ob_entities.paginator.num_pages,
+        'objects': ob_entities.object_list,
     }
 
 @profile(name='Federation view')
@@ -182,7 +183,7 @@ def federation_view(request, federation_slug=None):
     pagination = _paginate_fed(ob_entities, request.GET.get('page'))
 
     entities = []
-    for entity in ob_entities:
+    for entity in pagination['objects']:
         entities.append({
             'entityid': entity.entityid,
             'name': entity.name,
@@ -685,7 +686,7 @@ def search_entities(request):
             pagination = _paginate_fed(ob_entities, form.cleaned_data['page'])
 
             entities = []
-            for entity in ob_entities:
+            for entity in pagination['objects']:
                 entities.append({
                     'entityid': entity.entityid,
                     'name': entity.name,

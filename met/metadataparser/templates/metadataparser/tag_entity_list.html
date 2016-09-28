@@ -6,7 +6,7 @@
 
 {% export_menu entities append_query=append_query onclick=onclick_export %}
 {% if show_total %}
-<p><strong>{% trans "Total" %}:</strong> {{ entities|length }}</p>
+<p><strong>{% trans "Total" %}:</strong> {{ pagination.num_objects }}</p>
 {% endif %}
 
 {% if enable_filters %}

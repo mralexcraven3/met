@@ -151,6 +151,7 @@ def _paginate_fed(ob_entities, page):
         'page_range': page_range,
         'cur_page_number': ob_entities.number,
         'num_pages': ob_entities.paginator.num_pages,
+        'num_objects': ob_entities.paginator.count,
         'objects': ob_entities.object_list,
     }
 

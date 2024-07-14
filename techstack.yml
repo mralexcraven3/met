@@ -1,0 +1,285 @@
+repo_name: mralexcraven3/met
+report_id: 98a5a4c2dcf697742a3dcb34f67302e4
+version: 0.1
+repo_type: Public
+timestamp: '2024-07-14T00:39:01+00:00'
+requested_by: biancini
+provider: github
+branch: master
+detected_tools_count: 16
+tools:
+- name: CSS 3
+  description: The latest evolution of the Cascading Style Sheets language
+  website_url: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS3
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/6727/css.png
+  detection_source_url: https://github.com/mralexcraven3/met
+  detection_source: Repo Metadata
+- name: JavaScript
+  description: Lightweight, interpreted, object-oriented language with first-class
+    functions
+  website_url: https://developer.mozilla.org/en-US/docs/Web/JavaScript
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/1209/javascript.jpeg
+  detection_source_url: https://github.com/mralexcraven3/met
+  detection_source: Repo Metadata
+- name: Python
+  description: A clear and powerful object-oriented programming language, comparable
+    to Perl, Ruby, Scheme, or Java.
+  website_url: https://www.python.org
+  open_source: true
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/993/pUBY5pVj.png
+  detection_source_url: https://github.com/mralexcraven3/met
+  detection_source: Repo Metadata
+- name: Memcached
+  description: High-performance, distributed memory object caching system
+  website_url: http://memcached.org/
+  license: BSD-3-Clause
+  open_source: true
+  hosted_saas: false
+  category: Data Stores
+  sub_category: Databases
+  image_url: https://img.stackshare.io/service/1040/hDNnpa4a_400x400.jpg
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+- name: MySQL
+  description: The world's most popular open source database
+  website_url: http://www.mysql.com
+  open_source: true
+  hosted_saas: false
+  category: Data Stores
+  sub_category: Databases
+  image_url: https://img.stackshare.io/service/1025/logo-mysql-170x170.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+- name: Git
+  description: Fast, scalable, distributed revision control system
+  website_url: http://git-scm.com/
+  open_source: true
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Version Control System
+  image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/mralexcraven3/met
+  detection_source: Repo Metadata
+- name: NGINX
+  description: A high performance free open source web server powering busiest sites
+    on the Internet.
+  website_url: http://nginx.org
+  open_source: false
+  hosted_saas: false
+  category: Application Hosting
+  sub_category: Web Servers
+  image_url: https://img.stackshare.io/service/1052/YMxUfyWf.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/conf/nginx.conf
+  detection_source: conf/nginx.conf
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2015-03-10 15:39:40.000000000 Z
+- name: PyPI
+  description: A repository of software for the Python programming language
+  website_url: https://pypi.org/
+  open_source: false
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Hosted Package Repository
+  image_url: https://img.stackshare.io/service/12572/-RIWgodF_400x400.jpg
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+- name: Visual Studio
+  description: State-of-the-art tools and services that you can use to create great
+    apps for devices, the cloud, and everything in between.
+  website_url: http://msdn.microsoft.com/en-us/vstudio/aa718325.aspx
+  open_source: false
+  hosted_saas: false
+  category: Build, Test, Deploy
+  sub_category: Integrated Development Environment
+  image_url: https://img.stackshare.io/service/1451/SR2hUhQN.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/met.sln
+  detection_source: met.sln
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+- name: Pillow
+  description: Python Imaging Library
+  website_url: https://python-pillow.github.io/
+  open_source: true
+  hosted_saas: false
+  category: Assets and Media
+  sub_category: Image Processing and Management
+  image_url: https://img.stackshare.io/service/2375/default_1f67b0ca7416a9f52beb655f90b5602d5ef74b75.jpg
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+- name: Shell
+  description: A shell is a text-based terminal, used for manipulating programs and
+    files. Shell scripts typically manage program execution.
+  website_url: https://en.wikipedia.org/wiki/Shell_script
+  open_source: false
+  hosted_saas: false
+  category: Languages & Frameworks
+  sub_category: Languages
+  image_url: https://img.stackshare.io/service/4631/default_c2062d40130562bdc836c13dbca02d318205a962.png
+  detection_source_url: https://github.com/mralexcraven3/met
+  detection_source: Repo Metadata
+- name: Django
+  description: A high-level Python Web framework that encourages rapid development
+    and clean
+  package_url: https://pypi.org/project/Django
+  version: 1.7.7
+  license: BSD-3-Clause
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: PyPI Packages
+  image_url: https://img.stackshare.io/package/19832/default_58dbe7b4d7ec447b62773209af0f9a31bbabf5bd.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-07-27 09:53:34.000000000 Z
+  vulnerabilities:
+  - name: Potential bypass of an upstream access control based on URL paths in Django
+    cve_id: CVE-2021-44420
+    cve_url: https://github.com/advisories/GHSA-v6rh-hp5x-86rv
+    detected_date: Dec 14
+    severity: high
+    first_patched: 2.2.25
+  - name: Denial-of-service possibility in logout() view by filling session store
+    cve_id: CVE-2015-5964
+    cve_url: https://github.com/advisories/GHSA-x38m-486c-2wr9
+    detected_date: May 9
+    severity: moderate
+    first_patched: 1.7.10
+- name: lxml
+  description: Powerful and Pythonic XML processing library combining libxml2/libxslt
+    with the ElementTree API
+  package_url: https://pypi.org/project/lxml
+  version: 2.3.5
+  license: BSD-3-Clause
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: PyPI Packages
+  image_url: https://img.stackshare.io/package/19835/default_85689b353a3a9409328e253ea28d859d29151e0c.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+  vulnerabilities:
+  - name: lxml's HTML Cleaner allows crafted and SVG embedded scripts to pass through
+    cve_id: CVE-2021-43818
+    cve_url: https://github.com/advisories/GHSA-55x5-fj6c-h6m8
+    detected_date: Dec 14
+    severity: high
+    first_patched: 4.6.5
+  - name: lxml vulnerable to Cross-site Scripting
+    cve_id: CVE-2020-27783
+    cve_url: https://github.com/advisories/GHSA-pgww-xf46-h92r
+    detected_date: Aug 22
+    severity: moderate
+    first_patched: 4.6.2
+  - name: lxml Cross-site Scripting Via Control Characters
+    cve_id: CVE-2014-3146
+    cve_url: https://github.com/advisories/GHSA-57qw-cc2g-pv5p
+    detected_date: Aug 5
+    severity: moderate
+    first_patched: 3.3.5
+  - name: lxml NULL Pointer Dereference allows attackers to cause a denial of service
+    cve_id: CVE-2022-2309
+    cve_url: https://github.com/advisories/GHSA-wrxv-2j5q-m38w
+    detected_date: Jul 7
+    severity: moderate
+    first_patched: 4.9.1
+  - name: Improper Neutralization of Input During Web Page Generation in LXML
+    cve_id: CVE-2018-19787
+    cve_url: https://github.com/advisories/GHSA-xp26-p53h-6h2p
+    detected_date: Jun 29
+    severity: moderate
+    first_patched: 4.2.5
+  - name: 'lxml vulnerable to Cross-Site Scripting '
+    cve_id: CVE-2021-28957
+    cve_url: https://github.com/advisories/GHSA-jq4v-f5q6-mjqq
+    detected_date: Aug 22
+    severity: moderate
+    first_patched: 4.6.3
+- name: requests
+  description: Python HTTP for Humans
+  package_url: https://pypi.org/project/requests
+  version: 1.0.0
+  license: Apache-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: PyPI Packages
+  image_url: https://img.stackshare.io/package/19826/default_d7c684bf2673f008a9f02ac93901229297a22d7e.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+  vulnerabilities:
+  - name: Insufficiently Protected Credentials in Requests
+    cve_id: CVE-2018-18074
+    cve_url: https://github.com/advisories/GHSA-x84v-xcm2-53pg
+    detected_date: Aug 22
+    severity: high
+    first_patched: 2.20.0
+  - name: Requests `Session` object does not verify requests after making first request
+      with verify=False
+    cve_id: CVE-2024-35195
+    cve_url: https://github.com/advisories/GHSA-9wx4-h78v-vm56
+    detected_date: May 21
+    severity: moderate
+    first_patched: 2.32.0
+  - name: Exposure of Sensitive Information to an Unauthorized Actor in Requests
+    cve_id: CVE-2014-1830
+    cve_url: https://github.com/advisories/GHSA-652x-xj99-gmcc
+    detected_date: Jul 8
+    severity: moderate
+    first_patched: 2.3.0
+  - name: Exposure of Sensitive Information to an Unauthorized Actor in Requests
+    cve_id: CVE-2014-1829
+    cve_url: https://github.com/advisories/GHSA-cfj3-7x9c-4p3h
+    detected_date: Jul 8
+    severity: moderate
+    first_patched: 2.3.0
+- name: python-memcached
+  description: Pure python memcached client
+  package_url: https://pypi.org/project/python-memcached
+  version: '1.48'
+  license: Python-2.0
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: PyPI Packages
+  image_url: https://img.stackshare.io/package/20422/default_76822fdc70cc20016e635fe7fe3216bb3cbe7c0d.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
+- name: simplejson
+  description: Simple, fast, extensible JSON encoder/decoder for Python
+  package_url: https://pypi.org/project/simplejson
+  license: MIT
+  open_source: true
+  hosted_saas: false
+  category: Libraries
+  sub_category: PyPI Packages
+  image_url: https://img.stackshare.io/package/19859/default_4a8a8fdc10130068bf295812b98e9b72fb42fe70.png
+  detection_source_url: https://github.com/mralexcraven3/met/blob/master/requirements.txt
+  detection_source: requirements.txt
+  last_updated_by: Andrea Biancini
+  last_updated_on: 2016-01-20 13:43:13.000000000 Z
